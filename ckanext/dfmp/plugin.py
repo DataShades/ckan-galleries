@@ -2,16 +2,19 @@ import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
 from datetime import datetime
+from time import sleep
+
+import logging as l
 
 class DFMPPlugin(plugins.SingletonPlugin):
-    plugins.implements(plugins.IActions)
+  plugins.implements(plugins.IActions)
+  inProgress = 0
+  def get_actions(self):
+      return {
+        'user_add_asset': user_add_asset,
+        'user_get_assets': user_get_assets,
 
-    def get_actions(self):
-        return {
-          'user_add_asset': user_add_asset,
-          'user_get_assets': user_get_assets,
-
-        }
+      }
 
 
 
@@ -24,12 +27,17 @@ def user_add_asset(context, data_dict):
   owner_id    = orgs[0]['id']     if orgs else context['auth_user_obj'].id
   owner_name  = orgs[0]['title']  if orgs else context['auth_user_obj'].name
 
+  while DFMPPlugin.inProgress:
+    sleep(.1)
+
   try:
+    DFMPPlugin.inProgress += 1
     toolkit.get_action('package_create')(context, { 'name' : dataset_name })
   except toolkit.ValidationError:
     pass
 
-  resource = toolkit.get_action('resource_create')(context, { 
+  try:
+    resource = toolkit.get_action('resource_create')(context, {
                                                     'package_id' : dataset_name, 
                                                     'url':data_dict['url'],
                                                     'name':data_dict['name'],
@@ -37,7 +45,7 @@ def user_add_asset(context, data_dict):
                                                     'mimetype':data_dict['type']
                                                   })
 
-  datastore = toolkit.get_action('datastore_create')(context,{
+    datastore = toolkit.get_action('datastore_create')(context,{
                                             'force':True,
                                             'resource_id': resource['id'],
                                             'fields':[
@@ -63,7 +71,10 @@ def user_add_asset(context, data_dict):
                                             ] 
           
                                        })
-
+  except Exception:
+    DFMPPlugin.inProgress -= 1
+    resource = {'id':None}
+  DFMPPlugin.inProgress -= 1
   return resource['id']
 
 
