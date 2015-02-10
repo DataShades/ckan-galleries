@@ -108,9 +108,18 @@ def user_create_with_dataset(context, data_dict):
     log.warn(e)
   return user
 
-@side_effect_free
 def _delete_user_test(context, data_dict):
-  pass
+  # toolkit.get_action('package_show')(context, { 'id' : _get_assets_container_name(data_dict['name']) })
+  user = context['session'].query(context['model'].User).filter_by(apikey=data_dict['user'])
+  if not user.count(): return
+  try:
+    toolkit.get_action('package_delete')(context, { 'id' : _get_assets_container_name(user.first().name) })
+    context['session'].query(context['model'].Package).filter_by(name=_get_assets_container_name(user.first().name)).first().delete()
+  except:
+    pass
+  user.delete()
+  context['session'].commit()
+
 
 def _get_assets_container_name(name):
   return 'dfmp_assets_'+name
