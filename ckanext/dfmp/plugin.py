@@ -17,8 +17,8 @@ class DFMPPlugin(plugins.SingletonPlugin):
         'user_create_with_dataset': user_create_with_dataset,
         'user_remove_asset':user_remove_asset,
         'user_update_asset': user_update_asset,
+        'delete_user_test':_delete_user_test,
       }
-
 
 
 
@@ -78,26 +78,36 @@ def user_get_assets(context, data_dict):
   """Get all assets of user"""
   try:
     dataset = toolkit.get_action('package_show')(context,{'id' : _get_assets_container_name(context['auth_user_obj'].name) })
+
     for resource in dataset['resources']:
-      resource.update( datastore = toolkit.get_action('datastore_search')(context,{'resource_id': resource['id']}).get('records') )
+      try:
+        resource.update( datastore = toolkit.get_action('datastore_search')(context,{'resource_id': resource['id']}).get('records') )
+      except toolkit.ObjectNotFound:
+        resource.update(datastore = [])
     return dataset
   except toolkit.ObjectNotFound, e:
+    log.warn(_get_assets_container_name(context['auth_user_obj'].name))
+    log.warn(e)
     return {}
-
 
 def user_remove_asset(context, data_dict):
   """Remove one asset"""
+  while DFMPPlugin.inProgress:
+    sleep(.1)
+  DFMPPlugin.inProgress += 1
   try:
-    result = toolkit.get_action('datastore_delete')(context,{
-                                          'force':True,
-                                          'resource_id': data_dict['id'],
-                                          })
+    # result = toolkit.get_action('datastore_delete')(context,{
+    #                                       'force':True,
+    #                                       'resource_id': data_dict['id'],
+    #                                       })
+    toolkit.get_action('resource_delete')(context,{'id': data_dict['id']})
   except toolkit.ObjectNotFound:
     pass
-  toolkit.get_action('resource_delete')(context,{'id': data_dict['id']})
+  DFMPPlugin.inProgress -= 1
 
 
 def user_create_with_dataset(context, data_dict):
+  data_dict['name'] = data_dict['name'].lower()
   user = toolkit.get_action('user_create')(context, data_dict)
 
   try:
@@ -107,6 +117,9 @@ def user_create_with_dataset(context, data_dict):
 
   return user
 
+@side_effect_free
+def _delete_user_test(context, data_dict):
+  pass
 
 def _get_assets_container_name(name):
   return 'dfmp_assets_'+name
