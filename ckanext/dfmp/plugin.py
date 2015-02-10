@@ -54,22 +54,9 @@ def user_add_asset(context, data_dict):
 
 def user_update_asset(context, data_dict):
   """Update asset"""
-  res = toolkit.get_action('resource_show')(context, { 'id' : data_dict['id'] })
-  records = toolkit.get_action('datastore_search')(context,{'resource_id': data_dict['id']})['records'][-1]
-  del records['_id']
-  records['license_id'] = data_dict['license']
-
-
-  datastore = toolkit.get_action('datastore_upsert')(context,{
-                                          'force':True,
-                                          'resource_id': data_dict['id'],
-                                          'method':'insert',
-                                          'records': [
-                                            records,
-                                          ]
-                                     })
-  res.update(datastore=datastore.get('records'))
-  return res
+  updater = _update_generator(context, data_dict['items'])
+  resources = [resource for resource in updater]
+  return resources
 
 
 
@@ -108,13 +95,17 @@ def user_remove_asset(context, data_dict):
 
 def user_create_with_dataset(context, data_dict):
   data_dict['name'] = data_dict['name'].lower()
-  user = toolkit.get_action('user_create')(context, data_dict)
+
+  try:
+    user = toolkit.get_action('user_create')(context, data_dict)
+  except Exception, e:
+    log.warn(e)
+    user = toolkit.get_action('user_show')(context, {'id':data_dict['name']})
 
   try:
     toolkit.get_action('package_create')(context, { 'name' : _get_assets_container_name(data_dict['name']) })
   except toolkit.ValidationError, e:
     log.warn(e)
-
   return user
 
 @side_effect_free
@@ -143,3 +134,24 @@ def _init_records(context, data_dict):
               license_id = data_dict['license'],
               type = data_dict['type'],
               thumb = data_dict['thumbnailUrl'])
+
+def _update_generator(context, data_dict):
+  for item in data_dict:
+    try:
+      res = toolkit.get_action('resource_show')(context, { 'id' : item['id'] })
+      records = toolkit.get_action('datastore_search')(context,{'resource_id': item['id']})['records'][-1]
+      del records['_id']
+      records['license_id'] = item['license']
+
+      datastore = toolkit.get_action('datastore_upsert')(context,{
+                                              'force':True,
+                                              'resource_id': item['id'],
+                                              'method':'insert',
+                                              'records': [
+                                                records,
+                                              ]
+                                         })
+      res.update(datastore=datastore.get('records'))
+      yield res
+    except toolkit.ObjectNotFound:
+      yield {}
