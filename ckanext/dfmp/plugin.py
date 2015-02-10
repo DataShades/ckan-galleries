@@ -31,25 +31,25 @@ def user_add_asset(context, data_dict):
     res = _res_init(data_dict)
     res['package_id'] = _get_assets_container_name(context['auth_user_obj'].name)
     resource = toolkit.get_action('resource_create')(context, res )
+    datastore = toolkit.get_action('datastore_create')(context,{'force':True,
+                                                                'resource_id': resource['id'],
+                                                                'fields':[
+                                                                  {'id':'date', 'type':'text'},
+                                                                  {'id':'creator_id', 'type':'text'},
+                                                                  {'id':'creator_name', 'type':'text'},
+                                                                  {'id':'owner_id', 'type':'text'},
+                                                                  {'id':'owner_name', 'type':'text'},
+                                                                  {'id':'license_id', 'type':'text'},
+                                                                  {'id':'type', 'type':'text'},
+                                                                ],
+                                                                'records': [
+                                                                  _init_records(context, data_dict),
+                                                                ]})
+    resource.update(datastore=datastore.get('records'))
   except Exception, e:
     DFMPPlugin.inProgress -= 1
     return e
   DFMPPlugin.inProgress -= 1
-  datastore = toolkit.get_action('datastore_create')(context,{'force':True,
-                                                              'resource_id': resource['id'],
-                                                              'fields':[
-                                                                {'id':'date', 'type':'text'},
-                                                                {'id':'creator_id', 'type':'text'},
-                                                                {'id':'creator_name', 'type':'text'},
-                                                                {'id':'owner_id', 'type':'text'},
-                                                                {'id':'owner_name', 'type':'text'},
-                                                                {'id':'license_id', 'type':'text'},
-                                                                {'id':'type', 'type':'text'},
-                                                              ],
-                                                              'records': [
-                                                                _init_records(context, data_dict),
-                                                              ]})
-  resource.update(datastore=datastore.get('records'))
   return resource
 
 def user_update_asset(context, data_dict):
