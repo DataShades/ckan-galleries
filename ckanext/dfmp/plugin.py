@@ -53,12 +53,16 @@ def user_add_asset(context, data_dict):
   return resource
 
 def user_update_asset(context, data_dict):
-  """Update asset"""
+  """Update assets"""
   updater = _update_generator(context, data_dict['items'])
   resources = [resource for resource in updater]
   return resources
 
-
+def user_remove_asset(context, data_dict):
+  """Remove assets"""
+  deleter = _delete_generator(context, data_dict['items'])
+  resources = [resource for resource in deleter]
+  return resources
 
 @side_effect_free
 def user_get_assets(context, data_dict):
@@ -77,20 +81,6 @@ def user_get_assets(context, data_dict):
     log.warn(e)
     return {}
 
-def user_remove_asset(context, data_dict):
-  """Remove one asset"""
-  while DFMPPlugin.inProgress:
-    sleep(.1)
-  DFMPPlugin.inProgress += 1
-  try:
-    # result = toolkit.get_action('datastore_delete')(context,{
-    #                                       'force':True,
-    #                                       'resource_id': data_dict['id'],
-    #                                       })
-    toolkit.get_action('resource_delete')(context,{'id': data_dict['id']})
-  except toolkit.ObjectNotFound:
-    pass
-  DFMPPlugin.inProgress -= 1
 
 
 def user_create_with_dataset(context, data_dict):
@@ -164,3 +154,15 @@ def _update_generator(context, data_dict):
       yield res
     except toolkit.ObjectNotFound:
       yield {}
+
+def _delete_generator(context, data_dict):
+  for item in data_dict:
+    try:
+    #   # result = toolkit.get_action('datastore_delete')(context,{
+    #   #                                       'force':True,
+    #   #                                       'resource_id': data_dict['id'],
+    #   #                                       })
+      toolkit.get_action('resource_delete')(context,{'id': item['id']})
+      yield {item['id']:True}
+    except toolkit.ObjectNotFound:
+      yield {item['id']:False}
