@@ -138,10 +138,25 @@ def organization_remove_user(context, data_dict):
   toolkit.get_action('organization_member_delete')(context, {'id':_transform_org_name(data_dict['organization']),'username':_user_by_apikey(context, data_dict['user']).first().id})
   return True
 
+@side_effect_free
 def all_user_list(context, data_dict):
   U = context['model'].User
-  users = [dict(name=user.name, api_key=user.apikey) for user in context['session'].query(U).filter(~U.name.in_(['default', 'visitor', 'logged_in']), U.state!='deleted' ).all()]
+  G = context['model'].Group
+  users = [dict(name=user.name, api_key=user.apikey, organization=_organization_from_list(user.get_groups())) for user in context['session'].query(U).filter(~U.name.in_(['default', 'visitor', 'logged_in']), U.state!='deleted' ).all()]
+
   return users
+
+def _organization_from_list(groups):
+  if not len(groups):
+    return ''
+  else:
+    for group in groups:
+      log.warn(group)
+      if group.type == 'organization':
+        # return group.name
+        pass
+    return ''
+
 
 def _get_assets_container_name(name):
   return 'dfmp_assets_'+name
