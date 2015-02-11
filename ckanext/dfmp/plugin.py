@@ -153,8 +153,7 @@ def _organization_from_list(groups):
     for group in groups:
       log.warn(group)
       if group.type == 'organization':
-        # return group.name
-        pass
+        return group.title
     return ''
 
 
