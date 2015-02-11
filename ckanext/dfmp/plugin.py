@@ -128,9 +128,14 @@ def all_organization_list(context, data_dict):
   orgs = [ [key, value['title']] for key, value in enumerate(toolkit.get_action('organization_list')(context, {'all_fields':True}), 1) ]
   return orgs
 
+@side_effect_free
 def organization_add_user(context, data_dict):
   if not 'user' in data_dict or not 'organization' in data_dict: raise toolkit.ValidationError('Parameters "user" and "organization" must be defined')
-  toolkit.get_action('organization_member_create')(context, {'id':_transform_org_name(data_dict['organization']),'username':_user_by_apikey(context, data_dict['user']).first().id,'role':'editor'})
+  user = _user_by_apikey(context, data_dict['user']).first()
+  user_current_org = _organization_from_list(user.get_groups())[0]
+  if user_current_org:
+      toolkit.get_action('organization_member_delete')(context, {'id':user_current_org,'username':user.id})
+  toolkit.get_action('organization_member_create')(context, {'id':_transform_org_name(data_dict['organization']),'username':user.id,'role':'editor'})
   return True
 
 def organization_remove_user(context, data_dict):
@@ -142,19 +147,19 @@ def organization_remove_user(context, data_dict):
 def all_user_list(context, data_dict):
   U = context['model'].User
   G = context['model'].Group
-  users = [dict(name=user.name, api_key=user.apikey, organization=_organization_from_list(user.get_groups())) for user in context['session'].query(U).filter(~U.name.in_(['default', 'visitor', 'logged_in']), U.state!='deleted' ).all()]
+  users = [dict(name=user.name, api_key=user.apikey, organization=_organization_from_list(user.get_groups())[1] ) for user in context['session'].query(U).filter(~U.name.in_(['default', 'visitor', 'logged_in']), U.state!='deleted' ).all()]
 
   return users
 
 def _organization_from_list(groups):
   if not len(groups):
-    return ''
+    return (None, '')
   else:
     for group in groups:
       log.warn(group)
       if group.type == 'organization':
-        return group.title
-    return ''
+        return (group.name, group.title)
+    return (None, '')
 
 
 def _get_assets_container_name(name):
