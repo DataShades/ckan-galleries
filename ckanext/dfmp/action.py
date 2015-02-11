@@ -6,8 +6,51 @@ from datetime import datetime
 import logging
 log = logging.getLogger(__name__)
 
+#GET functions
+
+@side_effect_free
+def all_user_list(context, data_dict):
+  U = context['model'].User
+  users = [dict(name=user.name, api_key=user.apikey, organization=_organization_from_list(_user_get_groups(user))[1] ) 
+      for user in context['session'].query(U).filter(
+        ~U.name.in_(['default', 'visitor', 'logged_in']
+      ), U.state!='deleted' ).all()]
+
+  return users
+
+@side_effect_free
+def user_get_organization(context, data_dict):
+  _validate(data_dict, 'user')
+  user = _user_by_apikey(context, data_dict['user']).first()
+  groups = _user_get_groups(user)
+  org = _organization_from_list( groups )[1]
+  return org
+
+@side_effect_free
+def all_organization_list(context, data_dict):
+  orgs = [ [key, value['title'], value['id']] for key, value in enumerate(toolkit.get_action('organization_list')(context, {'all_fields':True}), 1) ]
+  return orgs
+
+@side_effect_free
+def user_get_assets(context, data_dict):
+  """Get all assets of user"""
+  try:
+    dataset = toolkit.get_action('package_show')(context,{'id' : _get_assets_container_name(context['auth_user_obj'].name) })
+
+    for resource in dataset['resources']:
+      try:
+        resource.update( datastore = toolkit.get_action('datastore_search')(context,{'resource_id': resource['id']}).get('records') )
+      except toolkit.ObjectNotFound:
+        resource.update(datastore = [])
+    return dataset
+  except toolkit.ObjectNotFound, e:
+    log.warn(_get_assets_container_name(context['auth_user_obj'].name))
+    log.warn(e)
+    return {}
+
+
+# ASSET functions
 def user_add_asset_inner(context, data_dict):
-  organization = _organization_from_list(context['auth_user_obj'].get_groups())[2] 
   res = _res_init(data_dict)
   res['package_id'] = _get_assets_container_name(context['auth_user_obj'].name)
   resource = toolkit.get_action('resource_create')(context, res )
@@ -42,24 +85,9 @@ def user_remove_asset_inner(context, data_dict):
   resources = [resource for resource in deleter]
   return resources
 
-@side_effect_free
-def user_get_assets(context, data_dict):
-  """Get all assets of user"""
-  try:
-    dataset = toolkit.get_action('package_show')(context,{'id' : _get_assets_container_name(context['auth_user_obj'].name) })
-
-    for resource in dataset['resources']:
-      try:
-        resource.update( datastore = toolkit.get_action('datastore_search')(context,{'resource_id': resource['id']}).get('records') )
-      except toolkit.ObjectNotFound:
-        resource.update(datastore = [])
-    return dataset
-  except toolkit.ObjectNotFound, e:
-    log.warn(_get_assets_container_name(context['auth_user_obj'].name))
-    log.warn(e)
-    return {}
 
 
+# USER functions
 
 def user_create_with_dataset(context, data_dict):
   data_dict['name'] = data_dict['name'].lower()
@@ -89,48 +117,39 @@ def delete_user_test(context, data_dict):
   context['session'].commit()
 
 
+# ORGANIZATION functions
+
 def create_organization(context, data_dict):
-  validate(data_dict, 'name')
+  _validate(data_dict, 'name')
   name = _transform_org_name(data_dict['name'])
   title = data_dict['name']
   org = toolkit.get_action('organization_create')(context, {'name':name,'title':title})
   return org
 
-@side_effect_free
-def all_organization_list(context, data_dict):
-  orgs = [ [key, value['title']] for key, value in enumerate(toolkit.get_action('organization_list')(context, {'all_fields':True}), 1) ]
-  return orgs
-
 def organization_add_user(context, data_dict):
-  validate(data_dict, 'user', 'organization')
+  _validate(data_dict, 'user', 'organization')
+  log.warn(data_dict)
   user = _user_by_apikey(context, data_dict['user']).first()
+  username = user.id
   user_current_org = _organization_from_list(_user_get_groups(user))[0]
   if user_current_org:
-      toolkit.get_action('organization_member_delete')(context, {'id':user_current_org,'username':user.id})
-  toolkit.get_action('organization_member_create')(context, {'id':_transform_org_name(data_dict['organization']),'username':user.id,'role':'editor'})
-  return True
+    toolkit.get_action('organization_member_delete')(context, {'id':user_current_org,'username':username})
+  try:
+    res = toolkit.get_action('organization_member_create')(context, {'id':data_dict['organization'],'username': username,'role':'editor'} )
+  except Exception, e:
+    log.warn(e)
+    return {}
+  return res
 
 def organization_remove_user(context, data_dict):
-  validate(data_dict, 'user', 'organization')
-  toolkit.get_action('organization_member_delete')(context, {'id':_transform_org_name(data_dict['organization']),'username':_user_by_apikey(context, data_dict['user']).first().id})
+  _validate(data_dict, 'user', 'organization')
+  toolkit.get_action('organization_member_delete')(context, {'id':data_dict['organization'],'username':_user_by_apikey(context, data_dict['user']).first().id})
   return True
 
-@side_effect_free
-def all_user_list(context, data_dict):
-  U = context['model'].User
-  users = [dict(name=user.name, api_key=user.apikey, organization=_organization_from_list(_user_get_groups(user))[1] ) for user in context['session'].query(U).filter(~U.name.in_(['default', 'visitor', 'logged_in']), U.state!='deleted' ).all()]
 
-  return users
+# ADDITIONAL functions 
 
-@side_effect_free
-def user_get_organization(context, data_dict):
-  validate(data_dict, 'user')
-  user = _user_by_apikey(context, data_dict['user']).first()
-  groups = _user_get_groups(user)
-  org = _organization_from_list( groups )[1]
-  return org
-
-def validate(data, *fields):
+def _validate(data, *fields):
   for field in fields:
     if not field in data: 
       raise toolkit.ValidationError('Parameter {%s} must be defined' % field)
@@ -140,7 +159,6 @@ def _organization_from_list(groups):
     return (None, '', None)
   else:
     for group in groups:
-      log.warn(group)
       if group.type == 'organization':
         return (group.name, group.title, group)
     return (None, '', None)
@@ -160,9 +178,10 @@ def _res_init(data_dict):
               mimetype = data_dict['type'])
 
 def _init_records(context, data_dict):
-  orgs = toolkit.get_action('organization_list_for_user')(context, {'permission':'read'})
-  owner_id    = orgs[0]['id']     if orgs else context['auth_user_obj'].id
-  owner_name  = orgs[0]['title']  if orgs else context['auth_user_obj'].name
+  organization = _organization_from_list(context['auth_user_obj'].get_groups())[2] 
+
+  owner_id    = organization.id     if organization else context['auth_user_obj'].id
+  owner_name  = organization.title  if organization else context['auth_user_obj'].name
 
   return dict(creator_id = context['auth_user_obj'].id,
               creator_name = context['auth_user_obj'].name,

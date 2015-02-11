@@ -1,7 +1,5 @@
 import ckan.plugins as plugins
-
 from time import sleep
-
 from ckanext.dfmp.action import *
 
 import logging
@@ -28,6 +26,7 @@ class DFMPPlugin(plugins.SingletonPlugin):
 
 
 def custom_stack(func):
+  """Execute actions in queue"""
   def waiter(a, b):
     while DFMPPlugin.inProgress:
       sleep(.1)
@@ -46,16 +45,16 @@ def custom_stack(func):
 
 @custom_stack
 def user_add_asset(context, data_dict):
-  """Add new asset"""
+  """Add new assets"""
   return user_add_asset_inner(context, data_dict)
 
 @custom_stack
 def user_update_asset(context, data_dict):
-  """Add new asset"""
+  """Update assets"""
   return user_update_asset_inner(context, data_dict)
 
 @custom_stack
 def user_remove_asset(context, data_dict):
-  """Add new asset"""
+  """Remove assets"""
   return user_remove_asset_inner(context, data_dict)
 
