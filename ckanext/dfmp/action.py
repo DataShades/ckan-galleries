@@ -26,7 +26,7 @@ def user_add_asset_inner(context, data_dict):
                                                                 _init_records(context, data_dict),
                                                               ]})
   resource.update(datastore=datastore.get('records'))
-
+  return resource
 
 def user_update_asset_inner(context, data_dict):
   """Update assets"""
