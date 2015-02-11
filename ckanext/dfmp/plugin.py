@@ -18,6 +18,11 @@ class DFMPPlugin(plugins.SingletonPlugin):
         'user_remove_asset':user_remove_asset,
         'user_update_asset': user_update_asset,
         'delete_user_test':_delete_user_test,
+        'create_organization':create_organization,
+        'all_organization_list':all_organization_list,
+        'organization_add_user':organization_add_user,
+        'organization_remove_user':organization_remove_user,
+        'all_user_list':all_user_list,
       }
 
 
@@ -100,7 +105,7 @@ def user_create_with_dataset(context, data_dict):
 
 def _delete_user_test(context, data_dict):
   # toolkit.get_action('package_show')(context, { 'id' : _get_assets_container_name(data_dict['name']) })
-  user = context['session'].query(context['model'].User).filter_by(apikey=data_dict['user'])
+  user = _user_by_apikey(context, data_dict['user'])
   if not user.count(): return
   try:
     toolkit.get_action('package_delete')(context, { 'id' : _get_assets_container_name(user.first().name) })
@@ -110,6 +115,33 @@ def _delete_user_test(context, data_dict):
   user.delete()
   context['session'].commit()
 
+
+def create_organization(context, data_dict):
+  if not 'name' in data_dict: raise toolkit.ValidationError('Parameter "name" must be defined')
+  name = _transform_org_name(data_dict['name'])
+  title = data_dict['name']
+  org = toolkit.get_action('organization_create')(context, {'name':name,'title':title})
+  return org
+
+@side_effect_free
+def all_organization_list(context, data_dict):
+  orgs = [ [key, value['title']] for key, value in enumerate(toolkit.get_action('organization_list')(context, {'all_fields':True}), 1) ]
+  return orgs
+
+def organization_add_user(context, data_dict):
+  if not 'user' in data_dict or not 'organization' in data_dict: raise toolkit.ValidationError('Parameters "user" and "organization" must be defined')
+  toolkit.get_action('organization_member_create')(context, {'id':_transform_org_name(data_dict['organization']),'username':_user_by_apikey(context, data_dict['user']).first().id,'role':'editor'})
+  return True
+
+def organization_remove_user(context, data_dict):
+  if not 'user' in data_dict or not 'organization' in data_dict: raise toolkit.ValidationError('Parameters "user" and "organization" must be defined')
+  toolkit.get_action('organization_member_delete')(context, {'id':_transform_org_name(data_dict['organization']),'username':_user_by_apikey(context, data_dict['user']).first().id})
+  return True
+
+def all_user_list(context, data_dict):
+  U = context['model'].User
+  users = [dict(name=user.name, api_key=user.apikey) for user in context['session'].query(U).filter(~U.name.in_(['default', 'visitor', 'logged_in']), U.state!='deleted' ).all()]
+  return users
 
 def _get_assets_container_name(name):
   return 'dfmp_assets_'+name
@@ -166,3 +198,9 @@ def _delete_generator(context, data_dict):
       yield {item['id']:True}
     except toolkit.ObjectNotFound:
       yield {item['id']:False}
+
+def _user_by_apikey(context, key):
+  return context['session'].query(context['model'].User).filter_by(apikey=key)
+
+def _transform_org_name(title):
+  return title.replace(' ','_').lower()
