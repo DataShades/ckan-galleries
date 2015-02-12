@@ -20,7 +20,8 @@ setup(
     include_package_data=True,
     zip_safe=False,
     install_requires=[
-        # -*- Extra requirements: -*-
+        'tweepy',
+        'ckanapi'
     ],
     entry_points='''
         [ckan.plugins]
