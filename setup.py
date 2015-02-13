@@ -22,6 +22,7 @@ setup(
     install_requires=[
         'tweepy',
         'ckanapi'
+        'requests==2.4.3'
     ],
     entry_points='''
         [ckan.plugins]
