@@ -6,8 +6,18 @@ import logging
 log = logging.getLogger(__name__)
 
 class DFMPPlugin(plugins.SingletonPlugin):
+  plugins.implements(plugins.IConfigurer)
   plugins.implements(plugins.IActions)
   inProgress = 0
+
+  def update_config(self, config):
+    toolkit.add_template_directory(config, 'templates')
+    toolkit.add_resource('fanstatic', 'dfmp')
+
+
+
+
+
   def get_actions(self):
       return {
         'user_add_asset': user_add_asset,
