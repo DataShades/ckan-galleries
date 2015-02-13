@@ -32,6 +32,7 @@ class DFMPPlugin(plugins.SingletonPlugin):
         'organization_remove_user':organization_remove_user,
         'all_user_list':all_user_list,
         'user_get_organization':user_get_organization,
+        'my_packages_list':my_packages_list,
       }
 
 

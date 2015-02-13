@@ -48,6 +48,12 @@ def user_get_assets(context, data_dict):
     log.warn(e)
     return {}
 
+@side_effect_free
+def my_packages_list(context, data_dict):
+  user = context['auth_user_obj'].id
+  packages = toolkit.get_action('package_search')(context, {'q':'creator_user_id:{0}'.format(user)})
+  return packages
+
 
 # ASSET functions
 def user_add_asset_inner(context, data_dict):
