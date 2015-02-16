@@ -5,10 +5,56 @@ from ckanext.dfmp.action import *
 import logging
 log = logging.getLogger(__name__)
 
-class DFMPPlugin(plugins.SingletonPlugin):
+class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
   plugins.implements(plugins.IConfigurer)
   plugins.implements(plugins.IActions)
+  plugins.implements(plugins.IDatasetForm)
+
   inProgress = 0
+
+  def is_fallback(self):
+    return True
+  def package_types(self):
+    return []
+
+  def show_package_schema(self):
+    schema = super(DFMPPlugin, self).show_package_schema()
+    # schema.update({
+    #     'custom_text': [tk.get_converter('convert_from_extras'),
+    #                     tk.get_validator('ignore_missing')]
+    # })
+    schema['resources'].update({
+                'license_id' : [ toolkit.get_validator('ignore_missing') ],
+                'license_name':[ toolkit.get_validator('ignore_missing') ],
+                'thumb' : [ toolkit.get_validator('ignore_missing') ],
+                'something_else' : [ toolkit.get_validator('ignore_missing') ],
+                'spatial': [toolkit.get_validator('ignore_missing')],
+            })
+    return schema
+
+  def _modify_package_schema(self, schema):
+    # schema.update({
+    #     'custom_text': [tk.get_validator('ignore_missing'),
+    #                     tk.get_converter('convert_to_extras')]
+    # })
+    schema['resources'].update({
+                'license_id' : [ toolkit.get_validator('ignore_missing') ],
+                'license_name':[ toolkit.get_validator('ignore_missing') ],
+                'thumb' : [ toolkit.get_validator('ignore_missing') ],
+                'something_else' : [ toolkit.get_validator('ignore_missing') ],
+                'spatial': [toolkit.get_validator('ignore_missing')],
+                })
+    return schema
+
+  def create_package_schema(self):
+    schema = super(DFMPPlugin, self).create_package_schema()
+    schema = self._modify_package_schema(schema)
+    return schema
+
+  def update_package_schema(self):
+    schema = super(DFMPPlugin, self).update_package_schema()
+    schema = self._modify_package_schema(schema)
+    return schema
 
   def update_config(self, config):
     toolkit.add_template_directory(config, 'templates')

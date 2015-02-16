@@ -36,12 +36,6 @@ def user_get_assets(context, data_dict):
   """Get all assets of user"""
   try:
     dataset = toolkit.get_action('package_show')(context,{'id' : _get_assets_container_name(context['auth_user_obj'].name) })
-
-    for resource in dataset['resources']:
-      try:
-        resource.update( datastore = toolkit.get_action('datastore_search')(context,{'resource_id': resource['id']}).get('records') )
-      except toolkit.ObjectNotFound:
-        resource.update(datastore = [])
     return dataset
   except toolkit.ObjectNotFound, e:
     log.warn(_get_assets_container_name(context['auth_user_obj'].name))
@@ -57,24 +51,13 @@ def my_packages_list(context, data_dict):
 
 # ASSET functions
 def user_add_asset_inner(context, data_dict):
+  log.warn(data_dict)
+  organization = _organization_from_list(context['auth_user_obj'].get_groups())[2] 
+  data_dict['owner_name'] = organization.title  if organization else context['auth_user_obj'].name
+
   res = _res_init(data_dict)
   res['package_id'] = _get_assets_container_name(context['auth_user_obj'].name)
-  resource = toolkit.get_action('resource_create')(context, res )
-  datastore = toolkit.get_action('datastore_create')(context,{'force':True,
-                                                              'resource_id': resource['id'],
-                                                              'fields':[
-                                                                {'id':'date', 'type':'text'},
-                                                                {'id':'creator_id', 'type':'text'},
-                                                                {'id':'creator_name', 'type':'text'},
-                                                                {'id':'owner_id', 'type':'text'},
-                                                                {'id':'owner_name', 'type':'text'},
-                                                                {'id':'license_id', 'type':'text'},
-                                                                {'id':'type', 'type':'text'},
-                                                              ],
-                                                              'records': [
-                                                                _init_records(context, data_dict),
-                                                              ]})
-  resource.update(datastore=datastore.get('records'))
+  resource = toolkit.get_action('resource_create')(context, res)
   return resource
 
 def user_update_asset_inner(context, data_dict):
@@ -181,40 +164,23 @@ def _res_init(data_dict):
   return dict(url      = data_dict['url'],
               name     = data_dict['name'],
               size     = data_dict['size'],
-              mimetype = data_dict['type'])
-
-def _init_records(context, data_dict):
-  organization = _organization_from_list(context['auth_user_obj'].get_groups())[2] 
-
-  owner_id    = organization.id     if organization else context['auth_user_obj'].id
-  owner_name  = organization.title  if organization else context['auth_user_obj'].name
-
-  return dict(creator_id = context['auth_user_obj'].id,
-              creator_name = context['auth_user_obj'].name,
-              date = datetime.now().isoformat(),
-              owner_id = owner_id,
-              owner_name = owner_name,
-              license_id = data_dict['license'],
-              type = data_dict['type'],
-              thumb = data_dict['thumbnailUrl'])
+              mimetype = data_dict['type'],
+              license_id  = data_dict['license'],
+              license_name= _get_license_name(data_dict['license']),
+              thumb       = data_dict['thumbnailUrl'],
+              owner_name  = data_dict['owner_name'],
+              spatial     =  data_dict.get('geoLocation')
+              )
 
 def _update_generator(context, data_dict):
   for item in data_dict:
     try:
       res = toolkit.get_action('resource_show')(context, { 'id' : item['id'] })
-      records = toolkit.get_action('datastore_search')(context,{'resource_id': item['id']})['records'][-1]
-      del records['_id']
-      records['license_id'] = item['license']
 
-      datastore = toolkit.get_action('datastore_upsert')(context,{
-                                              'force':True,
-                                              'resource_id': item['id'],
-                                              'method':'insert',
-                                              'records': [
-                                                records,
-                                              ]
-                                         })
-      res.update(datastore=datastore.get('records'))
+      res['license_id'] = item['license']
+      res['license_name'] = _get_license_name(item['license'])
+
+      res = toolkit.get_action('resource_update')(context,res)
       yield res
     except toolkit.ObjectNotFound:
       yield {}
@@ -232,3 +198,9 @@ def _user_by_apikey(context, key):
 
 def _transform_org_name(title):
   return title.replace(' ','_').lower()
+
+def _get_license_name(id):
+  license = filter(lambda x: x['id']==id, toolkit.get_action('license_list')(None,None) )
+  if license:
+    return license[0]['title']
+  return ''
