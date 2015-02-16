@@ -17,21 +17,6 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
   def package_types(self):
     return []
 
-  def show_package_schema(self):
-    schema = super(DFMPPlugin, self).show_package_schema()
-    # schema.update({
-    #     'custom_text': [tk.get_converter('convert_from_extras'),
-    #                     tk.get_validator('ignore_missing')]
-    # })
-    schema['resources'].update({
-                'license_id' : [ toolkit.get_validator('ignore_missing') ],
-                'license_name':[ toolkit.get_validator('ignore_missing') ],
-                'thumb' : [ toolkit.get_validator('ignore_missing') ],
-                'something_else' : [ toolkit.get_validator('ignore_missing') ],
-                'spatial': [toolkit.get_validator('ignore_missing')],
-            })
-    return schema
-
   def _modify_package_schema(self, schema):
     # schema.update({
     #     'custom_text': [tk.get_validator('ignore_missing'),
@@ -41,8 +26,8 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
                 'license_id' : [ toolkit.get_validator('ignore_missing') ],
                 'license_name':[ toolkit.get_validator('ignore_missing') ],
                 'thumb' : [ toolkit.get_validator('ignore_missing') ],
-                'something_else' : [ toolkit.get_validator('ignore_missing') ],
                 'spatial': [toolkit.get_validator('ignore_missing')],
+                'spatial_friendly': [toolkit.get_validator('ignore_missing')],
                 })
     return schema
 
@@ -59,10 +44,6 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
   def update_config(self, config):
     toolkit.add_template_directory(config, 'templates')
     toolkit.add_resource('fanstatic', 'dfmp')
-
-
-
-
 
   def get_actions(self):
       return {
