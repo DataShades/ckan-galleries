@@ -44,14 +44,17 @@ def user_get_assets(context, data_dict):
 
 @side_effect_free
 def my_packages_list(context, data_dict):
-  user = context['auth_user_obj'].id
-  packages = toolkit.get_action('package_search')(context, {'q':'creator_user_id:{0}'.format(user)})
+  user = context['auth_user_obj']
+  if not user: raise toolkit.NotAuthorized
+  packages = toolkit.get_action('package_search')(context, {'q':'creator_user_id:{0}'.format(user.id)})
+  # org = _organization_from_list(user.get_groups())[2]
+  # if org:
+  #   packages.extend(org.packages())
   return packages
 
 
 # ASSET functions
 def user_add_asset_inner(context, data_dict):
-  log.warn(data_dict)
   organization = _organization_from_list(context['auth_user_obj'].get_groups())[2] 
   data_dict['owner_name'] = organization.title  if organization else context['auth_user_obj'].name
 
@@ -117,7 +120,6 @@ def create_organization(context, data_dict):
 
 def organization_add_user(context, data_dict):
   _validate(data_dict, 'user', 'organization')
-  log.warn(data_dict)
   user = _user_by_apikey(context, data_dict['user']).first()
   username = user.id
   user_current_org = _organization_from_list(_user_get_groups(user))[0]
