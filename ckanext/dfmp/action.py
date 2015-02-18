@@ -34,7 +34,11 @@ def all_organization_list(context, data_dict):
 @side_effect_free
 def user_get_assets(context, data_dict):
   """Get all assets of user"""
+  if not context['auth_user_obj']: 
+    log.warn('User not authorized to get assets!')
+    raise toolkit.NotAuthorized
   try:
+    log.warn(context)
     dataset = toolkit.get_action('package_show')(context,{'id' : _get_assets_container_name(context['auth_user_obj'].name) })
     return dataset
   except toolkit.ObjectNotFound, e:

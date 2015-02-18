@@ -21,7 +21,7 @@ setup(
     zip_safe=False,
     install_requires=[
         'tweepy',
-        'ckanapi'
+        'ckanapi',
         'requests==2.4.3'
     ],
     entry_points='''

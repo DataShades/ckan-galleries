@@ -30,13 +30,15 @@ class TwitterListener(StreamListener):
 
 
 def _save_data(data):
+  print(data)
   if not 'extended_entities' in data or not 'media' in data['extended_entities']:
     'Proccess %d. Media not found...' % pid
     return
   try:
     resource = {'package_id': package['id'],
               'description': data['text'],
-              'name': '{0} at {1}'.format(data['user']['screen_name'], datetime.fromtimestamp( int(data['timestamp_ms'][:-3]) ).strftime('%d %h %Y, %H:%M:%S'))}
+              'spatial': data['place'].get('bounding_box']) if data['place'] else None,
+              'name': '{0}'.format(data['user']['screen_name'])}
   except Exception, e:
     print e
     print 'Proccess %d. Data not saved' % pid
@@ -44,7 +46,7 @@ def _save_data(data):
     return
   for asset in data['extended_entities']['media']:
     try:
-      resource.update(url=asset['media_url'], mimetype=asset['type'])
+      resource.update(url=asset['media_url'], thumb=asset['media_url'], mimetype='image/jpeg')
       ckan.call_action('resource_create', resource)
       print 'Proccess %d. Item saved...' % pid
       flush()
