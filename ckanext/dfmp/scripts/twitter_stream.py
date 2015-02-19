@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# encoding=utf-8
+# encoding='utf-8'
 from tweepy import Stream, OAuthHandler
 from tweepy.streaming import StreamListener
 import argparse
@@ -10,6 +10,7 @@ from datetime import datetime
 
 from  ckan.logic import NotFound
 import ckanapi
+
 
 from sys import stdout
 flush = stdout.flush
@@ -35,10 +36,12 @@ def _save_data(data):
     'Proccess %d. Media not found...' % pid
     return
   try:
-    resource = {'package_id': package['id'],
-              'description': data['text'],
-              'spatial': data['place'].get('bounding_box']) if data['place'] else None,
-              'name': '{0}'.format(data['user']['screen_name'])}
+    resource = {
+                'text': data['text'],
+                'spatial': data.get('place') and data['place'].get('bounding_box') and data['place']['bounding_box']['coordinates'],
+                'name': '{0}'.format(data['user']['screen_name']),
+                'time': data['timestamp_ms'][:-3]
+              }
   except Exception, e:
     print e
     print 'Proccess %d. Data not saved' % pid
@@ -46,8 +49,16 @@ def _save_data(data):
     return
   for asset in data['extended_entities']['media']:
     try:
-      resource.update(url=asset['media_url'], thumb=asset['media_url'], mimetype='image/jpeg')
-      ckan.call_action('resource_create', resource)
+      resource.update(thumb=asset['media_url'], mimetype='image/jpeg')
+      ckan.call_action('datastore_upsert', {'resource_id':args.resource,
+                                            'force':True,
+                                            'records':[{
+                                              'lastModified': datetime.fromtimestamp( int(resource['time']) ).isoformat(' '),
+                                              'name':resource['name'],
+                                              'url':resource['thumb'],
+                                              'metadata':resource,
+                                            }],
+                                            'method': 'insert'})
       print 'Proccess %d. Item saved...' % pid
       flush()
     except Exception, e:
@@ -67,8 +78,11 @@ def get_args():
                       help='CKAN API-Key which will be used to create resources(need access to edit chosen dataset)',
                       dest='apikey',
                       required=True)
-  parser.add_argument('--dataset',
-                      help='Valid name of CKAN Dataset(alphanumeric, 2-100 characters, may contain - and _) or ID of existing package which will be used as container for resources(if not exists will be added by user who is owner of provided API-Key)',
+  # parser.add_argument('--dataset',
+                      # help='Valid name of CKAN Dataset(alphanumeric, 2-100 characters, may contain - and _) or ID of existing package which will be used as container for resources(if not exists will be added by user who is owner of provided API-Key)',
+                      # required=True)
+  parser.add_argument('--resource',
+                      help='Valid id of CKAN Resource which will be used as container for tweets',
                       required=True)
   parser.add_argument('--search',
                       help='Tag or word for streaming',
@@ -92,10 +106,21 @@ def get_args():
   return parser.parse_args()
 
 def init_package(args, ckan):
-  try:
-    return ckan.call_action('package_show',{'id': args.dataset})
-  except NotFound:
-    return ckan.call_action('package_create',{'name': args.dataset})
+  # try:
+  #   return ckan.call_action('package_show',{'id': args.dataset})
+  # except NotFound:
+  #   return ckan.call_action('package_create',{'name': args.dataset})
+  ckan.call_action('datastore_create', {'resource_id':args.resource,
+                                                    'force': True,
+                                                    'fields':[
+                                                      {'id':'lastModified', 'type':'text'},
+                                                      {'id':'name', 'type':'text'},
+                                                      {'id':'url', 'type':'text'},
+                                                      {'id':'metadata', 'type':'json'},
+                                                    ],
+                                                    'indexes':['name']
+                                                    })
+
 
 def init_stream(args):
   auth = OAuthHandler(args.ck, args.cs)
