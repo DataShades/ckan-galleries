@@ -175,7 +175,8 @@ def _res_init(data_dict):
               license_name= _get_license_name(data_dict['license']),
               thumb       = data_dict['thumbnailUrl'],
               owner_name  = data_dict['owner_name'],
-              spatial     =  data_dict.get('geoLocation')
+              spatial     =  data_dict.get('geoLocation'),
+              spatial_friendly = data_dict,
               )
 
 def _update_generator(context, data_dict):
