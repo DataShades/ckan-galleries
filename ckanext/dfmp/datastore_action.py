@@ -28,4 +28,10 @@ def _filter_metadata(rec):
       rec['metadata'] = json.loads( rec['metadata'].replace('("{','{').replace('}","")','}').replace('""','"') )
     except ValueError:
       return False
+  if type( rec['spatial'] ) in (str, unicode) and rec['spatial']:
+    try:
+      rec['spatial'] = json.loads( rec['spatial'].replace('("{','{').replace('}","")','}').replace('""','"') )
+    except ValueError:
+      return False
+  
   return True
