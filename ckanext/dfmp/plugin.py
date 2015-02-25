@@ -2,6 +2,8 @@ import ckan.plugins as plugins
 from time import sleep
 from ckanext.dfmp.action import *
 from ckanext.dfmp.datastore_action import *
+# from ckan.common import c, request, response
+# import ckan.model as model
 
 import logging
 log = logging.getLogger(__name__)
@@ -10,9 +12,34 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
   plugins.implements(plugins.IConfigurer)
   plugins.implements(plugins.IActions)
   plugins.implements(plugins.IDatasetForm)
+  plugins.implements(plugins.ITemplateHelpers)
 
+  # plugins.implements(plugins.IRoutes, inherit=True)
+  # plugins.implements(plugins.IAuthenticator)
+  # def authenticate(self, environ, identity):
+  #     return None
+  # def identify(self):
+  #   return None
+  # def login(self, key=None):
+  #   # log.warn(request.environ)
+  #   response.headers['Authorization'] = key
+  #   # apikey = unicode(key)
+  #   # query = model.Session.query(model.User)
+  #   # c.userobj = query.filter_by(apikey=apikey).first()
+  #   # if c.userobj is not None:
+  #   #   c.user = c.userobj.name
+  #   # log.warn(c)
+  # def logout(self):
+  #   pass
+  # def abort(self, status_code, detail, headers, comment):
+  #   return (status_code, detail, headers, comment)
+  # def before_map(self, map):
+  #   map.connect('/api_login', controller='ckanext.dfmp.controller:DFMPController', action='api_login')
+  #   return map
   inProgress = 0
 
+  def get_helpers(self):
+    return {'dfmp_with_gallery':dfmp_with_gallery}
   def is_fallback(self):
     return True
   def package_types(self):
@@ -98,3 +125,7 @@ def user_remove_asset(context, data_dict):
   """Remove assets"""
   return user_remove_asset_inner(context, data_dict)
 
+def dfmp_with_gallery(id):
+  res = toolkit.get_action('resource_show')(None, {'id':id})
+  result = res.get('datastore_active', False)
+  return result

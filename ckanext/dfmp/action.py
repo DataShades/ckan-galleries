@@ -2,6 +2,7 @@ import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
 from datetime import datetime
+from uuid import uuid1 as make_id
 
 import logging
 log = logging.getLogger(__name__)
@@ -38,10 +39,15 @@ def user_get_assets(context, data_dict):
     log.warn('User not authorized to get assets!')
     raise toolkit.NotAuthorized
   try:
-    log.warn(context)
-    dataset = toolkit.get_action('package_show')(context,{'id' : _get_assets_container_name(context['auth_user_obj'].name) })
-    return dataset
-  except toolkit.ObjectNotFound, e:
+
+    package_id = _get_assets_container_name(context['auth_user_obj'].name)
+    package = context['session'].query(context['model'].Package).filter_by(name=package_id).first()
+    if not package.resources:
+      return {}
+    else:
+      assets = toolkit.get_action('resource_items')(context, {'id':package.resources[0].id})
+    return assets['records']
+  except Exception, e:
     log.warn(_get_assets_container_name(context['auth_user_obj'].name))
     log.warn(e)
     return {}
@@ -62,10 +68,50 @@ def user_add_asset_inner(context, data_dict):
   organization = _organization_from_list(context['auth_user_obj'].get_groups())[2] 
   data_dict['owner_name'] = organization.title  if organization else context['auth_user_obj'].name
 
-  res = _res_init(data_dict)
-  res['package_id'] = _get_assets_container_name(context['auth_user_obj'].name)
-  resource = toolkit.get_action('resource_create')(context, res)
-  return resource
+  if data_dict.get('geoLocation'):
+    location =  { "type": "Point", "coordinates": [ float(data_dict['geoLocation']['lng']), float(data_dict['geoLocation']['lat'])] }
+  else:
+    location = None
+
+  package_id = _get_assets_container_name(context['auth_user_obj'].name)
+  package = context['session'].query(context['model'].Package).filter_by(name=package_id).first()
+  if not package.resources:
+    parent = toolkit.get_action('resource_create')(context, {'package_id':package_id, 'url':'http://web.actgdfmp.links.com.au', 'name':'Asset'})
+  else:
+    parent = toolkit.get_action('resource_show')(context, {'id': package.resources[0].id})
+  if parent.get('datastore_active'):
+    log.warn('YEES')
+  else:
+    log.warn('NOOOO')
+    toolkit.get_action('datastore_create')(context, {'resource_id':parent['id'],
+                                                    'force': True,
+                                                    'fields':[
+                                                      {'id':'assetID', 'type':'text'},
+                                                      {'id':'lastModified', 'type':'text'},
+                                                      {'id':'name', 'type':'text'},
+                                                      {'id':'url', 'type':'text'},
+                                                      {'id':'spatial', 'type':'json'},
+                                                      {'id':'metadata', 'type':'json'},
+
+                                                    ],
+                                                    'primary_key':['assetID'],
+                                                    'indexes':['name', 'assetID']
+                                                    })
+  datastore_item = toolkit.get_action('datastore_upsert')(context, {'resource_id':parent['id'],
+                                                    'force': True,
+                                                    'records':[
+                                                      {'assetID':str(make_id()), 
+                                                      'lastModified':datetime.now().isoformat(' '), 
+                                                      'name':data_dict['name'], 
+                                                      'url':data_dict['url'], 
+                                                      'spatial':location, 
+                                                      'metadata':data_dict, 
+                                                      }
+                                                    ],
+                                                    'method':'insert'
+                                                    })
+  return datastore_item['records'][0]
+
 
 def user_update_asset_inner(context, data_dict):
   """Update assets"""
@@ -95,7 +141,11 @@ def user_create_with_dataset(context, data_dict):
     user = toolkit.get_action('user_show')(context, {'id':data_dict['name']})
 
   try:
-    toolkit.get_action('package_create')(context, { 'name' : _get_assets_container_name(data_dict['name']) })
+    package = toolkit.get_action('package_create')(context, { 'name' : _get_assets_container_name(data_dict['name']) })
+    try:
+      toolkit.get_action('package_owner_org_update')(context,{'id':package['id'],'organization_id':'brand-cbr'})
+    except Exception:
+      pass
   except toolkit.ValidationError, e:
     log.warn(e)
   return user
@@ -166,18 +216,7 @@ def _user_get_groups(user):
 def _get_assets_container_name(name):
   return 'dfmp_assets_'+name
 
-def _res_init(data_dict):
-  return dict(url      = data_dict['url'],
-              name     = data_dict['name'],
-              size     = data_dict['size'],
-              mimetype = data_dict['type'],
-              license_id  = data_dict['license'],
-              license_name= _get_license_name(data_dict['license']),
-              thumb       = data_dict['thumbnailUrl'],
-              owner_name  = data_dict['owner_name'],
-              spatial     =  data_dict.get('geoLocation'),
-              spatial_friendly = data_dict,
-              )
+
 
 def _update_generator(context, data_dict):
   for item in data_dict:
