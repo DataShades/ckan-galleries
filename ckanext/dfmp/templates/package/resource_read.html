@@ -1,0 +1,12 @@
+{% ckan_extends %}
+
+{# block secondary_content %}
+  {{ super() }}
+
+  {% set dataset_extent = res.spatial %}
+  {% if dataset_extent %}
+    {% set ext ='{   "type": "Point",   "coordinates": [%s,%s] }'| format(dataset_extent.lat, dataset_extent.lng) %}
+    {% snippet "spatial/snippets/dataset_map_sidebar.html", extent=ext %}
+  {% endif %}
+
+{% endblock #}

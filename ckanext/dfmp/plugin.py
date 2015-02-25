@@ -1,6 +1,7 @@
 import ckan.plugins as plugins
 from time import sleep
 from ckanext.dfmp.action import *
+from ckanext.dfmp.datastore_action import *
 
 import logging
 log = logging.getLogger(__name__)
@@ -60,6 +61,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'all_user_list':all_user_list,
         'user_get_organization':user_get_organization,
         'my_packages_list':my_packages_list,
+        'resource_items':resource_items,
       }
 
 

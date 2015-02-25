@@ -1,0 +1,13 @@
+{% ckan_extends %}
+
+{% block resource_item_explore_links %}
+  {% if res.datastore_active %}
+  <li>
+    <a href="/gallery/view/{{ res.id }}">
+      <i class="icon-picture"></i>
+      {{ _('Gallery') }}
+    </a>
+  </li>
+  {% endif %}
+  {{ super() }}
+{% endblock %}

@@ -36,9 +36,13 @@ def _save_data(data):
     'Proccess %d. Media not found...' % pid
     return
   try:
+    try:
+      spatial = data['place']['bounding_box']
+    except Exception, e:
+      print e
+      spatial = None
     resource = {
                 'text': data['text'],
-                'spatial': data.get('place') and data['place'].get('bounding_box') and data['place']['bounding_box']['coordinates'],
                 'name': '{0}'.format(data['user']['screen_name']),
                 'time': data['timestamp_ms'][:-3]
               }
@@ -49,14 +53,17 @@ def _save_data(data):
     return
   for asset in data['extended_entities']['media']:
     try:
-      resource.update(thumb=asset['media_url'], mimetype='image/jpeg')
+      resource.update(thumb=asset['media_url'], mimetype='image/jpeg', id=asset['id_str'])
+
       ckan.call_action('datastore_upsert', {'resource_id':args.resource,
                                             'force':True,
                                             'records':[{
+                                              'assetID': resource['id'],
                                               'lastModified': datetime.fromtimestamp( int(resource['time']) ).isoformat(' '),
                                               'name':resource['name'],
                                               'url':resource['thumb'],
                                               'metadata':resource,
+                                              'spatial': spatial,
                                             }],
                                             'method': 'insert'})
       print 'Proccess %d. Item saved...' % pid
@@ -110,15 +117,22 @@ def init_package(args, ckan):
   #   return ckan.call_action('package_show',{'id': args.dataset})
   # except NotFound:
   #   return ckan.call_action('package_create',{'name': args.dataset})
+
+  # ckan.call_action('datastore_delete', {'resource_id':args.resource,
+  #                                                   'force': True})
   ckan.call_action('datastore_create', {'resource_id':args.resource,
                                                     'force': True,
                                                     'fields':[
+                                                      {'id':'assetID', 'type':'text'},
                                                       {'id':'lastModified', 'type':'text'},
                                                       {'id':'name', 'type':'text'},
                                                       {'id':'url', 'type':'text'},
+                                                      {'id':'spatial', 'type':'json'},
                                                       {'id':'metadata', 'type':'json'},
+
                                                     ],
-                                                    'indexes':['name']
+                                                    'primary_key':['assetID'],
+                                                    'indexes':['name', 'assetID']
                                                     })
 
 
