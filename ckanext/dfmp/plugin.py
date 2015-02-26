@@ -2,8 +2,7 @@ import ckan.plugins as plugins
 from time import sleep
 from ckanext.dfmp.action import *
 from ckanext.dfmp.datastore_action import *
-# from ckan.common import c, request, response
-# import ckan.model as model
+from ckan.logic import side_effect_free
 
 import logging
 log = logging.getLogger(__name__)
@@ -11,63 +10,12 @@ log = logging.getLogger(__name__)
 class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
   plugins.implements(plugins.IConfigurer)
   plugins.implements(plugins.IActions)
-  plugins.implements(plugins.IDatasetForm)
   plugins.implements(plugins.ITemplateHelpers)
 
-  # plugins.implements(plugins.IRoutes, inherit=True)
-  # plugins.implements(plugins.IAuthenticator)
-  # def authenticate(self, environ, identity):
-  #     return None
-  # def identify(self):
-  #   return None
-  # def login(self, key=None):
-  #   # log.warn(request.environ)
-  #   response.headers['Authorization'] = key
-  #   # apikey = unicode(key)
-  #   # query = model.Session.query(model.User)
-  #   # c.userobj = query.filter_by(apikey=apikey).first()
-  #   # if c.userobj is not None:
-  #   #   c.user = c.userobj.name
-  #   # log.warn(c)
-  # def logout(self):
-  #   pass
-  # def abort(self, status_code, detail, headers, comment):
-  #   return (status_code, detail, headers, comment)
-  # def before_map(self, map):
-  #   map.connect('/api_login', controller='ckanext.dfmp.controller:DFMPController', action='api_login')
-  #   return map
   inProgress = 0
 
   def get_helpers(self):
     return {'dfmp_with_gallery':dfmp_with_gallery}
-  def is_fallback(self):
-    return True
-  def package_types(self):
-    return []
-
-  def _modify_package_schema(self, schema):
-    # schema.update({
-    #     'custom_text': [tk.get_validator('ignore_missing'),
-    #                     tk.get_converter('convert_to_extras')]
-    # })
-    schema['resources'].update({
-                'license_id' : [ toolkit.get_validator('ignore_missing') ],
-                'license_name':[ toolkit.get_validator('ignore_missing') ],
-                'thumb' : [ toolkit.get_validator('ignore_missing') ],
-                'spatial': [toolkit.get_validator('ignore_missing')],
-                'spatial_friendly': [toolkit.get_validator('ignore_missing')],
-                })
-    return schema
-
-  def create_package_schema(self):
-    schema = super(DFMPPlugin, self).create_package_schema()
-    schema = self._modify_package_schema(schema)
-    return schema
-
-  def update_package_schema(self):
-    schema = super(DFMPPlugin, self).update_package_schema()
-    schema = self._modify_package_schema(schema)
-    return schema
 
   def update_config(self, config):
     toolkit.add_template_directory(config, 'templates')
@@ -89,14 +37,14 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'user_get_organization':user_get_organization,
         'my_packages_list':my_packages_list,
         'resource_items':resource_items,
+        'dfmp_gallery':dfmp_gallery,
       }
 
 
 def custom_stack(func):
   """Execute actions in queue"""
   def waiter(a, b):
-    while DFMPPlugin.inProgress:
-      sleep(.1)
+    while DFMPPlugin.inProgress: sleep(.1)
     DFMPPlugin.inProgress += 1
     log.warn('in')
     try:
@@ -105,6 +53,7 @@ def custom_stack(func):
       DFMPPlugin.inProgress -= 1
       return result
     except Exception, e:
+      log.warn(e)
       log.warn('out with error')
       DFMPPlugin.inProgress -= 1
       return e

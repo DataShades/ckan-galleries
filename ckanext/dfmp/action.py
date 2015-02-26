@@ -45,7 +45,10 @@ def user_get_assets(context, data_dict):
     if not package.resources:
       return {}
     else:
-      assets = toolkit.get_action('resource_items')(context, {'id':package.resources[0].id})
+      parent_id = package.resources[0].id
+      assets = toolkit.get_action('resource_items')(context, {'id':parent_id})
+      for record in assets['records']:
+        record['parent_id'] = parent_id
     return assets['records']
   except Exception, e:
     log.warn(_get_assets_container_name(context['auth_user_obj'].name))
@@ -73,6 +76,9 @@ def user_add_asset_inner(context, data_dict):
   else:
     location = None
 
+  if data_dict.get('license'):
+    data_dict['license_id'] = data_dict['license']
+    data_dict['license_name'] = _get_license_name(data_dict['license'])
   package_id = _get_assets_container_name(context['auth_user_obj'].name)
   package = context['session'].query(context['model'].Package).filter_by(name=package_id).first()
   if not package.resources:
@@ -110,24 +116,51 @@ def user_add_asset_inner(context, data_dict):
                                                     ],
                                                     'method':'insert'
                                                     })
-  return datastore_item['records'][0]
+  result = datastore_item['records'][0]
+  result['parent_id'] = parent['id']
+  return result
 
 
 def user_update_asset_inner(context, data_dict):
   """Update assets"""
+  if not 'items' in data_dict:
+    data_dict['items'] = [data_dict.copy()]
   updater = _update_generator(context, data_dict['items'])
   resources = [resource for resource in updater]
   return resources
 
 def user_remove_asset_inner(context, data_dict):
   """Remove assets"""
+  log.warn('outer')
+  log.warn(data_dict)
   if not 'items' in data_dict:
-    data_dict['items'] = [{'id': data_dict.get('id')}]
+    data_dict['items'] = [data_dict.copy()]
   deleter = _delete_generator(context, data_dict['items'])
   resources = [resource for resource in deleter]
   return resources
 
+def _update_generator(context, data_dict):
+  for item in data_dict:
+    try:
+      res = toolkit.get_action('datastore_search')(context, { 'resource_id' : item['id'], 'filters':{'assetID':item['assetID']} })['records'][0]
+      del res['_id']
+      if item.get('license'):
+        res['metadata']['license_id'] = res['metadata']['license'] = item['license']
+        res['metadata']['license_name'] = _get_license_name(item['license'])
+        toolkit.get_action('datastore_upsert')(context,{'resource_id' : item['id'], 'force':True, 'method': 'update', 'records':[res]})
+      yield res
+    except toolkit.ObjectNotFound:
+      yield {}
 
+def _delete_generator(context, data_dict):
+  for item in data_dict:
+    try:
+      log.warn('inner')
+      log.warn(item)
+      log.warn(toolkit.get_action('datastore_delete')(context,{'resource_id': item['id'], 'force': True,'filters':{'assetID':item['assetID']}}))
+      yield {item['id']:True}
+    except toolkit.ObjectNotFound:
+      yield {item['id']:False}
 
 # USER functions
 
@@ -145,7 +178,12 @@ def user_create_with_dataset(context, data_dict):
     try:
       toolkit.get_action('package_owner_org_update')(context,{'id':package['id'],'organization_id':'brand-cbr'})
     except Exception:
-      pass
+      log.warn('Error during adding user to organization ')
+    try:
+
+      toolkit.get_action('organization_member_create')(context, {'id':'brand-cbr','username': data_dict['name'],'role':'editor'} )
+    except Exception:
+      log.warn('Error during adding permissions to user')
   except toolkit.ValidationError, e:
     log.warn(e)
   return user
@@ -199,6 +237,9 @@ def _validate(data, *fields):
     if not field in data: 
       raise toolkit.ValidationError('Parameter {%s} must be defined' % field)
 
+def _unjson(string):
+  return string.replace('("{','{').replace('}","")','}').replace('""','"')
+
 def _organization_from_list(groups):
   if not len(groups):
     return (None, '', None)
@@ -214,30 +255,8 @@ def _user_get_groups(user):
   return user.get_groups()
 
 def _get_assets_container_name(name):
-  return 'dfmp_assets_'+name
+  return 'dfmp_assets_'+name.lower()
 
-
-
-def _update_generator(context, data_dict):
-  for item in data_dict:
-    try:
-      res = toolkit.get_action('resource_show')(context, { 'id' : item['id'] })
-
-      res['license_id'] = item['license']
-      res['license_name'] = _get_license_name(item['license'])
-
-      res = toolkit.get_action('resource_update')(context,res)
-      yield res
-    except toolkit.ObjectNotFound:
-      yield {}
-
-def _delete_generator(context, data_dict):
-  for item in data_dict:
-    try:
-      toolkit.get_action('resource_delete')(context,{'id': item['id']})
-      yield {item['id']:True}
-    except toolkit.ObjectNotFound:
-      yield {item['id']:False}
 
 def _user_by_apikey(context, key):
   return context['session'].query(context['model'].User).filter_by(apikey=key)
