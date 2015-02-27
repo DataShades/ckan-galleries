@@ -48,16 +48,31 @@ def dfmp_gallery(context, data_dict):
   sql_search =  toolkit.get_action('datastore_search_sql')
   shuffle(resources)
   result = []
+  # scope = resources[:int(data_dict.get('per_asset', '121'))]
+  # log.warn(scope)
+  # sql = "(SELECT _id, url, '{0}' as parent FROM \"{0}\" ORDER BY RANDOM() LIMIT {1})".format( scope[-2], data_dict.get('per_asset', '1') )
+  # sql += " UNION (SELECT _id, url, '{0}' as parent FROM \"{0}\" ORDER BY RANDOM() LIMIT {1}) ".format( scope[-1], data_dict.get('per_asset', '1') )
+  # result.extend( [ item for item in sql_search(context,{'sql': sql} )['records'] ] )
+
   for res in resources:
-    sql = "SELECT _id, url FROM \"%s\" LIMIT %s" % (res, data_dict.get('per_asset', '21') )
+    sql = "SELECT _id, url FROM \"%s\" ORDER BY RANDOM() LIMIT %s" % (res, data_dict.get('per_asset', '1') )
     try:
       result.extend( [ {'id':res, 'assetID':item['_id'], 'url':item['url']} for item in sql_search(context,{'sql': sql} )['records'] ] )
     except toolkit.ValidationError:
-      sql = "SELECT _id, \"URL\" as url FROM \"%s\" LIMIT %s" % (res, data_dict.get('per_asset', '21') )
-      try:
-        result.extend( [ {'id':res, 'assetID':item['_id'], 'url':item['url']} for item in sql_search(context,{'sql': sql} )['records'] ] )
-      except toolkit.ValidationError:
-        continue
+      continue
     if len(result) >= int(data_dict.get('limit', '21')): break
   shuffle(result)
   return result
+
+@side_effect_free
+def cbr_gallery(context, data_dict):
+  res_id = data_dict.get('res_id')
+  if not res_id:
+    cbr = toolkit.get_action('resource_search')(context, {'query':'description:#CBR'})
+    if cbr['count'] != 1:
+      raise toolkit.ValidationError('Can\'t find unique resouce or any resource at all. Please specify param {res_id}')
+    res_id = cbr['results'][0]['id']
+  items = [{'url':item['url'], '_id':item['_id'], 'parent':res_id} for item in toolkit.get_action('datastore_search')(context,
+          {'resource_id':res_id, 'fields':'url, _id', 'sort':'_id desc', 'limit':int(data_dict.get('limit',1000)), 'offset':int(data_dict.get('offset','0')) }
+        )['records'] ]
+  return items
