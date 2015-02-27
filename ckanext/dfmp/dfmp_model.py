@@ -19,6 +19,8 @@ class DFMPAssets(Base):
   url = Column(String)
   parent = Column(String)
   name = Column(String)
+  asset_metadata = Column(String)
+  lastModified = Column(String)
 
   def __repr__(self):
     return "<DFMP Item(item='%s', url='%s', parent='%s',  name='%s')>" % (self.item, self.url, self.parent, self.name)

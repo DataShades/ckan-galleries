@@ -81,18 +81,24 @@ def cbr_gallery(context, data_dict):
   return items
 
 @side_effect_free
-def static_gallery_reset(context, data_dict):
-  # celery.send_task("dfmp.echofunction", args=["Hello World"], task_id=str(uuid.uuid4()))
-  
+def static_gallery_reset(context, data_dict):  
   ds = [ item['name'] for item in toolkit.get_action('datastore_search')(context, {'resource_id':'_table_metadata', 'fields':'name', 'limit':int(data_dict.get('assets_limit', '1000')) })['records' ] ]
   resources = [ str(resource[0]) for resource in model.Session.query(model.Resource.id).filter(model.Resource.state=='active',model.Resource.id.in_(ds) ).all() ]
   sql_search =  toolkit.get_action('datastore_search_sql')
   result = []
 
   for res in resources:
-    sql = "SELECT _id, url, name FROM \"{0}\"".format(res)
+    sql = "SELECT _id, url, name, metadata, \"lastModified\" FROM \"{0}\"".format(res)
     try:
-      result.extend( [ DFMPAssets(parent=res, item=item['_id'], url=item['url'], name=item['name'] ) for item in sql_search(context,{'sql': sql} )['records'] ] )
+      result.extend( [ DFMPAssets(parent=res, 
+                                  item=item['_id'], 
+                                  url=item['url'], 
+                                  name=item['name'], 
+                                  asset_metadata=_unjson(item['metadata']) if type( item['metadata'] ) in (str, unicode) and item['metadata'] else json.dumps(item['metadata']),
+                                  lastModified=item['lastModified']
+                                  ) 
+                          for item in sql_search(context,{'sql': sql} )['records'] 
+                      ] )
     except toolkit.ValidationError:
       continue
   model.Session.execute('TRUNCATE {0}; ALTER SEQUENCE {0}_id_seq RESTART;'.format( str(DFMPAssets.__table__) ))
@@ -107,7 +113,31 @@ def dfmp_static_gallery(context, data_dict):
   variety = range(1, total+1 if total > limit else limit+1)
   ids = sample(variety, limit)
 
-  log.warn(variety)
-  result = [{'id':item.parent, 'assetID':item.item, 'url': item.url, 'name': item.name} for item in model.Session.query(DFMPAssets).filter(DFMPAssets.id.in_(ids)).all() ]
+  result = [{'id':item.parent, 
+              'assetID':item.item, 
+              'url': item.url, 
+              'name': item.name,
+              'lastModified':item.lastModified,
+              'metadata':json.loads(item.asset_metadata)} for item in model.Session.query(DFMPAssets).filter(DFMPAssets.id.in_(ids)).all() ]
   shuffle(result)
   return result
+
+@side_effect_free
+def search_item(context, data_dict):
+  limit = int( data_dict.get('limit', 21) )
+  offset = int( data_dict.get('offset', 0) )
+
+  name = data_dict.get('query_string','')
+
+  result = [{'id':item.parent, 
+              'assetID':item.item, 
+              'url': item.url, 
+              'name': item.name,
+              'lastModified':item.lastModified,
+              'metadata':json.loads(item.asset_metadata)} for item in model.Session.query(DFMPAssets).filter(DFMPAssets.name.like('%{0}%'.format(name))).offset(offset).limit(limit+1).all() ]
+  shuffle(result)
+  has_more = False
+  if len(result) > limit:
+    has_more = True
+    result = result[:-1]
+  return {'records':result, 'limit':limit, 'offset':offset, 'has_more':has_more}
