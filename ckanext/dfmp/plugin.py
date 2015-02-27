@@ -39,6 +39,8 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'resource_items':resource_items,
         'dfmp_gallery':dfmp_gallery,
         'cbr_gallery':cbr_gallery,
+        'static_gallery_reset':static_gallery_reset,
+        'dfmp_static_gallery':dfmp_static_gallery,
       }
 
 

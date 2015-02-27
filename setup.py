@@ -26,7 +26,8 @@ setup(
     ],
     entry_points='''
         [ckan.plugins]
-        # Add plugins here, e.g.
         dfmp=ckanext.dfmp.plugin:DFMPPlugin
+        [paste.paster_command]
+        initdb = ckanext.dfmp.command:InitDB
     ''',
 )

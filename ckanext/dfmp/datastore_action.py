@@ -4,9 +4,12 @@ from ckanext.dfmp.action import _validate, _unjson
 import json
 from ckan.lib.helpers import url_for
 import ckan.model as model
-from random import shuffle
+from random import shuffle, sample
 import logging
 log = logging.getLogger(__name__)
+
+from ckanext.dfmp.dfmp_model import DFMPAssets
+from sqlalchemy import func
 
 @side_effect_free
 def resource_items(context, data_dict):
@@ -72,7 +75,39 @@ def cbr_gallery(context, data_dict):
     if cbr['count'] != 1:
       raise toolkit.ValidationError('Can\'t find unique resouce or any resource at all. Please specify param {res_id}')
     res_id = cbr['results'][0]['id']
-  items = [{'url':item['url'], '_id':item['_id'], 'parent':res_id} for item in toolkit.get_action('datastore_search')(context,
+  items = [{'url':item['url'], 'id':item['_id'], 'parent':res_id} for item in toolkit.get_action('datastore_search')(context,
           {'resource_id':res_id, 'fields':'url, _id', 'sort':'_id desc', 'limit':int(data_dict.get('limit',1000)), 'offset':int(data_dict.get('offset','0')) }
         )['records'] ]
   return items
+
+@side_effect_free
+def static_gallery_reset(context, data_dict):
+  # celery.send_task("dfmp.echofunction", args=["Hello World"], task_id=str(uuid.uuid4()))
+  
+  ds = [ item['name'] for item in toolkit.get_action('datastore_search')(context, {'resource_id':'_table_metadata', 'fields':'name', 'limit':int(data_dict.get('assets_limit', '1000')) })['records' ] ]
+  resources = [ str(resource[0]) for resource in model.Session.query(model.Resource.id).filter(model.Resource.state=='active',model.Resource.id.in_(ds) ).all() ]
+  sql_search =  toolkit.get_action('datastore_search_sql')
+  result = []
+
+  for res in resources:
+    sql = "SELECT _id, url, name FROM \"{0}\"".format(res)
+    try:
+      result.extend( [ DFMPAssets(parent=res, item=item['_id'], url=item['url'], name=item['name'] ) for item in sql_search(context,{'sql': sql} )['records'] ] )
+    except toolkit.ValidationError:
+      continue
+  model.Session.execute('TRUNCATE {0}; ALTER SEQUENCE {0}_id_seq RESTART;'.format( str(DFMPAssets.__table__) ))
+  model.Session.add_all(result)
+  model.Session.commit()
+  return len(result)
+
+@side_effect_free
+def dfmp_static_gallery(context, data_dict):
+  limit = int( data_dict.get('limit', 21) )
+  total = model.Session.query(func.count('*')).select_from(DFMPAssets).scalar()
+  variety = range(1, total+1 if total > limit else limit+1)
+  ids = sample(variety, limit)
+
+  log.warn(variety)
+  result = [{'id':item.parent, 'assetID':item.item, 'url': item.url, 'name': item.name} for item in model.Session.query(DFMPAssets).filter(DFMPAssets.id.in_(ids)).all() ]
+  shuffle(result)
+  return result
