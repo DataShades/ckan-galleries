@@ -26,7 +26,7 @@ def resource_items(context, data_dict):
       where = " WHERE \"assetID\" = '{0}'".format(item)
     resp = sql_search(context, {'sql': sql + where })
   else:
-    resp = sql_search(context, {'sql': sql + " LIMIT {0} OFFSET {1}" .format( data_dict.get('limit', 99999), data_dict.get('offset', 0) ) })
+    resp = sql_search(context, {'sql': sql + " ORDER BY _id DESC LIMIT {0} OFFSET {1}" .format( data_dict.get('limit', 99999), data_dict.get('offset', 0) ) })
   resp['records'] = filter(_filter_metadata, resp['records'])
   resource = model.Session.query(model.Resource).filter_by(id=data_dict['id']).first().get_package_id()
   resp['backlink'] = url_for(controller='package', action='resource_read', resource_id=data_dict['id'], id=resource)[1:]
@@ -75,8 +75,8 @@ def cbr_gallery(context, data_dict):
     if cbr['count'] != 1:
       raise toolkit.ValidationError('Can\'t find unique resouce or any resource at all. Please specify param {res_id}')
     res_id = cbr['results'][0]['id']
-  items = [{'url':item['url'], 'id':item['_id'], 'parent':res_id} for item in toolkit.get_action('datastore_search')(context,
-          {'resource_id':res_id, 'fields':'url, _id', 'sort':'_id desc', 'limit':int(data_dict.get('limit',1000)), 'offset':int(data_dict.get('offset','0')) }
+  items = [{'url':item['url'], 'id':item['_id'], 'parent':res_id, 'lastModified':item['lastModified'], 'metadata':item['metadata'], 'name':item['name']} for item in toolkit.get_action('datastore_search')(context,
+          {'resource_id':res_id, 'fields':'url, _id, lastModified, metadata, name', 'sort':'_id desc', 'limit':int(data_dict.get('limit',1000)), 'offset':int(data_dict.get('offset','0')) }
         )['records'] ]
   return items
 
