@@ -227,7 +227,7 @@ def _validate(data, *fields):
       raise toolkit.ValidationError('Parameter {%s} must be defined' % field)
 
 def _unjson(string):
-  return string.replace('("{','{').replace('}","")','}').replace('""','"')
+  return string.replace('("{','{').replace('}","")','}').replace('\\\\"','')
 
 def _organization_from_list(groups):
   if not len(groups):

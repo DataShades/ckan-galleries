@@ -36,7 +36,6 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'all_user_list':all_user_list,
         'user_get_organization':user_get_organization,
         'resource_items':resource_items,
-        'dfmp_gallery':dfmp_gallery,
         'cbr_gallery':cbr_gallery,
         'static_gallery_reset':static_gallery_reset,
         'dfmp_static_gallery':dfmp_static_gallery,

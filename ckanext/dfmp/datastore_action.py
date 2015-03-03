@@ -26,7 +26,7 @@ def resource_items(context, data_dict):
       where = " WHERE \"assetID\" = '{0}'".format(item)
     resp = sql_search(context, {'sql': sql + where })
   else:
-    resp = sql_search(context, {'sql': sql + " ORDER BY _id DESC LIMIT {0} OFFSET {1}" .format( data_dict.get('limit', 99999), data_dict.get('offset', 0) ) })
+    resp = sql_search(context, {'sql': sql + " ORDER BY _id DESC LIMIT {0} OFFSET {1}" .format( data_dict.get('limit', 21), data_dict.get('offset', 0) ) })
   resp['records'] = filter(_filter_metadata, resp['records'])
   resource = model.Session.query(model.Resource).filter_by(id=data_dict['id']).first().get_package_id()
   resp['backlink'] = url_for(controller='package', action='resource_read', resource_id=data_dict['id'], id=resource)[1:]
@@ -37,35 +37,19 @@ def _filter_metadata(rec):
   try:
     if type( rec['metadata'] ) in (str, unicode) and rec['metadata']:
       rec['metadata'] = json.loads( _unjson(rec['metadata']) )
+  except ValueError, e:
+    log.warn(e)
+    log.warn(rec)
+    log.warn('wrong metadata')
+  try:
     if type( rec['spatial'] ) in (str, unicode) and rec['spatial']:
       rec['spatial'] = json.loads( _unjson(rec['spatial']) )
-  except ValueError:
-    return False
+  except ValueError, e:
+    log.warn(e)
+    log.warn(rec)
+    log.warn('empty spatial')
   
   return True
-
-@side_effect_free
-def dfmp_gallery(context, data_dict):
-  ds = [ item['name'] for item in toolkit.get_action('datastore_search')(context, {'resource_id':'_table_metadata', 'fields':'name', 'limit':int(data_dict.get('assets_limit', '1000')) })['records' ] ]
-  resources = [ str(resource[0]) for resource in model.Session.query(model.Resource.id).filter(model.Resource.state=='active',model.Resource.id.in_(ds) ).all() ]
-  sql_search =  toolkit.get_action('datastore_search_sql')
-  shuffle(resources)
-  result = []
-  # scope = resources[:int(data_dict.get('per_asset', '121'))]
-  # log.warn(scope)
-  # sql = "(SELECT _id, url, '{0}' as parent FROM \"{0}\" ORDER BY RANDOM() LIMIT {1})".format( scope[-2], data_dict.get('per_asset', '1') )
-  # sql += " UNION (SELECT _id, url, '{0}' as parent FROM \"{0}\" ORDER BY RANDOM() LIMIT {1}) ".format( scope[-1], data_dict.get('per_asset', '1') )
-  # result.extend( [ item for item in sql_search(context,{'sql': sql} )['records'] ] )
-
-  for res in resources:
-    sql = "SELECT _id, url FROM \"%s\" ORDER BY RANDOM() LIMIT %s" % (res, data_dict.get('per_asset', '1') )
-    try:
-      result.extend( [ {'id':res, 'assetID':item['_id'], 'url':item['url']} for item in sql_search(context,{'sql': sql} )['records'] ] )
-    except toolkit.ValidationError:
-      continue
-    if len(result) >= int(data_dict.get('limit', '21')): break
-  shuffle(result)
-  return result
 
 @side_effect_free
 def cbr_gallery(context, data_dict):
@@ -76,12 +60,14 @@ def cbr_gallery(context, data_dict):
       raise toolkit.ValidationError('Can\'t find unique resouce or any resource at all. Please specify param {res_id}')
     res_id = cbr['results'][0]['id']
   items = [{'url':item['url'], 'id':item['_id'], 'parent':res_id, 'lastModified':item['lastModified'], 'metadata':item['metadata'], 'name':item['name']} for item in toolkit.get_action('datastore_search')(context,
-          {'resource_id':res_id, 'fields':'url, _id, lastModified, metadata, name', 'sort':'_id desc', 'limit':int(data_dict.get('limit',1000)), 'offset':int(data_dict.get('offset','0')) }
+          {'resource_id':res_id, 'fields':'url, _id, lastModified, metadata, name', 'sort':'_id desc', 'limit':int(data_dict.get('limit',21)), 'offset':int(data_dict.get('offset','0')) }
         )['records'] ]
   return items
 
 @side_effect_free
-def static_gallery_reset(context, data_dict):  
+def static_gallery_reset(context, data_dict): 
+  if not data_dict.get('real') :
+    return 0
   ds = [ item['name'] for item in toolkit.get_action('datastore_search')(context, {'resource_id':'_table_metadata', 'fields':'name', 'limit':int(data_dict.get('assets_limit', '1000')) })['records' ] ]
   resources = [ str(resource[0]) for resource in model.Session.query(model.Resource.id).filter(model.Resource.state=='active',model.Resource.id.in_(ds) ).all() ]
   sql_search =  toolkit.get_action('datastore_search_sql')
