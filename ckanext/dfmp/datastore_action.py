@@ -11,119 +11,156 @@ log = logging.getLogger(__name__)
 from ckanext.dfmp.dfmp_model import DFMPAssets
 from sqlalchemy import func
 
+DEF_LIMIT = 21
+DEF_FIELDS = '_id, CAST("assetID" AS TEXT), CAST(url AS TEXT), CAST("lastModified" AS TEXT), CAST(metadata  AS TEXT), name, CAST(spatial  AS TEXT)'
+session = model.Session
+
 @side_effect_free
 def resource_items(context, data_dict):
+  '''Returns items from asset if only {id} specified or single item if {item} specified as well. Also you can use {limit} and {offset} for global search'''
   _validate(data_dict, 'id')
-  sql = "SELECT * FROM \"%s\"" % data_dict['id']
+  sql = "SELECT {fields} FROM \"{table}\"".format(fields=DEF_FIELDS, table=_sanitize(data_dict['id']) )
   sql_search =  toolkit.get_action('datastore_search_sql')
 
   item = data_dict.get('item')
   if item:
     try:
       int(item)
-      where = " WHERE _id = '{0}' OR \"assetID\" = '{0}'".format(item)
+      fields_filter = " _id = '{0}' OR \"assetID\" = '{0}'".format(item)
     except ValueError:
-      where = " WHERE \"assetID\" = '{0}'".format(item)
-    resp = sql_search(context, {'sql': sql + where })
+      fields_filter = " \"assetID\" = '{0}' ".format( _sanitize(item) )
+    where = " WHERE {0}".format(fields_filter)
+
   else:
-    resp = sql_search(context, {'sql': sql + " ORDER BY _id DESC LIMIT {0} OFFSET {1}" .format( data_dict.get('limit', 21), data_dict.get('offset', 0) ) })
-  resp['records'] = filter(_filter_metadata, resp['records'])
-  resource = model.Session.query(model.Resource).filter_by(id=data_dict['id']).first().get_package_id()
-  resp['backlink'] = url_for(controller='package', action='resource_read', resource_id=data_dict['id'], id=resource)[1:]
-  return resp
+    where = " ORDER BY _id DESC LIMIT {0} OFFSET {1}".format( int(data_dict.get('limit', DEF_LIMIT)), int(data_dict.get('offset', 0)) ) 
 
-def _filter_metadata(rec):
-  del rec['_full_text']
-  try:
-    if type( rec['metadata'] ) in (str, unicode) and rec['metadata']:
-      rec['metadata'] = json.loads( _unjson(rec['metadata']) )
-  except ValueError, e:
-    log.warn(e)
-    log.warn(rec)
-    log.warn('wrong metadata')
-  try:
-    if type( rec['spatial'] ) in (str, unicode) and rec['spatial']:
-      rec['spatial'] = json.loads( _unjson(rec['spatial']) )
-  except ValueError, e:
-    log.warn(e)
-    log.warn(rec)
-    log.warn('empty spatial')
-  
-  return True
+  result = sql_search(context, {'sql': sql + where })
+  result['records'] = map(_filter_metadata, result['records'])
+
+  resource = session.query(model.Resource).filter_by(id=data_dict['id']).first().get_package_id()
+  result['backlink'] = url_for(controller='package', action='resource_read', resource_id=data_dict['id'], id=resource)[1:]
+
+  return result
 
 @side_effect_free
-def cbr_gallery(context, data_dict):
-  res_id = data_dict.get('res_id')
-  if not res_id:
-    cbr = toolkit.get_action('resource_search')(context, {'query':'description:#CBR'})
-    if cbr['count'] != 1:
-      raise toolkit.ValidationError('Can\'t find unique resouce or any resource at all. Please specify param {res_id}')
-    res_id = cbr['results'][0]['id']
-  items = [{'url':item['url'], 'id':item['_id'], 'parent':res_id, 'lastModified':item['lastModified'], 'metadata':item['metadata'], 'name':item['name']} for item in toolkit.get_action('datastore_search')(context,
-          {'resource_id':res_id, 'fields':'url, _id, lastModified, metadata, name', 'sort':'_id desc', 'limit':int(data_dict.get('limit',21)), 'offset':int(data_dict.get('offset','0')) }
-        )['records'] ]
-  return items
-
-@side_effect_free
-def static_gallery_reset(context, data_dict): 
+def static_gallery_reset(context, data_dict):
+  '''Recreate table with assets list'''
   if not data_dict.get('real') :
     return 0
-  ds = [ item['name'] for item in toolkit.get_action('datastore_search')(context, {'resource_id':'_table_metadata', 'fields':'name', 'limit':int(data_dict.get('assets_limit', '1000')) })['records' ] ]
-  resources = [ str(resource[0]) for resource in model.Session.query(model.Resource.id).filter(model.Resource.state=='active',model.Resource.id.in_(ds) ).all() ]
+  ds = [ item['name'] 
+          for item 
+          in toolkit.get_action('datastore_search')(context, {'resource_id':'_table_metadata', 'fields':'name', 'limit':int(data_dict.get('assets_limit', '1000')) })['records' ] ]
+  resources = [ str(resource[0]) 
+                for resource 
+                in session.query(model.Resource.id).filter( model.Resource.state=='active',model.Resource.id.in_(ds) ).all() ]
   sql_search =  toolkit.get_action('datastore_search_sql')
   result = []
 
+  session.execute('TRUNCATE {0}; ALTER SEQUENCE {0}_id_seq RESTART;'.format( str(DFMPAssets.__table__) ))
+
   for res in resources:
-    sql = "SELECT _id, url, name, metadata, \"lastModified\" FROM \"{0}\"".format(res)
+    sql = 'SELECT "assetID", name FROM "{table}" ORDER BY _id DESC LIMIT {limit}'.format(fields=DEF_FIELDS, table=res, limit=1000)
     try:
-      result.extend( [ DFMPAssets(parent=res, 
-                                  item=item['_id'], 
-                                  url=item['url'], 
-                                  name=item['name'], 
-                                  asset_metadata=_unjson(item['metadata']) if type( item['metadata'] ) in (str, unicode) and item['metadata'] else json.dumps(item['metadata']),
-                                  lastModified=item['lastModified']
-                                  ) 
-                          for item in sql_search(context,{'sql': sql} )['records'] 
-                      ] )
+      result.extend([ DFMPAssets(parent=res,  asset_id=item['assetID'], name=item['name']) for item in sql_search(context,{'sql': sql} )['records']   ])
+      
     except toolkit.ValidationError:
       continue
-  model.Session.execute('TRUNCATE {0}; ALTER SEQUENCE {0}_id_seq RESTART;'.format( str(DFMPAssets.__table__) ))
-  model.Session.add_all(result)
-  model.Session.commit()
-  return len(result)
+  
+  seek = 0
+  step = 1000
+  total = len(result)
+  while seek <= total:
+    piece = result[seek : seek+step]
+    seek += step 
+
+    session.add_all(piece)
+    session.commit()
+  return total
 
 @side_effect_free
 def dfmp_static_gallery(context, data_dict):
+  '''Returns random items from gallery'''
   limit = int( data_dict.get('limit', 21) )
-  total = model.Session.query(func.count('*')).select_from(DFMPAssets).scalar()
-  variety = range(1, total+1 if total > limit else limit+1)
-  ids = sample(variety, limit)
 
-  result = [{'id':item.parent, 
-              'assetID':item.item, 
-              'url': item.url, 
-              'name': item.name,
-              'lastModified':item.lastModified,
-              'metadata':json.loads(item.asset_metadata)} for item in model.Session.query(DFMPAssets).filter(DFMPAssets.id.in_(ids)).all() ]
+  total = session.query(func.max(DFMPAssets.id)).first()[0]
+
+  ids = sample( range(1, total+1), limit if limit < total else total )
+  
+  result = {}
+  assets = session.query(DFMPAssets.parent, DFMPAssets.asset_id).filter(DFMPAssets.id.in_(ids)).all()
+  for item in assets:
+    _concat_items(result, item)
+
+  sql = _concat_sql(result)
+
+  result = toolkit.get_action('datastore_search_sql')(context, {'sql': sql})['records']
+  result = map(_filter_metadata, result)
   shuffle(result)
   return result
 
 @side_effect_free
 def search_item(context, data_dict):
-  limit = int( data_dict.get('limit', 21) )
-  offset = int( data_dict.get('offset', 0) )
+  '''Search by name'''
+  try:
+    limit =int( data_dict.get('limit') ) + 1
+  except Exception:
+    limit=22
+  try:
+    offset = int( data_dict.get('offset') )
+  except Exception:
+    offset=0
 
   name = data_dict.get('query_string','')
+  
+  result = {}
+  assets = session.query(DFMPAssets.parent, DFMPAssets.asset_id).filter(DFMPAssets.name.like('%{name}%'.format(name=name))).limit(limit).offset(offset).all()
+  limit -=1
+  for item in assets:
+    _concat_items(result, item)
+  if result:
+    sql = _concat_sql(result)
 
-  result = [{'id':item.parent, 
-              'assetID':item.item, 
-              'url': item.url, 
-              'name': item.name,
-              'lastModified':item.lastModified,
-              'metadata':json.loads(item.asset_metadata)} for item in model.Session.query(DFMPAssets).filter(DFMPAssets.name.like('%{0}%'.format(name))).offset(offset).limit(limit+1).all() ]
-  shuffle(result)
+    result = toolkit.get_action('datastore_search_sql')(context, {'sql': sql})
+    result['records'] = map(_filter_metadata, result['records'])
   has_more = False
-  if len(result) > limit:
+  if len(result['records']) > limit:
     has_more = True
-    result = result[:-1]
-  return {'records':result, 'limit':limit, 'offset':offset, 'has_more':has_more}
+    result['records'] = result['records'][:-1]
+  result.update(limit=limit, offset=offset, has_more=has_more)
+  return result
+
+
+def _filter_metadata(rec):
+  # del rec['_full_text']
+  _check_datastore_json(rec, 'metadata')
+  _check_datastore_json(rec, 'spatial')
+  return rec
+
+def _check_datastore_json(rec, field):
+  try:
+    if type( rec[field] ) in (str, unicode) and rec[field]:
+      rec[field] = json.loads( _unjson(rec[field]) )
+  except ValueError, e:
+    try:
+      rec[field] = json.loads( _unjson(rec[field]).replace('""','"') )
+    except ValueError, e:
+      log.warn(e)
+      log.warn(rec)
+      log.warn('Wrong {0}'.format(field))
+
+def _sanitize(s):
+  return s.replace(';','').replace('"','').replace("'","")
+
+def _concat_items(result, item):
+  if item.parent in result:
+    result[item.parent] += "', '{0}".format(item.asset_id)
+  else:
+    result[item.parent] = item.asset_id
+
+def _concat_sql(result, limit=''):
+  sql = [ '( SELECT {fields} FROM "{id}" WHERE  "assetID" IN ( \'{assetID}\' {limit}) ) '.format(fields=DEF_FIELDS, id=item[0], assetID=item[1], limit=limit) for item in result.items() ]
+  if len(sql) > 1:
+    sql = ' UNION '.join(sql)
+  else:
+    sql = sql[0]
+  return sql

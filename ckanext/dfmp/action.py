@@ -2,10 +2,12 @@ import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
 from datetime import datetime
-from uuid import uuid1 as make_id
-
 import logging
 log = logging.getLogger(__name__)
+
+import uuid
+def make_uuid():
+    return unicode(uuid.uuid4())
 
 #GET functions
 
@@ -74,10 +76,8 @@ def user_add_asset_inner(context, data_dict):
     parent = toolkit.get_action('resource_create')(context, {'package_id':package_id, 'url':'http://web.actgdfmp.links.com.au', 'name':'Asset'})
   else:
     parent = toolkit.get_action('resource_show')(context, {'id': package.resources[0].id})
-  if parent.get('datastore_active'):
-    log.warn('YEES')
+  if parent.get('datastore_active'): pass
   else:
-    log.warn('NOOOO')
     toolkit.get_action('datastore_create')(context, {'resource_id':parent['id'],
                                                     'force': True,
                                                     'fields':[
@@ -95,7 +95,7 @@ def user_add_asset_inner(context, data_dict):
   datastore_item = toolkit.get_action('datastore_upsert')(context, {'resource_id':parent['id'],
                                                     'force': True,
                                                     'records':[
-                                                      {'assetID':str(make_id()), 
+                                                      {'assetID':str(make_uuid()), 
                                                       'lastModified':datetime.now().isoformat(' '), 
                                                       'name':data_dict['name'], 
                                                       'url':data_dict['url'], 
@@ -227,7 +227,8 @@ def _validate(data, *fields):
       raise toolkit.ValidationError('Parameter {%s} must be defined' % field)
 
 def _unjson(string):
-  return string.replace('("{','{').replace('}","")','}').replace('\\\\"','')
+  return string.replace('("{','{').replace('}","")','}')
+  # .replace('""','"')
 
 def _organization_from_list(groups):
   if not len(groups):
