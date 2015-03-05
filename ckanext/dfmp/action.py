@@ -57,6 +57,13 @@ def user_get_assets(context, data_dict):
     log.warn(e)
     return {}
 
+@side_effect_free
+def dfmp_tags(context, data_dict):
+  q = data_dict.get('query', '')
+  log.warn(q)
+  tags = toolkit.get_action('tag_list')(context,{'query':q})
+  return dict(zip(tags,tags))
+
 # ASSET functions
 def user_add_asset_inner(context, data_dict):
   organization = _organization_from_list(context['auth_user_obj'].get_groups())[2] 

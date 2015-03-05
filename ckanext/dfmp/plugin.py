@@ -39,6 +39,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'static_gallery_reset':static_gallery_reset,
         'dfmp_static_gallery':dfmp_static_gallery,
         'search_item':search_item,
+        'dfmp_tags':dfmp_tags,
       }
 
 
