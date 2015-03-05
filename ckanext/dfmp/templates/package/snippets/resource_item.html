@@ -3,12 +3,24 @@
 {% block resource_item_explore_links %}
 
   {% if h.dfmp_with_gallery(res.id) %}
-  <li>
-    <a href="/gallery/view/{{ res.id }}">
-      <i class="icon-picture"></i>
-      {{ _('Gallery') }}
-    </a>
-  </li>
+    <li>
+      <a href="/gallery/view/{{ res.id }}">
+        <i class="icon-picture"></i>
+        {{ _('Gallery') }}
+      </a>
+    </li>
+    {{ super() }}
+
+    {% if h.is_sysadmin() %}
+      <li>
+        <a href="/data/api/3/action/celery_cleaning?resource={{ res.id }}" >
+          <i class="icon-time"></i>
+          {{ _('Check URLs') }} 
+        </a>
+      </li>
+    {% endif %}
+
+  {% else %}
+    {{ super() }}
   {% endif %}
-  {{ super() }}
 {% endblock %}

@@ -3,6 +3,9 @@ from time import sleep
 from ckanext.dfmp.action import *
 from ckanext.dfmp.datastore_action import *
 from ckan.logic import side_effect_free
+from ckanext.dfmp.background import *
+
+from ckan.common import c
 
 import logging
 log = logging.getLogger(__name__)
@@ -15,7 +18,8 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
   inProgress = 0
 
   def get_helpers(self):
-    return {'dfmp_with_gallery':dfmp_with_gallery}
+    return {'dfmp_with_gallery':dfmp_with_gallery,
+            'is_sysadmin':is_sysadmin,}
 
   def update_config(self, config):
     toolkit.add_template_directory(config, 'templates')
@@ -40,6 +44,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'dfmp_static_gallery':dfmp_static_gallery,
         'search_item':search_item,
         'dfmp_tags':dfmp_tags,
+        'celery_cleaning':celery_cleaning,
       }
 
 
@@ -80,3 +85,8 @@ def dfmp_with_gallery(id):
   res = toolkit.get_action('resource_show')(None, {'id':id})
   result = res.get('datastore_active', False)
   return result
+
+def is_sysadmin():
+  if c.userobj:
+    return c.userobj.sysadmin
+  return False
