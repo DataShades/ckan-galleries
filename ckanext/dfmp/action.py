@@ -140,6 +140,7 @@ def _update_generator(context, data_dict):
     try:
       res = toolkit.get_action('datastore_search')(context, { 'resource_id' : item['id'], 'filters':{'assetID':item['assetID']} })['records'][0]
       del res['_id']
+      res['metadata'].update(item)
       if item.get('license'):
         res['metadata']['license_id'] = res['metadata']['license'] = item['license']
         res['metadata']['license_name'] = _get_license_name(item['license'])
@@ -160,17 +161,24 @@ def _delete_generator(context, data_dict):
 
 # USER functions
 
+@side_effect_free
 def user_create_with_dataset(context, data_dict):
+  _validate(data_dict, 'password', 'name', 'email' )
+
+  title = data_dict.get('title', data_dict['name'])
+  notes = data_dict.get('description', '')
+  tags = [{'name':name} for name in data_dict.get('tags', []) ]
+
+
   data_dict['name'] = data_dict['name'].lower()
 
   try:
     user = toolkit.get_action('user_create')(context, data_dict)
-  except Exception, e:
-    log.warn(e)
-    user = toolkit.get_action('user_show')(context, {'id':data_dict['name']})
+  except toolkit.ValidationError, e:
+    raise e
 
   try:
-    package = toolkit.get_action('package_create')(context, { 'name' : _get_assets_container_name(data_dict['name']) })
+    package = toolkit.get_action('package_create')(context, { 'name' : _get_assets_container_name(data_dict['name']), 'title':title, 'notes':notes, 'tags':tags })
     try:
       toolkit.get_action('package_owner_org_update')(context,{'id':package['id'],'organization_id':'brand-cbr'})
     except Exception:
@@ -182,6 +190,7 @@ def user_create_with_dataset(context, data_dict):
       log.warn('Error during adding permissions to user')
   except toolkit.ValidationError, e:
     log.warn(e)
+
   return user
 
 def delete_user_test(context, data_dict):
