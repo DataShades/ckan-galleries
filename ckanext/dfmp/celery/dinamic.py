@@ -23,7 +23,11 @@ def clearing(context, data):
                    'offset':offset, 
                    'limit':limit}
       response = _celery_api_request('datastore_search', data, context, post_data)
-      datastore = json.loads(response)
+      try:
+        datastore = json.loads(response)
+      except:
+        _change_status(context, data, 'Error: Wrong response')
+        break
 
       if not datastore['success']:
         log.error(datastore['error'])
@@ -52,7 +56,7 @@ def clearing(context, data):
   #   log.warn(e)
 
 def _celery_api_request(action, data, context, post_data):
-  api_url = urlparse.urljoin(context['site_url'], 'api/action/') + action
+  api_url = urlparse.urljoin(context['site_url'], '/data/api/action/') + action
   
   res = requests.post(
       api_url, json.dumps(post_data),
@@ -81,7 +85,10 @@ def _get_status(context, data):
         'key': u'celery_task_id',
     }
   response = _celery_api_request('task_status_show', data, context, task_status)
-  status = json.loads(response)
+  try:
+    status = json.loads(response)
+  except:
+    return
 
   if status['success']:
     return status['result'].get('value')

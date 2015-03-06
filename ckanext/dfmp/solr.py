@@ -1,5 +1,5 @@
-import socket, string, logging, json, hashlib, re, solr
-# from dateutil.parser import parse
+import socket, string, logging, json, hashlib, re, solr, datetime
+from dateutil.parser import parse
 
 from pylons import config
 from paste.deploy.converters import asbool
@@ -43,14 +43,6 @@ class DFMPSolr(SearchIndex):
         if ast_dict is None:
             return
         ast_dict['data_dict'] = json.dumps(ast_dict)
-
-        # add to string field for sorting
-        # title = ast_dict.get('title')
-        # if title:
-        #     ast_dict['title_string'] = title
-
-        # if (not ast_dict.get('state')) or ('active' not in ast_dict.get('state')):
-        #     return self.delete_asset(ast_dict)
 
         index_fields = RESERVED_FIELDS + ast_dict.keys()
 
@@ -101,8 +93,26 @@ class DFMPSolr(SearchIndex):
         # modify dates (SOLR is quite picky with dates, and only accepts ISO dates
         # with UTC time (i.e trailing Z)
         # See http://lucene.apache.org/solr/api/org/apache/solr/schema/DateField.html
-        ast_dict['lastModified'] += 'Z'
-        ast_dict['metadata_modified'] = ast_dict['lastModified']
+
+
+        new_dict = {}
+        bogus_date = datetime.datetime(1, 1, 1)
+        for key, value in ast_dict.items():
+            key = key.encode('ascii', 'ignore')
+            if key.endswith('_date'):
+                try:
+                    date = parse(value, default=bogus_date)
+                    if date != bogus_date:
+                        value = date.isoformat() + 'Z'
+                    else:
+                        # The date field was empty, so dateutil filled it with
+                        # the default bogus date
+                        value = None
+                except ValueError:
+                    continue
+            new_dict[key] = value
+        ast_dict = new_dict
+        log.warn(ast_dict)
 
         # mark this CKAN instance as data source:
         ast_dict['site_id'] = config.get('ckan.site_id')
@@ -158,9 +168,11 @@ class DFMPSolr(SearchIndex):
 
     def delete_asset(self, ast_dict):
         conn = make_connection()
-        query = "+%s:%s (+id:\"%s\" OR +name:\"%s\") +site_id:\"%s\"" % (TYPE_FIELD, PACKAGE_TYPE,
-                                                       ast_dict.get('id'), ast_dict.get('id'),
-                                                       config.get('ckan.site_id'))
+        query = "+{type}:{asset} +index_id:\"{index}\" +site_id:\"{site}\"".format(
+            type=TYPE_FIELD,
+            asset=ASSET_TYPE,
+            index=hashlib.md5('%s%s' % (ast_dict['id']+ast_dict['assetID'],config.get('ckan.site_id'))).hexdigest(),
+            site=config.get('ckan.site_id'))
         try:
             conn.delete_query(query)
             if asbool(config.get('ckan.search.solr_commit', 'true')):

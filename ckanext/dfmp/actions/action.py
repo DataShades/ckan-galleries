@@ -16,16 +16,10 @@ def make_uuid():
 
 #GET functions
 
-import ckan.lib.search as search
-from pylons import config
 @side_effect_free
 def solr(context, data_dict):
-  _validate(data_dict,'name', 'lastModified', 'id', 'assetID')
-  indexer.index_asset(data_dict)
-
-  return 
+  pass
   
-
 @side_effect_free
 def all_user_list(context, data_dict):
   U = context['model'].User
@@ -128,6 +122,9 @@ def user_add_asset_inner(context, data_dict):
                                                     'method':'insert'
                                                     })
   result = datastore_item['records'][0]
+  ind = {'id': package_id}
+  ind.update(result)
+  _asset_to_solr(ind)
   result['parent_id'] = parent['id']
   return result
 
@@ -159,7 +156,16 @@ def _update_generator(context, data_dict):
       if item.get('license'):
         res['metadata']['license_id'] = res['metadata']['license'] = item['license']
         res['metadata']['license_name'] = _get_license_name(item['license'])
-        toolkit.get_action('datastore_upsert')(context,{'resource_id' : item['id'], 'force':True, 'method': 'update', 'records':[res]})
+        result = toolkit.get_action('datastore_upsert')(context,
+          {'resource_id' : item['id'], 
+          'force':True, 
+          'method': 'update', 
+          'records':[res]}
+        )['records'][0]
+
+        ind = {'id': _get_assets_container_name(context['auth_user_obj'].name)}
+        ind.update(result)
+        _asset_to_solr(ind)
       yield res
     except toolkit.ObjectNotFound:
       yield {}
@@ -170,13 +176,17 @@ def _delete_generator(context, data_dict):
       log.warn('inner')
       log.warn(item)
       log.warn(toolkit.get_action('datastore_delete')(context,{'resource_id': item['id'], 'force': True,'filters':{'assetID':item['assetID']}}))
+
+      indexer.remove_dict({
+        'id' :  _get_assets_container_name(context['auth_user_obj'].name), 
+        'assetID' : item['assetID']})
+
       yield {item['id']:True}
     except toolkit.ObjectNotFound:
       yield {item['id']:False}
 
 # USER functions
 
-@side_effect_free
 def user_update_dataset(context, data_dict):
   _validate(data_dict, 'title', 'description', 'tags' )
   dataset = toolkit.get_action('package_show')(context,
@@ -188,13 +198,12 @@ def user_update_dataset(context, data_dict):
     for name 
     in data_dict.get('tags', '').split(',') 
     if name]
-    
+
   if tags:
     dataset.update(tags=tags)
 
   toolkit.get_action('package_update')(context, dataset)
 
-@side_effect_free
 def user_create_with_dataset(context, data_dict):
   _validate(data_dict, 'password', 'name', 'email' )
 
@@ -311,3 +320,9 @@ def _get_license_name(id):
 
 def _name_normalize(name):
   return ''.join([c for c in key if c in KEY_CHARS])
+
+def _asset_to_solr(data_dict):
+  _validate(data_dict,'name', 'lastModified', 'id', 'assetID')
+  data_dict['metadata_modified'] = data_dict['lastModified']
+  indexer.index_asset(data_dict)
+  return True

@@ -37,9 +37,13 @@ def resource_items(context, data_dict):
   result = sql_search(context, {'sql': sql + where })
   result['records'] = map(_filter_metadata, result['records'])
 
-  resource = session.query(model.Resource).filter_by(id=data_dict['id']).first().get_package_id()
-  result['backlink'] = url_for(controller='package', action='resource_read', resource_id=data_dict['id'], id=resource)[1:]
+  package_id = session.query(model.Resource).filter_by(id=data_dict['id']).first().get_package_id()
+  result['backlink'] = url_for(controller='package', action='resource_read', resource_id=data_dict['id'], id=package_id)[1:]
+  package = toolkit.get_action('package_show')(context, {'id':package_id})
 
+  result['title'] = package.get('title')
+  result['description'] = package.get('notes')
+  result['tags'] = ','.join([item['display_name'] for item in package.get('tags')])
   return result
 
 @side_effect_free
