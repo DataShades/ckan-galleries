@@ -69,8 +69,8 @@ def flickr_group_pool_add_resource(context, dataset, resource) :
             'url' : 'http://web.actgdfmp.links.com.au',
             'name':'Asset'
         })
-    else:
-        group_not_found('ValidationError', u"This group pool has been allready imported")
+    else :
+        parent = toolkit.get_action('resource_show')(context, {'id': package.resources[0].id})
 
     if parent.get('datastore_active'):
         pass
@@ -109,30 +109,22 @@ def flickr_group_pool_add_resource(context, dataset, resource) :
     return datastore_item
 
 # get existing original url
-def flickr_group_pull_get_existing_original_url(resource) :
-	# url priority
-	urls = (u"url_o", u"url_l", u"url_c", u"url_z", u"url_n", u"url_m", u"url_q", u"url_s", u"url_t", u"url_sq")
+def flickr_group_pull_get_existing_correct_url(resource, reversed=False) :
+    # url priority
+    urls = (u"url_o", u"url_l", u"url_c", u"url_z", u"url_n", u"url_m", u"url_q", u"url_s", u"url_t", u"url_sq")
 
-	image_path = ''
-	for path in urls :
-		if (resource.get(path)) :
-			image_path = resource[path]
-			break
+    # the order should be reversed for thumbbail URL
+    if reversed :
+        urls = urls[::-1]
 
-	return image_path
+    # finds the most appropriate path from existing one
+    image_path = ''
+    for path in urls :
+        if (resource.get(path)) :
+            image_path = resource[path]
+            break
 
-# get existing url
-def flickr_group_pull_get_existing_thumbnail_url(resource) :
-	# url priority
-	urls = (u"url_sq", u"url_t", u"url_s", u"url_q", u"url_m", u"url_n", u"url_z", u"url_c", u"url_l", u"url_o")
-
-	image_path = ''
-	for path in urls :
-		if (resource.get(path)) :
-			image_path = resource[path]
-			break
-
-	return image_path
+    return image_path
 
 def flickr_group_pool_import (context, url) :
     # FlickrAPI init
@@ -184,7 +176,7 @@ def flickr_group_pool_import (context, url) :
                 resource = {
                     u"name" : photo.get(u"title", photo[u"title"]),
                     # gets first available url
-                    u"url" : flickr_group_pull_get_existing_original_url(photo),
+                    u"url" : flickr_group_pull_get_existing_correct_url(photo),
                     u"spatial" : {
                         u"latitude" : photo.get(u"latitude"),
                         u"longitude" : photo.get(u"longitude"),
@@ -192,7 +184,7 @@ def flickr_group_pool_import (context, url) :
                     u"metadata" : {
                         u"mimetype" : u"image/" + photo.get(u"originalformat", ''),
                         # gets first available url
-                        u"thumb" : flickr_group_pull_get_existing_thumbnail_url(photo),
+                        u"thumb" : flickr_group_pull_get_existing_correct_url(photo, reversed=True),
                         u"text" : photo[u"description"][u"_content"],
                         u"time" : photo.get(u"dateadded"),
                         u"name" : photo.get(u"title"),
