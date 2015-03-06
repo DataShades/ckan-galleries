@@ -11,6 +11,8 @@ log = logging.getLogger(__name__)
 from ckanext.dfmp.dfmp_model import DFMPAssets
 from sqlalchemy import func
 
+from ckanext.dfmp.actions.action import indexer
+
 DEF_LIMIT = 21
 DEF_FIELDS = '_id, CAST("assetID" AS TEXT), CAST(url AS TEXT), CAST("lastModified" AS TEXT), CAST(metadata  AS TEXT), name, CAST(spatial  AS TEXT)'
 session = model.Session
@@ -32,7 +34,8 @@ def resource_items(context, data_dict):
     where = " WHERE {0}".format(fields_filter)
 
   else:
-    where = " ORDER BY _id DESC LIMIT {0} OFFSET {1}".format( int(data_dict.get('limit', DEF_LIMIT)), int(data_dict.get('offset', 0)) ) 
+    where = " ORDER BY _id DESC LIMIT {0} OFFSET {1}".format( int(data_dict.get('limit', DEF_LIMIT)), int(data_dict.get('offset', 0)) )
+
 
   result = sql_search(context, {'sql': sql + where })
   result['records'] = map(_filter_metadata, result['records'])
@@ -51,11 +54,15 @@ def static_gallery_reset(context, data_dict):
   '''Recreate table with assets list'''
   if not data_dict.get('real') :
     return 0
-  ds = [ item['name'] 
-          for item 
+  ds = [ item['name']
+
+          for item
+
           in toolkit.get_action('datastore_search')(context, {'resource_id':'_table_metadata', 'fields':'name', 'limit':int(data_dict.get('assets_limit', '1000')) })['records' ] ]
-  resources = [ str(resource[0]) 
-                for resource 
+  resources = [ str(resource[0])
+
+                for resource
+
                 in session.query(model.Resource.id).filter( model.Resource.state=='active',model.Resource.id.in_(ds) ).all() ]
   sql_search =  toolkit.get_action('datastore_search_sql')
   result = []
@@ -75,7 +82,8 @@ def static_gallery_reset(context, data_dict):
   total = len(result)
   while seek <= total:
     piece = result[seek : seek+step]
-    seek += step 
+    seek += step
+
 
     session.add_all(piece)
     session.commit()

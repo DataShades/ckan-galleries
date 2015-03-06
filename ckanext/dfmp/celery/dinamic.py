@@ -8,55 +8,38 @@ import logging, urlparse, json, requests, urllib2
 log = logging.getLogger(__name__)
 
 
-def clearing(context, data):
+def datastore_mass(context, data, workflow):
   # try:
   context = json.loads(context)
-  offset=0
-  limit=1000
+  offlim= [0, 10]
   try:
     while True:
-      current_status = _get_status(context, data)
+      current_status = _get_status(context, data, task_type=workflow)
       if current_status == 'stop':
         print 'Terminated by API'
         raise Exception('Stop')
-      post_data = {'resource_id':data['resource'], 
-                   'offset':offset, 
-                   'limit':limit}
-      response = _celery_api_request('datastore_search', data, context, post_data)
-      try:
-        datastore = json.loads(response)
-      except:
-        _change_status(context, data, 'Error: Wrong response')
+      post_data = {'resource_id':data['resource'],
+
+                   'offset':offlim[0],
+
+                   'limit':offlim[1]}
+      print(workflow)
+      result = {
+        'clearing':clearing,
+      }[workflow](data, context, post_data, offlim)
+
+      if result and result.get('done'):
         break
-
-      if not datastore['success']:
-        log.error(datastore['error'])
-        break
-
-      items = []
-      for record in datastore['result']['records']:
-        resp = requests.head(record['url'])
-        if resp.status_code > 310:
-          items.append({'id':data['resource'], 
-                        'assetID':record['assetID']})
-
-      response = _celery_api_request('user_remove_asset', data, context, {'items':items})
-      print response
-
-      offset += limit
-      _change_status(context, data, 'Checked first {0} rows'.format(offset))
-
-      if datastore['result'].get('total', -1) < offset:
-        break
-    _change_status(context, data, 'Done')
+    _change_status(context, data, status='Done', task_type=workflow)
     print 'Done'
   except toolkit.ObjectNotFound:
-    _change_status(context, data, 'Error: Resource not found')
+    _change_status(context, data, status='Error: Resource not found', task_type=workflow)
   # except Exception, e:
   #   log.warn(e)
 
 def _celery_api_request(action, data, context, post_data):
-  api_url = urlparse.urljoin(context['site_url'], '/data/api/action/') + action
+  # api_url = urlparse.urljoin(context['site_url'], '/data/api/action/') + action
+  api_url = urlparse.urljoin(context['site_url'], '/api/action/') + action
   
   res = requests.post(
       api_url, json.dumps(post_data),
@@ -65,11 +48,41 @@ def _celery_api_request(action, data, context, post_data):
   )
   return res.content
 
+def clearing(data, context, post_data, offlim):
 
-def _change_status(context, data, status):
+  response = _celery_api_request('datastore_search', data, context, post_data)
+  try:
+    datastore = json.loads(response)
+  except:
+    _change_status(context, data, status='Error: Wrong response', task_type='clearing')
+    return {'done':True}
+  if not datastore['success']:
+    log.error(datastore['error'])
+    return {'done':True}
+
+  items = []
+  for record in datastore['result']['records']:
+    if not record['url'].startswith('http'):
+      log.warn('URL without schema {url}'.format(url=record['url']))
+      continue
+    resp = requests.head(record['url'])
+    if resp.status_code > 310:
+      items.append({'id':data['resource'],
+
+                    'assetID':record['assetID']})
+  response = _celery_api_request('user_remove_asset', data, context, {'items':items})
+  print response
+
+  offlim[0] += offlim[1]
+  _change_status(context, data, status='Checked first {0} rows'.format(offlim[0]), task_type='clearing')
+
+  if datastore['result'].get('total', -1) < offlim[0]:
+    return {'done':True}
+
+def _change_status(context, data, status, task_type):
   task_status = {
         'entity_id': data['resource'],
-        'task_type': u'clearing',
+        'task_type': task_type,
         'key': u'celery_task_id',
         'value': status,
         'error': u'',
@@ -78,10 +91,10 @@ def _change_status(context, data, status):
     }
   _celery_api_request('task_status_update', data, context, task_status)
 
-def _get_status(context, data):
+def _get_status(context, data, task_type):
   task_status = {
         'entity_id': data['resource'],
-        'task_type': u'clearing',
+        'task_type': task_type,
         'key': u'celery_task_id',
     }
   response = _celery_api_request('task_status_show', data, context, task_status)
