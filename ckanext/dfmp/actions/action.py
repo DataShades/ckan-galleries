@@ -4,12 +4,27 @@ from ckan.logic import side_effect_free
 from datetime import datetime
 import logging
 log = logging.getLogger(__name__)
+from ckanext.dfmp.solr import DFMPSolr
+indexer = DFMPSolr()
+
+import string
+KEY_CHARS = string.digits + string.letters + "_-"
 
 import uuid
 def make_uuid():
     return unicode(uuid.uuid4())
 
 #GET functions
+
+import ckan.lib.search as search
+from pylons import config
+@side_effect_free
+def solr(context, data_dict):
+  _validate(data_dict,'name', 'lastModified', 'id', 'assetID')
+  indexer.index_asset(data_dict)
+
+  return 
+  
 
 @side_effect_free
 def all_user_list(context, data_dict):
@@ -162,15 +177,33 @@ def _delete_generator(context, data_dict):
 # USER functions
 
 @side_effect_free
+def user_update_dataset(context, data_dict):
+  _validate(data_dict, 'title', 'description', 'tags' )
+  dataset = toolkit.get_action('package_show')(context,
+     {'id' : _get_assets_container_name(context['auth_user_obj'].name)})
+
+  data_dict['title'] and dataset.update(title=data_dict['title'])
+  data_dict['description'] and dataset.update(notes=data_dict['description'])
+  tags = [{'name':name} 
+    for name 
+    in data_dict.get('tags', '').split(',') 
+    if name]
+    
+  if tags:
+    dataset.update(tags=tags)
+
+  toolkit.get_action('package_update')(context, dataset)
+
+@side_effect_free
 def user_create_with_dataset(context, data_dict):
   _validate(data_dict, 'password', 'name', 'email' )
 
   title = data_dict.get('title', data_dict['name'])
   notes = data_dict.get('description', '')
-  tags = [{'name':name} for name in data_dict.get('tags', []) ]
+  tags = [{'name':name} for name in data_dict.get('tags', '').split(',') if name ]
 
 
-  data_dict['name'] = data_dict['name'].lower()
+  data_dict['name'] = _name_normalize(data_dict['name']).lower()
 
   try:
     user = toolkit.get_action('user_create')(context, data_dict)
@@ -275,3 +308,6 @@ def _get_license_name(id):
   if license:
     return license[0]['title']
   return ''
+
+def _name_normalize(name):
+  return ''.join([c for c in key if c in KEY_CHARS])

@@ -45,6 +45,8 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'search_item':search_item,
         'dfmp_tags':dfmp_tags,
         'celery_cleaning':celery_cleaning,
+        'solr':solr,
+        'user_update_dataset':user_update_dataset
       }
 
 
