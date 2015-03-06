@@ -5,7 +5,7 @@ from time import sleep
 import dinamic
 @celery.task(name = "dfmp.cleaning")
 def clearing( context, data ):
-  for i in range(10000):
+  # for i in range(10000):
     reload(dinamic)
     dinamic.clearing(context, data)
-    sleep(10)
+    # sleep(10)
