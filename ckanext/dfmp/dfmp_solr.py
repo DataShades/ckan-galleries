@@ -112,7 +112,7 @@ class DFMPSolr(SearchIndex):
                     continue
             new_dict[key] = value
         ast_dict = new_dict
-        log.warn(ast_dict)
+        # log.warn(ast_dict)
 
         # mark this CKAN instance as data source:
         ast_dict['site_id'] = config.get('ckan.site_id')
@@ -151,7 +151,6 @@ class DFMPSolr(SearchIndex):
             raise SearchIndexError(err)
         finally:
             conn.close()
-
         commit_debug_msg = 'Not commited yet' if defer_commit else 'Commited'
         log.debug('Updated index for %s [%s]' % (ast_dict.get('name'), commit_debug_msg))
 
@@ -182,3 +181,17 @@ class DFMPSolr(SearchIndex):
             raise SearchIndexError(e)
         finally:
             conn.close()
+
+    def search_asset(self):
+        # query = search.PackageSearchQuery()
+        # q = {
+        #     'q': q,
+        #     'fl': 'data_dict',
+        #     'wt': 'json',
+        #     'fq': 'site_id:"%s"' % config.get('ckan.site_id'),
+        #     'rows': BATCH_SIZE
+        # }
+
+        # for result in query.run(q)['results']:
+        #     data_dict = json.loads(result['data_dict'])
+        pass

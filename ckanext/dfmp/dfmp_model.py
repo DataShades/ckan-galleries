@@ -29,5 +29,6 @@ class DFMPAssets(Base):
     return "<DFMP Item(id='%s')>" % (self.id)
 
 def init_tables():
-  Base.metadata.drop_all(model.meta.engine, tables=[DFMPAssets.__table__], checkfirst=True) 
-  Base.metadata.create_all(model.meta.engine, tables=[DFMPAssets.__table__], checkfirst=True) 
+  Base.metadata.drop_all(model.meta.engine, tables=[DFMPAssets.__table__], checkfirst=True)
+
+  Base.metadata.create_all(model.meta.engine, tables=[DFMPAssets.__table__], checkfirst=True)

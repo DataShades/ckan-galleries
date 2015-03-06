@@ -7,5 +7,5 @@ import dinamic
 def clearing( context, data ):
   # for i in range(10000):
     reload(dinamic)
-    dinamic.clearing(context, data)
+    dinamic.datastore_mass(context, data, 'clearing')
     # sleep(10)
