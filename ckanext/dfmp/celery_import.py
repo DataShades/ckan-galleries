@@ -1,2 +1,2 @@
 def task_imports():
-  return ['ckanext.dfmp.tasks']
+  return ['ckanext.dfmp.celery.tasks']

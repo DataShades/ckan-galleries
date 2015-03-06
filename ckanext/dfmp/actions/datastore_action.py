@@ -1,6 +1,6 @@
 import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
-from ckanext.dfmp.action import _validate, _unjson
+from ckanext.dfmp.actions.action import _validate, _unjson
 import json
 from ckan.lib.helpers import url_for
 import ckan.model as model

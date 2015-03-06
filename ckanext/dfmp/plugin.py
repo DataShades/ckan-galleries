@@ -1,9 +1,9 @@
 import ckan.plugins as plugins
 from time import sleep
-from ckanext.dfmp.action import *
-from ckanext.dfmp.datastore_action import *
+from ckanext.dfmp.actions.action import *
+from ckanext.dfmp.actions.datastore_action import *
 from ckan.logic import side_effect_free
-from ckanext.dfmp.background import *
+from ckanext.dfmp.actions.background import *
 
 from ckan.common import c
 
