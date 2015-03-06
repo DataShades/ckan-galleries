@@ -4,6 +4,7 @@ from ckanext.dfmp.actions.action import *
 from ckanext.dfmp.actions.datastore_action import *
 from ckan.logic import side_effect_free
 from ckanext.dfmp.actions.background import *
+from ckanext.dfmp.actions.social import *
 
 from ckan.common import c
 
@@ -45,6 +46,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'search_item':search_item,
         'dfmp_tags':dfmp_tags,
         'celery_cleaning':celery_cleaning,
+        'flickr_import_group_pool':flickr_import_group_pool,
       }
 
 

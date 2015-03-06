@@ -261,7 +261,7 @@ def _user_get_groups(user):
   return user.get_groups()
 
 def _get_assets_container_name(name):
-  return 'dfmp_assets_'+name.lower()
+  return 'dfmp_assets_' + name.lower()
 
 
 def _user_by_apikey(context, key):
