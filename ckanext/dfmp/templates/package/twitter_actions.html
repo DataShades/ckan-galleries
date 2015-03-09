@@ -1,0 +1,24 @@
+{% set form_action = h.url_for('getting_tweets', id=pkg_id, resource_id=res_id) %}
+{% extends "package/resource_edit_base.html" %}
+
+{% block subtitle %}{{ _('Twitter actions') }} - {{ h.resource_display_name(res) }} - {{ h.dataset_display_name(pkg) }}{% endblock %}
+
+{% block form %}
+  <h4>Status: {{ getting_status.value }}</h4>
+  {% snippet 'package/snippets/resource_twitter_form.html', 
+    data=pull_data,
+    errors=pull_errors,
+    error_summary=pull_error_summary,
+    form_action=form_action,
+    stage=1,
+    type='getting' %}
+  <h4>Status: {{ streaming_status.value }}</h4>
+  {% snippet 'package/snippets/resource_twitter_form.html', 
+    data=stream_data,
+    errors=stream_errors,
+    error_summary=stream_error_summary,
+    form_action=form_action,
+    stage=1,
+    type='streaming' %}
+
+{% endblock %}

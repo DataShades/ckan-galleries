@@ -1,0 +1,32 @@
+{% extends 'package/snippets/resource_form.html' %}
+
+{% block stages %}{% endblock %}
+
+{% block previous_button %}{% endblock %}
+{% block basic_fields_url %}{% endblock %}
+{% block basic_fields_name %}{% endblock %}
+{% block basic_fields_description %}{% endblock %}
+{% block basic_fields_format %}{% endblock %}
+{% block again_button %}{% endblock %}
+
+{% block metadata_fields %}
+  {% if type == 'getting' %}
+      {{ form.input('pull_word', id='field-pull-word', label=_('Hashtag'), placeholder="#CBR", type='text', value=data.pull_word, error=errors.pull_word, classes=[], is_required=True) }}
+      {{ form.input('pull_from', id='field-pull-from', label=_('Pull tweets(day)'), type='date', value=data.pull_from, error=errors.pull_from, classes=[]) }}
+      {{ form.input('pull_from_time', id='field-pull-from-time', label=_('Pull tweets(time)'), type='time', value=data.pull_from_time, error=errors.pull_from_time, classes=[]) }}
+    
+  {% elif type == 'streaming' %}
+      {{ form.input('stream_word', id='field-stream-word', label=_('Hashtag'), placeholder="#CBR", type='text', value=data.stream_word, error=errors.stream_word, classes=[], is_required=True) }}
+  {% endif %}
+  
+{% endblock %}
+
+{% block save_button_text %}
+  {% if type == 'getting' %}
+    {{ _("Pull tweets") }}
+  {% elif type == 'streaming' %}
+    {{ _("Start listening") }}
+  {% endif %}
+{% endblock %}
+
+

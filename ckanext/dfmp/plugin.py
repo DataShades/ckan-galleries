@@ -15,8 +15,16 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
   plugins.implements(plugins.IConfigurer)
   plugins.implements(plugins.IActions)
   plugins.implements(plugins.ITemplateHelpers)
+  plugins.implements(plugins.IRoutes, inherit=True)
 
   inProgress = 0
+
+  def before_map(self, map):
+    map.connect(
+        'getting_tweets', '/dataset/{id}/pull_tweets/{resource_id}',
+        controller='ckanext.dfmp.controller:DFMPController',
+        action='getting_tweets', ckan_icon='twitter-sign')
+    return map
 
   def get_helpers(self):
     return {'dfmp_with_gallery':dfmp_with_gallery,
@@ -46,6 +54,8 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'search_item':search_item,
         'dfmp_tags':dfmp_tags,
         'celery_cleaning':celery_cleaning,
+        'celery_getting_tweets': celery_getting_tweets,
+        'celery_streaming_tweets':celery_streaming_tweets,
         'flickr_import_group_pool':flickr_import_group_pool,
         'solr':solr,
         'user_update_dataset':user_update_dataset

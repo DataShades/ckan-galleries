@@ -1,0 +1,8 @@
+{% ckan_extends %}
+
+{% block content_primary_nav %}
+  {{ super() }}
+  {% if h.is_sysadmin() %}
+    {{ h.build_nav_icon('getting_tweets', _('Twitter'), id=pkg.name, resource_id=res.id) }}
+  {% endif %}
+{% endblock %}
