@@ -34,7 +34,7 @@ def resource_items(context, data_dict):
     where = " WHERE {0}".format(fields_filter)
 
   else:
-    where = " ORDER BY _id DESC LIMIT {0} OFFSET {1}".format( int(data_dict.get('limit', DEF_LIMIT)), int(data_dict.get('offset', 0)) )
+    where = ' ORDER BY "lastModified" DESC LIMIT {0} OFFSET {1}'.format( int(data_dict.get('limit', DEF_LIMIT)), int(data_dict.get('offset', 0)) )
 
 
   result = sql_search(context, {'sql': sql + where })

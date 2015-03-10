@@ -1,7 +1,7 @@
 import ckan.plugins.toolkit as toolkit
 import ckan.lib.base as base
 import ckan.lib.helpers as h
-import datetime
+import datetime, os
 from dateutil import parser
 import ckan.model as model
 
@@ -14,6 +14,7 @@ log = logging.getLogger(__name__)
 class DFMPController(base.BaseController):
     def getting_tweets(self, id, resource_id):
         now = datetime.datetime.now() - datetime.timedelta(1)
+        pid = None
         extra_vars = {
             'pkg_id':id,
             'res_id': resource_id,
@@ -26,16 +27,58 @@ class DFMPController(base.BaseController):
             'pull_error_summary':{},
             'stream_error_summary':{},
         }
+        
+        try:
+            getting_status = toolkit.get_action('task_status_show')(None, {
+                'task_type': 'getting_tweets',
+                'entity_id': resource_id,
+                'key':'celery_task_id'
+                })
+            extra_vars.update(getting_status=getting_status)
+        except toolkit.ObjectNotFound:
+            pass
+
+        try:
+            streaming_status = toolkit.get_action('task_status_show')(None, {
+                'task_type': 'streaming_tweets',
+                'entity_id': resource_id,
+                'key':'celery_task_id'
+                })
+            extra_vars.update(streaming_status=streaming_status)
+            if 'value' in streaming_status:
+                try:
+                    pos = streaming_status['value'].rfind(' ')
+                    pid = streaming_status['value'][pos:]
+                    pid = int(pid)
+                    if not os.system('ps %s' % pid):
+                        extra_vars.update(may_kill = True)
+                except:
+                    pass
+        except toolkit.ObjectNotFound:
+            pass
 
         if toolkit.request.method == 'POST':
+            pst = toolkit.request.POST
+            stable = True
+
+            if 'kill_listener' in pst and pid:
+                os.system('kill %s' % pid)
+                toolkit.get_action('task_status_update')(None, {
+                    'entity_id': resource_id,
+                    'task_type': 'streaming_tweets',
+                    'key': 'celery_task_id',
+                    'value': 'Terminated',
+                    'error': u'',
+                    'last_updated': datetime.datetime.now().isoformat(),
+                    'entity_type': 'resource'
+                })
+                base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
+
             context = {
                 'model': model,
                 'user': c.user or c.author,
                 'auth_user_obj': c.userobj
             }
-
-            stable = True
-            pst = toolkit.request.POST
 
             if 'pull_from' in pst or 'pull_word' in pst:
                 word = pst.get('pull_word')
@@ -70,16 +113,6 @@ class DFMPController(base.BaseController):
                         'word': pst['stream_word'],
                     })
                     base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
-
-        try:
-            getting_status = toolkit.get_action('task_status_show')(None, {
-                'task_type': 'getting_tweets',
-                'entity_id': resource_id,
-                'key':'celery_task_id'
-                })
-            extra_vars.update(getting_status=getting_status)
-        except toolkit.ObjectNotFound:
-            pass
 
         try:
             toolkit.c.pkg_dict = toolkit.get_action('package_show')(

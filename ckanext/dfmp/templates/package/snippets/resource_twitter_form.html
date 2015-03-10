@@ -2,7 +2,6 @@
 
 {% block stages %}{% endblock %}
 
-{% block previous_button %}{% endblock %}
 {% block basic_fields_url %}{% endblock %}
 {% block basic_fields_name %}{% endblock %}
 {% block basic_fields_description %}{% endblock %}
@@ -18,7 +17,13 @@
   {% elif type == 'streaming' %}
       {{ form.input('stream_word', id='field-stream-word', label=_('Hashtag'), placeholder="#CBR", type='text', value=data.stream_word, error=errors.stream_word, classes=[], is_required=True) }}
   {% endif %}
-  
+{% endblock %}
+
+{% block previous_button %}
+  {% if type == 'getting' %}
+  {% elif type == 'streaming' and may_kill%}
+      <button class="btn btn-warning" name="kill_listener" value="killlistener" type="submit">{{ _('Kill listener') }}</button>
+  {% endif %}
 {% endblock %}
 
 {% block save_button_text %}

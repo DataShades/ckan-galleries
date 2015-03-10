@@ -127,7 +127,7 @@ def getting_tweets(data, context, post_data, offlim):
     records = []
     for item in piece:
       item_json = item._json
-      item_json.update(mimetype = 'image/jpeg')
+      item_json.update(mimetype = 'image/jpeg', type = 'image/jpeg')
       records.append({
         'assetID': item.entities['media'][0]['id_str'],
         'lastModified': item.created_at.isoformat(' '),
@@ -163,10 +163,16 @@ def getting_tweets(data, context, post_data, offlim):
   return {'done':True}
 
 def streaming_tweets(data, context, post_data, offlim):
-  print 'Starting...'
+  _change_status(
+    context,
+    data,
+    'Started, process %s' % ( getpid()),
+    'streaming_tweets'
+  )
+  print 'Starting %s...' % getpid()
   while True:
     try:
-      init_twitter_stream(TwitterListener).filter(track=[data['word']])
+      init_twitter_stream(TwitterListener, context, data).filter(track=[data['word']])
     except Exception, e:
       print e
       print 'Restart in 60 seconds'
@@ -212,16 +218,36 @@ def _get_status(context, data, task_type):
 
 
 class TwitterListener(StreamListener):
+    def __init__(self, context, data):
+      StreamListener.__init__(self)
+      self.context = context
+      self.data = data
     def on_data(self, data):
       print 'Data received...'
+      _change_status(
+        self.context,
+        self.data,
+        'Proccessing data, process %s' % ( getpid()),
+        'streaming_tweets'
+      )
       _twitter_save_data(json.loads(data))
+      _change_status(self.context,
+        self.data,
+        'Listening, process %s' % (getpid()),
+        'streaming_tweets'
+      )
       print 'Listening...'
       return True
     def on_error(self, status):
+      _change_status(self.context,
+        self.data,
+        'Error %s, process %s' % (status, getpid()),
+        'streaming_tweets'
+      )
       print 'Error %d' % status
 
-def init_twitter_stream(TwitterListener):
-  return Stream(twitter.auth, TwitterListener())
+def init_twitter_stream(TwitterListener, context, data):
+  return Stream(twitter.auth, TwitterListener(context, data))
 
 def _twitter_save_data(data):
   if not 'extended_entities' in data or not 'media' in data['extended_entities']:
@@ -255,7 +281,9 @@ def _twitter_save_data(data):
         'force':True,
         'records':[{
           'assetID': resource['id'],
-          'lastModified': datetime.fromtimestamp( int(resource['time']) ).strftime('%Y-%m-%d %H:%M:%S'),
+          'lastModified': datetime\
+            .fromtimestamp( int(resource['time']) )\
+            .strftime('%Y-%m-%d %H:%M:%S'),
           'name':resource['name'],
           'url':resource['thumb'],
           'metadata':resource,
@@ -265,9 +293,7 @@ def _twitter_save_data(data):
       })
 
       print 'Proccess %d. Item saved...' % pid
-      flush()
     except Exception, e:
       print e
       print 'Proccess %d. Problem with saving. Skipped..' % pid
-      flush()
       continue 
