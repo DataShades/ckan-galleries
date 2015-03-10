@@ -30,7 +30,7 @@ def flickr_group_pool_create_dataset(context, dataset) :
             log.warn('Error during adding user to organization ')
 
     except toolkit.ValidationError, e:
-        group_not_found('ValidationError', "This group pool has been allready imported: <a href='/dataset/" + u"flickr_pool_" + dataset[u"path_alias"] +"'>Please visit</a> it.")
+        group_not_found('ValidationError', "This group pool has been allready imported: <a href='/data/dataset/" + u"flickr_pool_" + dataset[u"path_alias"] +"'>Please visit</a> it.")
 
     return package
 
@@ -196,4 +196,4 @@ def flickr_group_pool_import (context, url) :
                 }
                 # adds resource to dataset
                 flickr_group_pool_add_resource(context, dataset, resource)
-        return str(total) + u" successfully imported from the pool. <a href='/dataset/" + dataset[u"name"] +"'>Please visit</a> the dataset."
+        return str(total) + u" successfully imported from the pool. <a href='/data/dataset/" + dataset[u"name"] +"'>Please visit</a> the dataset."
