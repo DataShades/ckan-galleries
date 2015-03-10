@@ -5,7 +5,8 @@ from ckanext.dfmp.actions.datastore_action import *
 from ckan.logic import side_effect_free
 from ckanext.dfmp.actions.background import *
 from ckanext.dfmp.actions.social import *
-
+import datetime
+from dateutil.parser import parse
 from ckan.common import c
 
 import logging
@@ -25,6 +26,14 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         controller='ckanext.dfmp.controller:DFMPController',
         action='getting_tweets', ckan_icon='twitter-sign')
     map.connect(
+        'terminate_listener', '/dataset/{id}/terminate_listener/{resource_id}',
+        controller='ckanext.dfmp.controller:DFMPController',
+        action='terminate_listener', ckan_icon='twitter-sign')
+    map.connect(
+        'start_listener', '/dataset/{id}/start_listener/{resource_id}',
+        controller='ckanext.dfmp.controller:DFMPController',
+        action='start_listener', ckan_icon='twitter-sign')
+    map.connect(
         'get_flickr', '/dataset/new_from_flickr',
         controller='ckanext.dfmp.controller:DFMPController',
         action='get_flickr')
@@ -37,7 +46,9 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
 
   def get_helpers(self):
     return {'dfmp_with_gallery':dfmp_with_gallery,
-            'is_sysadmin':is_sysadmin,}
+            'is_sysadmin':is_sysadmin,
+            'rel_date':rel_date,
+            }
 
   def update_config(self, config):
     toolkit.add_template_directory(config, 'templates')
@@ -113,3 +124,25 @@ def is_sysadmin():
   if c.userobj:
     return c.userobj.sysadmin
   return False
+
+def rel_date(d):
+  diff = datetime.datetime.now() - d
+  s = diff.seconds
+  if diff.days > 7 or diff.days < 0:
+    return d.strftime('%d %b %y')
+  elif diff.days == 1:
+    return '1 day ago'
+  elif diff.days > 1:
+    return '{} days ago'.format(diff.days)
+  elif s <= 1:
+    return 'just now'
+  elif s < 60:
+    return '{} seconds ago'.format(s)
+  elif s < 120:
+    return '1 minute ago'
+  elif s < 3600:
+    return '{} minutes ago'.format(s/60)
+  elif s < 7200:
+    return '1 hour ago'
+  else:
+    return '{} hours ago'.format(s/3600)

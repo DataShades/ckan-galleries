@@ -52,6 +52,7 @@ def resource_items(context, data_dict):
 
 @side_effect_free
 def static_gallery_reset(context, data_dict):
+  return
   '''Recreate table with assets list'''
   if not data_dict.get('real') :
     return 0

@@ -169,7 +169,8 @@ def streaming_tweets(data, context, post_data, offlim):
     context,
     data,
     'Started, process %s' % ( getpid()),
-    'streaming_tweets'
+    'streaming_tweets',
+    state='Listening'
   )
   print 'Starting %s...' % getpid()
   while True:
@@ -183,12 +184,13 @@ def streaming_tweets(data, context, post_data, offlim):
 
 
 
-def _change_status(context, data, status, task_type):
+def _change_status(context, data, status, task_type, state=''):
   task_status = {
       'entity_id': data['resource'],
       'task_type': task_type,
       'key': u'celery_task_id',
       'value': status,
+      'state':state,
       'error': u'',
       'last_updated': datetime.now().isoformat(),
       'entity_type': 'resource'
@@ -230,13 +232,25 @@ class TwitterListener(StreamListener):
         self.context,
         self.data,
         'Proccessing data, process %s' % ( getpid()),
-        'streaming_tweets'
+        'streaming_tweets',
+        state='Proccessing'
       )
-      _twitter_save_data(json.loads(data), self.context)
+      try:
+        _twitter_save_data(json.loads(data), self.context, self.data)
+      except Exception, e:
+        print e
+        _change_status(self.context,
+          self.data,
+          'Error {%s}, continue listening. Process %s' % (e, getpid()),
+          'streaming_tweets',
+          state='Listening'
+        )
+        return True
       _change_status(self.context,
         self.data,
         'Listening, process %s' % (getpid()),
-        'streaming_tweets'
+        'streaming_tweets',
+        state='Listening'
       )
       print 'Listening...'
       return True
@@ -244,14 +258,15 @@ class TwitterListener(StreamListener):
       _change_status(self.context,
         self.data,
         'Error %s, process %s' % (status, getpid()),
-        'streaming_tweets'
+        'streaming_tweets',
+        state='Listening'
       )
       print 'Error %d' % status
 
 def init_twitter_stream(TwitterListener, context, data):
   return Stream(twitter.auth, TwitterListener(context, data))
 
-def _twitter_save_data(data, context):
+def _twitter_save_data(data, context, data_dict):
   if not 'extended_entities' in data or not 'media' in data['extended_entities']:
     'Media not found...'
     return
@@ -279,7 +294,7 @@ def _twitter_save_data(data, context):
       )
 
       _celery_api_request('datastore_upsert', context, {
-        'resource_id':args.resource,
+        'resource_id':data_dict['resource'],
         'force':True,
         'records':[{
           'assetID': resource['id'],
@@ -294,10 +309,10 @@ def _twitter_save_data(data, context):
         'method': 'insert'
       })
 
-      print 'Proccess %d. Item saved...' % pid
+      print 'Proccess %d. Item saved...' % getpid()
     except Exception, e:
       print e
-      print 'Proccess %d. Problem with saving. Skipped..' % pid
+      print 'Proccess %d. Problem with saving. Skipped..' % getpid()
       continue
 
 def _create_datastore(id, context):

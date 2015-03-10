@@ -153,19 +153,13 @@ def user_add_asset_inner(context, data_dict):
   datastore_item = toolkit.get_action('datastore_upsert')(context, {
     'resource_id':parent['id'],
     'force': True,
-    'records':[
-      {'assetID':str(make_uuid()),
-
+    'records':[{
+      'assetID':str(make_uuid()),
       'lastModified':datetime.now().isoformat(' '),
-
       'name':data_dict['name'],
-
       'url':data_dict['url'],
-
       'spatial':location,
-
       'metadata':data_dict,
-
       }
     ],
     'method':'insert'
@@ -202,12 +196,10 @@ def _update_generator(context, data_dict):
   for item in data_dict:
     try:
       res = toolkit.get_action('datastore_search')(context, {
-
         'resource_id' : item['id'],
         'filters':{
           'assetID':item['assetID'],
         }
-
       })['records'][0]
 
       del res['_id']

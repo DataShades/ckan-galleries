@@ -1,7 +1,7 @@
 import ckan.plugins.toolkit as toolkit
 import ckan.lib.base as base
 import ckan.lib.helpers as h
-import datetime, os
+import datetime, os, re
 from dateutil import parser
 import ckan.model as model
 
@@ -20,21 +20,34 @@ class DFMPController(base.BaseController):
 
   def twitter_listeners(self):
     tasks = session.query(model.TaskStatus).filter_by(task_type='streaming_tweets').all()
-    resources = dict(
-      session.query(model.Resource.id, model.Resource.name)\
-        .filter(
-          model.Resource.id.in_(
-            [ task.entity_id for task in tasks ])
-        ).all()
-    )
+    resources = session.query(model.Resource)\
+      .filter(
+        model.Resource.id.in_(
+          [ task.entity_id for task in tasks ])
+      ).all()
+    
+    assets = { res.id:(res.get_package_id(), res.name) for res in resources}
 
     for task in tasks:
-      task.name = resources[task.entity_id]
+      pid = _get_pid( task.value or '' )
+      if pid:
+        task.pid = pid
+        if not os.system('ps %s' % pid):
+            task.is_active = True
+      task.name = assets[task.entity_id][1]
+      task.pkg = assets[task.entity_id][0]
 
     extra_vars = {
       'listeners':tasks,
     }
     return base.render('admin/twitter_listeners.html', extra_vars=extra_vars)
+  
+  def terminate_listener(self, id, resource_id):
+    base.redirect( c.environ['HTTP_REFERER'] )
+
+  def start_listener(self, id, resource_id):
+    base.redirect( c.environ['HTTP_REFERER'] )
+    
 
   def getting_tweets(self, id, resource_id):
     context = {
@@ -152,3 +165,8 @@ class DFMPController(base.BaseController):
 
 
     return base.render('package/twitter_actions.html', extra_vars=extra_vars)
+
+def _get_pid(val):
+  res = re.search('\d+$',val)
+  if res:
+    return res.group()
