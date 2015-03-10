@@ -12,6 +12,11 @@ import logging
 log = logging.getLogger(__name__)
 
 class DFMPController(base.BaseController):
+
+    def get_flickr(self):
+        return base.render('package/dataset_from_flickr.html')
+
+
     def getting_tweets(self, id, resource_id):
         now = datetime.datetime.now() - datetime.timedelta(1)
         pid = None

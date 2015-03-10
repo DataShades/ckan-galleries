@@ -24,6 +24,10 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'getting_tweets', '/dataset/{id}/pull_tweets/{resource_id}',
         controller='ckanext.dfmp.controller:DFMPController',
         action='getting_tweets', ckan_icon='twitter-sign')
+    map.connect(
+        'get_flickr', '/dataset/new_from_flickr',
+        controller='ckanext.dfmp.controller:DFMPController',
+        action='get_flickr')
     return map
 
   def get_helpers(self):
