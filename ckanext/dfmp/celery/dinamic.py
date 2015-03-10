@@ -121,6 +121,7 @@ def getting_tweets(data, context, post_data, offlim):
 
   searcher = twitter.search_tweets(twitter_api, word, **data)
   total = 0
+  _create_datastore(data['resource'], context)
   for piece in searcher:
     if not piece:
       continue
@@ -163,6 +164,7 @@ def getting_tweets(data, context, post_data, offlim):
   return {'done':True}
 
 def streaming_tweets(data, context, post_data, offlim):
+  _create_datastore(data['resource'], context)
   _change_status(
     context,
     data,
@@ -183,13 +185,13 @@ def streaming_tweets(data, context, post_data, offlim):
 
 def _change_status(context, data, status, task_type):
   task_status = {
-        'entity_id': data['resource'],
-        'task_type': task_type,
-        'key': u'celery_task_id',
-        'value': status,
-        'error': u'',
-        'last_updated': datetime.now().isoformat(),
-        'entity_type': 'resource'
+      'entity_id': data['resource'],
+      'task_type': task_type,
+      'key': u'celery_task_id',
+      'value': status,
+      'error': u'',
+      'last_updated': datetime.now().isoformat(),
+      'entity_type': 'resource'
     }
   _celery_api_request(
     'task_status_update',
@@ -199,9 +201,9 @@ def _change_status(context, data, status, task_type):
 
 def _get_status(context, data, task_type):
   task_status = {
-        'entity_id': data['resource'],
-        'task_type': task_type,
-        'key': u'celery_task_id',
+      'entity_id': data['resource'],
+      'task_type': task_type,
+      'key': u'celery_task_id',
     }
   response = _celery_api_request(
     'task_status_show',
@@ -230,7 +232,7 @@ class TwitterListener(StreamListener):
         'Proccessing data, process %s' % ( getpid()),
         'streaming_tweets'
       )
-      _twitter_save_data(json.loads(data))
+      _twitter_save_data(json.loads(data), self.context)
       _change_status(self.context,
         self.data,
         'Listening, process %s' % (getpid()),
@@ -249,7 +251,7 @@ class TwitterListener(StreamListener):
 def init_twitter_stream(TwitterListener, context, data):
   return Stream(twitter.auth, TwitterListener(context, data))
 
-def _twitter_save_data(data):
+def _twitter_save_data(data, context):
   if not 'extended_entities' in data or not 'media' in data['extended_entities']:
     'Media not found...'
     return
@@ -276,7 +278,7 @@ def _twitter_save_data(data):
         id=asset['id_str']
       )
 
-      _celery_api_request('datastore_upsert', {
+      _celery_api_request('datastore_upsert', context, {
         'resource_id':args.resource,
         'force':True,
         'records':[{
@@ -296,4 +298,20 @@ def _twitter_save_data(data):
     except Exception, e:
       print e
       print 'Proccess %d. Problem with saving. Skipped..' % pid
-      continue 
+      continue
+
+def _create_datastore(id, context):
+  _celery_api_request('datastore_create', context, {
+    'resource_id':id,
+    'force': True,
+    'fields':[
+      {'id':'assetID', 'type':'text'},
+      {'id':'lastModified', 'type':'text'},
+      {'id':'name', 'type':'text'},
+      {'id':'url', 'type':'text'},
+      {'id':'spatial', 'type':'json'},
+      {'id':'metadata', 'type':'json'},
+    ],
+    'primary_key':['assetID'],
+    'indexes':['name', 'assetID']
+  })

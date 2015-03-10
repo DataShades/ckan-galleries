@@ -56,7 +56,8 @@ def _prepare_celery(context, data_dict, task_type):
             'entity_type': u'resource',
             'task_type': task_type,
             'key': u'celery_task_id',
-            'value': 'progress',
+            'value': data_dict.get('word', ''),
+            'state':'Preparing',
             'error': u'',
             'last_updated': datetime.now().isoformat()
         }
