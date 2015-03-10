@@ -105,9 +105,7 @@ def user_add_asset_inner(context, data_dict):
 
   if data_dict.get('geoLocation'):
     location =  { "type": "Point", "coordinates": [
-
         float(data_dict['geoLocation']['lng']),
-
         float(data_dict['geoLocation']['lat'])
       ]}
   else:
