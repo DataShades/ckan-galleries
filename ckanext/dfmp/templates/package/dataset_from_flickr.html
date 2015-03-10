@@ -1,39 +1,42 @@
 {% extends "package/base_form_page.html" %}
 {% import 'macros/form.html' as form %}
 
-{% block subtitle %}{{ _('Create Dataset using Flickr') }}{% endblock %}
+{% block subtitle %}{{ _('Flickr import') }}{% endblock %}
 
 {% block form %}
 
 
-{% set action = c.form_action or '' %}
+    {% set action = c.form_action or '' %}
 
 
-<form class="dataset-form form-horizontal" method="post" action="{{ action }}" data-module="basic-form">
+    <form class="dataset-form" method="post" action="{{ action }}" data-module="basic-form">
 
-  {% block basic_fields %}
-    {{ form.input('flickr_pool', label=_('Flickr pool'), placeholder='pool adress', is_required=True, attrs={'required':'required', 'class':'class1 class2', 'data-one':'one', 'data-two':'two'}) }}
-  {% endblock %}
+      <div style="display:none;" class="error-explanation alert alert-error">
+        <p></p>
+      </div>
 
+      <div style="display:none;" class="flash-messages">
+        <div class="alert fade in alert-success"></div>
+      </div>
 
-  {% block form_actions %}
-    <div class="form-actions">
-      {% block disclaimer %}
-        <p class="action-info small">
-          {%- trans -%}
-          Important: By submitting content, you
-          agree to release your contributions under the Open Database
-          License.
-          {%- endtrans -%}
-        </p>
+      {% block basic_fields %}
+        {{ form.input('flickr_pool_url', label=_('Flickr Group pool url'), placeholder='i.e. https://www.flickr.com/groups/abccanberra/pool/', is_required=True, classes=['control-full', 'control-large'], attrs={'required':'required', 'class':'class1 class2', 'data-one':'one', 'data-two':'two'}) }}
       {% endblock %}
 
-      <button class="btn btn-primary" type="submit" name="save">{% block save_button_text %}{{ _('Save') }}{% endblock %}</button>
-    </div>
-  {% endblock %}
-</form>
 
+      {% block form_actions %}
+        <div class="form-actions">
+          {% block disclaimer %}
+            <p class="action-info small">
+              {%- trans -%}
+                Dataset will be created using all images from specified Flickr group pool.
+              {%- endtrans -%}
+            </p>
+          {% endblock %}
 
-
+          <button id="flickr_import_button" class="btn btn-primary" type="submit" name="save">{% block save_button_text %}{{ _('Import') }}{% endblock %}</button>
+        </div>
+      {% endblock %}
+    </form>
 
 {% endblock %}

@@ -1,3 +1,4 @@
 .media-image, .image a{
   background-color: black;
 }
+.alert-error a {text-decoration: underline;}

@@ -4,3 +4,10 @@
   {{ super() }}
   {% resource 'dfmp/css/dfmp.css' %}
 {% endblock %}
+
+{% block scripts %}
+  {{ super() }}
+  {% resource 'dfmp/js/dfmp.js' %}
+{#  {% resource 'dfmp/js/jquery.spin.js' %}#}
+{#  {% resource 'dfmp/js/spin.min.js' %}#}
+{% endblock %}
