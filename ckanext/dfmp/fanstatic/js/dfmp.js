@@ -43,7 +43,7 @@
               var request = $.ajax({
                   method : 'POST',
                   dataType : 'json',
-                  url : '/api/3/action/flickr_import_group_pool',
+                  url : '/data/api/3/action/flickr_import_group_pool',
                   data : { url : url }
               })
               .done(function(response) {
