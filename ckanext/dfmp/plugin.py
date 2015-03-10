@@ -40,17 +40,17 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
 
   def get_actions(self):
       return {
-        'user_add_asset': user_add_asset,
         'user_get_assets': user_get_assets,
-        'user_create_with_dataset': user_create_with_dataset,
-        'user_remove_asset':user_remove_asset,
+        'user_add_asset': user_add_asset,
         'user_update_asset': user_update_asset,
+        'user_remove_asset':user_remove_asset,
+        'user_create_with_dataset': user_create_with_dataset,
+        'all_user_list':all_user_list,
         'delete_user_test':delete_user_test,
         'create_organization':create_organization,
-        'all_organization_list':all_organization_list,
         'organization_add_user':organization_add_user,
         'organization_remove_user':organization_remove_user,
-        'all_user_list':all_user_list,
+        'all_organization_list':all_organization_list,
         'user_get_organization':user_get_organization,
         'resource_items':resource_items,
         'static_gallery_reset':static_gallery_reset,

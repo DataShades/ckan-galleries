@@ -12,7 +12,7 @@
 <form class="dataset-form form-horizontal" method="post" action="{{ action }}" data-module="basic-form">
 
   {% block basic_fields %}
-    {{ form.input('flickr_pool', label=_('Flickr pool')) }}
+    {{ form.input('flickr_pool', label=_('Flickr pool'), placeholder='pool adress', is_required=True, attrs={'required':'required', 'class':'class1 class2', 'data-one':'one', 'data-two':'two'}) }}
   {% endblock %}
 
 

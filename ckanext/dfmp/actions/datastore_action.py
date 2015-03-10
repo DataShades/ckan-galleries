@@ -27,7 +27,8 @@ def resource_items(context, data_dict):
   item = data_dict.get('item')
   if item:
     try:
-      int(item)
+      # check PostgreSQL integer top bound
+      if int(item) > 2147483647: raise ValueError
       fields_filter = " _id = '{0}' OR \"assetID\" = '{0}'".format(item)
     except ValueError:
       fields_filter = " \"assetID\" = '{0}' ".format( _sanitize(item) )
