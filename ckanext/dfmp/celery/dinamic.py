@@ -227,6 +227,7 @@ class TwitterListener(StreamListener):
       self.context = context
       self.data = data
     def on_data(self, data):
+      print self
       print 'Data received...'
       _change_status(
         self.context,
@@ -262,6 +263,30 @@ class TwitterListener(StreamListener):
         state='Listening'
       )
       print 'Error %d' % status
+    def on_connect(self):
+      print 'on_connect'
+    def on_delete(self, status_id, user_id):
+      print 'on_delete'
+      print status_id
+      print user_id
+    def on_disconnect(self, notice):
+      print 'on_disconnect'
+      print notice
+    def on_event(self, status):
+      print 'on_event'
+      print status
+    def on_exception(self, exception):
+      print 'on_exception'
+      print exception
+    def on_limit(self, track):
+      print 'on_limit'
+      print track
+    def on_timeout(self):
+      print 'on_timeout'
+    def on_warning(self, notice):
+      print 'on_warning'
+      print notice
+
 
 def init_twitter_stream(TwitterListener, context, data):
   return Stream(twitter.auth, TwitterListener(context, data))
