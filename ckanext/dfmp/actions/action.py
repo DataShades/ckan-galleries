@@ -438,11 +438,8 @@ def _get_license_name(id):
 def _name_normalize(name):
   return ''.join([
       c
-
       for c
-
-      in key
-
+      in name
       if c in KEY_CHARS
     ])
 
