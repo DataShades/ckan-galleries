@@ -159,6 +159,7 @@ def flickr_group_pool_add_images_to_dataset(context, data):
 
       # adds resource to dataset
       flickr_group_pool_add_resource(context, resource, datastore)
+
     # update job status
     task_status = {
       'entity_id': datastore['id'],
