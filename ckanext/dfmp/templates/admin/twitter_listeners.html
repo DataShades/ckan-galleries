@@ -4,7 +4,7 @@
 
 {% block primary_content_inner %}
   {% if listeners %}
-  <table class="table table-striped table-bordered table-condensed">
+  <table class="table table-striped table-bordered table-condensed center-aligned">
     <thead>
       <tr>
         <th>Asset</th>
@@ -17,7 +17,7 @@
       {% for listener in listeners %}
 
       <tr>
-        <td><a href="{{ h.url_for( controller='package', action='resource_read', id=listener.pkg, resource_id=listener.entity_id) }}">{{ listener.name or _('Unnamed asset') }}</a></td>
+        <td><a class='btn btn-primary' href="{{ h.url_for( controller='package', action='resource_read', id=listener.pkg, resource_id=listener.entity_id) }}">{{ listener.name or _('Unnamed asset') }}</a></td>
         <td>
           {{ listener.state }}
         
@@ -30,11 +30,14 @@
           ({{ h.rel_date(listener.last_updated) }})</td>
         <td>{{ listener.value}}</td>
         <td>
+          <p>
           {% if listener.is_active %}
-            <a href="{{ h.url_for( 'terminate_listener', id=listener.pkg, resource_id=listener.entity_id) }}">{{ _('Terminate listener') }}</a>
+            <a class="btn btn-danger" href="{{ h.url_for( 'terminate_listener', id=listener.pkg, resource_id=listener.entity_id) }}">{{ _('Terminate listener') }}</a>
           {% else %}
-            <a href="{{ h.url_for('getting_tweets', id=listener.pkg, resource_id=listener.entity_id) }}">{{ _('Start listening') }}</a>
+            <a class="btn btn-success" href="{{ h.url_for('getting_tweets', id=listener.pkg, resource_id=listener.entity_id) }}">{{ _('Start listening') }}</a>
           {% endif %}
+        </p>
+            <p><input type="button" class="btn btn-info" value="Last activity" data-module="asset_last_items" data-module-res="{{listener.entity_id}}"></p>
         </td>
       </tr>
       {% endfor %}
@@ -57,7 +60,7 @@
       {% set home_url = h.url_for(controller='home', action='index') %}
       {% set docs_url = "http://docs.ckan.org/en/{0}/theming.html".format(g.ckan_doc_version) %}
       {% trans %}
-        <p><strong>Error 420:</strong> Listener should be disabled for few hours</p>
+        <p><strong>Error 420:</strong> Connections limit - listener should be disabled for few hours</p>
       {% endtrans %}
       {% endblock %}
     </div>

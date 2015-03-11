@@ -255,6 +255,7 @@ def _delete_generator(context, data_dict):
 # USER functions
 
 def user_update_dataset(context, data_dict):
+  log.warn(data_dict)
   _validate(data_dict, 'title', 'description', 'tags' )
   dataset = toolkit.get_action('package_show')(context,{
     'id' : _get_assets_container_name(context['auth_user_obj'].name)
@@ -273,7 +274,7 @@ def user_update_dataset(context, data_dict):
   if tags:
     dataset.update(tags=tags)
 
-  toolkit.get_action('package_update')(context, dataset)
+  log.warn(toolkit.get_action('package_update')(context, dataset))
 
 def user_create_with_dataset(context, data_dict):
   _validate(data_dict, 'password', 'name', 'email' )
