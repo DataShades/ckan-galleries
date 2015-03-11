@@ -18,7 +18,15 @@ class DFMPController(base.BaseController):
   def get_flickr(self):
     return base.render('package/dataset_from_flickr.html')
 
+  def terminate_listener(self, id, resource_id):
+    self._listener_route('terminate', id, resource_id)
+
+  def start_listener(self, id, resource_id):
+    self._listener_route('start', id, resource_id)
+
   def twitter_listeners(self):
+    if not c.userobj or not c.userobj.sysadmin:
+      base.abort(404)
     tasks = session.query(model.TaskStatus).filter_by(task_type='streaming_tweets').all()
     resources = session.query(model.Resource)\
       .filter(
@@ -42,14 +50,61 @@ class DFMPController(base.BaseController):
     }
     return base.render('admin/twitter_listeners.html', extra_vars=extra_vars)
   
-  def terminate_listener(self, id, resource_id):
-    base.redirect( c.environ['HTTP_REFERER'] )
 
-  def start_listener(self, id, resource_id):
+  def _listener_route(self, action, id, resource_id):
+    if not c.userobj or not c.userobj.sysadmin:
+      base.abort(404)
+    context = {
+      'model': model,
+      'user': c.user or c.author,
+      'auth_user_obj': c.userobj
+    }
+    if action == 'terminate':
+      task = session.query(model.TaskStatus)\
+        .filter(
+          model.TaskStatus.task_type=='streaming_tweets',
+          model.TaskStatus.entity_id==resource_id)\
+        .first()
+      if not task:
+        h.flash_error("Can't find listener")
+      if task:
+        pid = _get_pid( task.value or '' )
+        if not pid:
+          h.flash_error("Can't get PID of process")
+        else:
+          if os.system('kill %s' % pid):
+            h.flash_error("Can't terminate process")
+          else:
+            h.flash_success('Success')
+            toolkit.get_action('task_status_update')(None, {
+              'entity_id': resource_id,
+              'task_type': 'streaming_tweets',
+              'key': 'celery_task_id',
+              'state': 'Terminated',
+              'value': 'Ready for start',
+              'error': u'',
+              'last_updated': datetime.datetime.now().isoformat(),
+              'entity_type': 'resource'
+            })
+
+
     base.redirect( c.environ['HTTP_REFERER'] )
+    os.system('kill %s' % pid)
+    toolkit.get_action('task_status_update')(None, {
+      'entity_id': resource_id,
+      'task_type': 'streaming_tweets',
+      'key': 'celery_task_id',
+      'value': 'Terminated',
+      'error': u'',
+      'last_updated': datetime.datetime.now().isoformat(),
+      'entity_type': 'resource'
+    })
+    base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
     
 
   def getting_tweets(self, id, resource_id):
+    if not c.userobj or not c.userobj.sysadmin:
+      base.abort(404)
     context = {
       'model': model,
       'user': c.user or c.author,
@@ -105,18 +160,8 @@ class DFMPController(base.BaseController):
       pst = toolkit.request.POST
       stable = True
 
-      if 'kill_listener' in pst and pid:
-        os.system('kill %s' % pid)
-        toolkit.get_action('task_status_update')(None, {
-          'entity_id': resource_id,
-          'task_type': 'streaming_tweets',
-          'key': 'celery_task_id',
-          'value': 'Terminated',
-          'error': u'',
-          'last_updated': datetime.datetime.now().isoformat(),
-          'entity_type': 'resource'
-        })
-        base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
+      if 'kill_listener' in pst:
+        self._listener_route('terminate', id, resource_id)
 
       
 

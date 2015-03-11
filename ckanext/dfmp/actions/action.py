@@ -169,7 +169,7 @@ def user_add_asset_inner(context, data_dict):
 
   ind = {'id': package_id}
   ind.update(result)
-  _asset_to_solr(ind)
+  # _asset_to_solr(ind)
 
   result['parent_id'] = parent['id']
   return result
@@ -208,7 +208,7 @@ def _update_generator(context, data_dict):
         res['metadata']['license_id']   = res['metadata']['license'] = item['license']
         res['metadata']['license_name'] = _get_license_name(item['license'])
 
-        ind_res = copy.deepcopy(res)
+        # ind_res = copy.deepcopy(res)
         result = toolkit.get_action('datastore_upsert')(context,{
           'resource_id' : item['id'],
 
@@ -219,12 +219,14 @@ def _update_generator(context, data_dict):
           'records':[res]}
         )['records'][0]
 
-        ind = {'id': _get_assets_container_name(context['auth_user_obj'].name)}
-        ind.update(ind_res)
-        _asset_to_solr(ind)
+        # ind = {'id': _get_assets_container_name(context['auth_user_obj'].name)}
+        # ind.update(ind_res)
+        log.warn(res)
+        # _asset_to_solr(ind)
       yield res
 
     except toolkit.ObjectNotFound:
+      log.warn('res not found in update')
       yield {}
 
 def _delete_generator(context, data_dict):
@@ -240,11 +242,11 @@ def _delete_generator(context, data_dict):
         }
       }))
 
-      indexer.remove_dict({
-        'id' :  _get_assets_container_name(context['auth_user_obj'].name),
+      # indexer.remove_dict({
+      #   'id' :  _get_assets_container_name(context['auth_user_obj'].name),
 
-        'assetID' : item['assetID']
-      })
+      #   'assetID' : item['assetID']
+      # })
       yield {item['id']:True}
 
     except toolkit.ObjectNotFound:
@@ -260,12 +262,11 @@ def user_update_dataset(context, data_dict):
 
   data_dict['title'] and dataset.update(title=data_dict['title'])
   data_dict['description'] and dataset.update(notes=data_dict['description'])
+  if 'tags' in data_dict and type(data_dict['tags']==bool):
+    data_dict['tags'] = ''
   tags = [{'name':name}
-
     for name
-
     in data_dict.get('tags', '').split(',')
-
     if name
   ]
 
@@ -276,11 +277,12 @@ def user_update_dataset(context, data_dict):
 
 def user_create_with_dataset(context, data_dict):
   _validate(data_dict, 'password', 'name', 'email' )
-
+  log.warn(data_dict)
   title = data_dict.get('title', data_dict['name'])
   notes = data_dict.get('description', '')
+  if 'tags' in data_dict and type(data_dict['tags']==bool):
+    data_dict['tags'] = ''
   tags = [{'name':name}
-
     for name
     in data_dict.get('tags', '').split(',')
     if name
@@ -438,11 +440,8 @@ def _get_license_name(id):
 def _name_normalize(name):
   return ''.join([
       c
-
       for c
-
-      in key
-
+      in name
       if c in KEY_CHARS
     ])
 
