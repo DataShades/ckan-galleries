@@ -5,11 +5,12 @@
 
 {% block form %}
 
-
     {% set action = c.form_action or '' %}
 
 
     <form class="dataset-form" method="post" action="{{ action }}" data-module="basic-form">
+
+      <input id="site-url-value" type="hidden" value="{{ g.site_url }}">
 
       <div style="display:none;" class="error-explanation alert alert-error">
         <p></p>

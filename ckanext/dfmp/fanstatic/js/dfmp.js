@@ -28,6 +28,8 @@
           // URL provided by user
           var url = $('#flickr_pool_url').val();
 
+          var site_url = $('#site-url-value').val();
+
           $('.alert-error').hide();
           $('.flash-messages').hide();
 
@@ -43,13 +45,30 @@
               var request = $.ajax({
                   method : 'POST',
                   dataType : 'json',
-                  url : '/data/api/3/action/flickr_import_group_pool',
+                  url : site_url+ '/api/3/action/flickr_import_group_pool',
                   data : { url : url }
               })
               .done(function(response) {
                 $('.dataset-form').spin(false);
                 $('#flickr_import_button').attr('disabled', false);
-                flickr_notify('success', response.result);
+                flickr_notify('success', response.result.text);
+                var entity_id = response.result.datasrore;
+                      console.log(entity_id);
+                var update = setInterval(function () {
+                  $.ajax({
+                    method : 'POST',
+                    dataType : 'json',
+                    url : site_url+ '/api/3/action/task_status_show',
+                    data : {
+                      entity_id : entity_id,
+                      key : 'celery_task_id',
+                      task_type : 'flickr_import'
+                    }
+                  })
+                  .done(function(response) {
+                    console.log(response);
+                  });
+                }, 5000)
               })
               .fail(function(response) {
                 $('.dataset-form').spin(false);

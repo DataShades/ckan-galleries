@@ -52,7 +52,7 @@ def _prepare_celery(context, data_dict, task_type):
   })
 
   task_status = {
-            'entity_id': data_dict['resource'],
+            'entity_id': data_dict.get('resource', "without resource"),
             'entity_type': u'resource',
             'task_type': task_type,
             'key': u'celery_task_id',
@@ -65,3 +65,10 @@ def _prepare_celery(context, data_dict, task_type):
   toolkit.get_action('task_status_update')(context, task_status)
 
   return task_id, celery_context
+
+
+@side_effect_free
+def celery_flickr_import (context, data_dict):
+  task_id, celery_context = _prepare_celery(context, data_dict, 'flickr_images')
+  log.warn(task_id)
+  celery.send_task("dfmp.flickr_images", args=[celery_context, data_dict], task_id=task_id)

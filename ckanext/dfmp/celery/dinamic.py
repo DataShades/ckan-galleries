@@ -330,3 +330,7 @@ def _create_datastore(id, context):
     'primary_key':['assetID'],
     'indexes':['name', 'assetID']
   })
+
+def flickr_add_image_to_dataset(context, data_dict):
+    from ckanext.dfmp.scripts.flickr_import import flickr_group_pool_add_images_to_dataset
+    flickr_group_pool_add_images_to_dataset(context, data_dict)

@@ -78,7 +78,8 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'celery_streaming_tweets':celery_streaming_tweets,
         'flickr_import_group_pool':flickr_import_group_pool,
         'solr':solr,
-        'user_update_dataset':user_update_dataset
+        'user_update_dataset':user_update_dataset,
+        'celery_flickr_import':celery_flickr_import,
       }
 
 
