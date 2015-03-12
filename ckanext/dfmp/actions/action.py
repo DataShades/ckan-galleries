@@ -7,6 +7,8 @@ log = logging.getLogger(__name__)
 from ckanext.dfmp.dfmp_solr import DFMPSolr
 indexer = DFMPSolr()
 
+import json
+
 import dateutil.parser as parser
 
 import string
@@ -166,6 +168,9 @@ def user_add_asset_inner(context, data_dict):
   })
 
   result = datastore_item['records'][0]
+  if type( result['metadata'] ) == tuple:
+    result['metadata'] = json.loads(result['metadata'][0])
+
   log.warn(result)
   ind = {'id': package_id}
   ind.update(result)
@@ -255,6 +260,8 @@ def _delete_generator(context, data_dict):
 # USER functions
 
 def user_update_dataset(context, data_dict):
+  log.warn('USER UPDATE DATASET')
+  log.warn(data_dict)
   _validate(data_dict, 'title', 'description', 'tags' )
   dataset = toolkit.get_action('package_show')(context,{
     'id' : _get_assets_container_name(context['auth_user_obj'].name)
@@ -262,31 +269,29 @@ def user_update_dataset(context, data_dict):
 
   data_dict['title'] and dataset.update(title=data_dict['title'])
   data_dict['description'] and dataset.update(notes=data_dict['description'])
-  if 'tags' in data_dict and type(data_dict['tags']==bool):
-    data_dict['tags'] = ''
-  tags = [{'name':name}
-    for name
-    in data_dict.get('tags', '').split(',')
-    if name
-  ]
-
-  if tags:
+  if 'tags' in data_dict and type(data_dict['tags']) in (str, unicode):
+    tags = [{'name':name}
+      for name
+      in data_dict.get('tags', '').split(',')
+      if name
+    ]
     dataset.update(tags=tags)
 
   toolkit.get_action('package_update')(context, dataset)
 
 def user_create_with_dataset(context, data_dict):
-  _validate(data_dict, 'password', 'name', 'email' )
+  log.warn('USER CREATE WITH DATASET')
   log.warn(data_dict)
+  _validate(data_dict, 'password', 'name', 'email' )
   title = data_dict.get('title', data_dict['name'])
   notes = data_dict.get('description', '')
-  if 'tags' in data_dict and type(data_dict['tags']==bool):
-    data_dict['tags'] = ''
-  tags = [{'name':name}
-    for name
-    in data_dict.get('tags', '').split(',')
-    if name
-  ]
+  tags = None
+  if 'tags' in data_dict and type(data_dict['tags']) in (str, unicode):
+    tags = [{'name':name}
+      for name
+      in data_dict.get('tags', '').split(',')
+      if name
+    ]
 
   data_dict['name'] = _name_normalize(data_dict['name']).lower()
 
