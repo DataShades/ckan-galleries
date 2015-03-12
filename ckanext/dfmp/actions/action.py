@@ -162,7 +162,7 @@ def user_add_asset_inner(context, data_dict):
       'metadata':data_dict,
       }
     ],
-    'method':'insert'
+    'method':'upsert'
   })
 
   result = datastore_item['records'][0]

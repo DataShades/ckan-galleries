@@ -33,7 +33,11 @@ class DFMPController(base.BaseController):
         model.Resource.id.in_(
           [ task.entity_id for task in tasks ])
       ).all()
-    
+
+    assets = {}
+    for res in resources:
+      assets[res.id] = (res.get_package_id(), res.name)
+
     assets = dict([(res.id, (res.get_package_id(), res.name)) for res in resources])
 
     for task in tasks:
