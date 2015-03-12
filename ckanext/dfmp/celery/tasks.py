@@ -27,3 +27,8 @@ def indexing_solr( context, data ):
 def flickr_images( context, data ):
     reload(dinamic)
     dinamic.flickr_add_image_to_dataset(context, data)
+
+@celery.task(name = "dfmp.revoke")
+def revoke( context, data ):
+    reload(dinamic)
+    dinamic.revoke(context, data)

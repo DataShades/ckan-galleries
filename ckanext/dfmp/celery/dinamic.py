@@ -175,14 +175,18 @@ def streaming_tweets(data, context, post_data, offlim):
   print 'Starting %s...' % getpid()
   while True:
     try:
-      init_twitter_stream(TwitterListener, context, data).filter(track=[data['word']])
+      init_twitter_stream( TwitterListener(context, data) ).filter(track=[data['word']])
     except Exception, e:
       print e
-      print 'Restart in 60 seconds'
+      print 'Restart in 1000 seconds'
       sleep(60)
       print 'Restarting...'
 
-
+def revoke(context, data):
+  from ckan.lib.celery_app import celery
+  print dir(celery)
+  # .control.revoke(task_id='86c0992a-1f8a-4c4d-a74a-b7a3df9ed490', terminate=True, signal='SIGKILL')
+  print 'done'
 
 def _change_status(context, data, status, task_type, state=''):
   task_status = {
@@ -227,7 +231,9 @@ class TwitterListener(StreamListener):
       self.context = context
       self.data = data
     def on_data(self, data):
-      print self
+      print data
+      if data == 'STOP':
+        return False
       print 'Data received...'
       _change_status(
         self.context,
@@ -255,7 +261,10 @@ class TwitterListener(StreamListener):
       )
       print 'Listening...'
       return True
-    def on_error(self, status):
+    def on_error(self, status, *car):
+      print self
+      print dir(self)
+      print car
       _change_status(self.context,
         self.data,
         'Error %s, process %s' % (status, getpid()),
@@ -288,8 +297,8 @@ class TwitterListener(StreamListener):
       print notice
 
 
-def init_twitter_stream(TwitterListener, context, data):
-  return Stream(twitter.auth, TwitterListener(context, data))
+def init_twitter_stream(listener):
+  return Stream(twitter.auth, listener)
 
 def _twitter_save_data(data, context, data_dict):
   if not 'extended_entities' in data or not 'media' in data['extended_entities']:
