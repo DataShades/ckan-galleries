@@ -166,7 +166,7 @@ def user_add_asset_inner(context, data_dict):
   })
 
   result = datastore_item['records'][0]
-
+  log.warn(result)
   ind = {'id': package_id}
   ind.update(result)
   # _asset_to_solr(ind)
