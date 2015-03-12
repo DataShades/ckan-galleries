@@ -1,4 +1,5 @@
-.media-image, .image a{
-  background-color: black;
-}
 .alert-error a {text-decoration: underline;}
+.table.center-aligned td{
+  text-align: center;
+  vertical-align: middle;
+}

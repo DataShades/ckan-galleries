@@ -34,7 +34,7 @@ class DFMPController(base.BaseController):
           [ task.entity_id for task in tasks ])
       ).all()
     
-    assets = { res.id:(res.get_package_id(), res.name) for res in resources}
+    assets = dict([(res.id, (res.get_package_id(), res.name)) for res in resources])
 
     for task in tasks:
       pid = _get_pid( task.value or '' )
@@ -162,8 +162,6 @@ class DFMPController(base.BaseController):
 
       if 'kill_listener' in pst:
         self._listener_route('terminate', id, resource_id)
-
-      
 
       if 'pull_from' in pst or 'pull_word' in pst:
         word = pst.get('pull_word')
