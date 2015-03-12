@@ -27,7 +27,7 @@
             {{ _(' - Make sure that celery daemon running') }}
           {% endif %}
 
-          ({{ h.rel_date(listener.last_updated) }})</td>
+          <span data-module="dfmp_relative_time">({{ listener.last_updated }})</span></td>
         <td>{{ listener.value}}</td>
         <td>
           <p>
