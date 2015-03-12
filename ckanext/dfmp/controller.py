@@ -38,8 +38,6 @@ class DFMPController(base.BaseController):
     for res in resources:
       assets[res.id] = (res.get_package_id(), res.name)
 
-    assets = dict([(res.id, (res.get_package_id(), res.name)) for res in resources])
-
     for task in tasks:
       pid = _get_pid( task.value or '' )
       if pid:
