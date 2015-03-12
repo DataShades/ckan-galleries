@@ -180,7 +180,7 @@ def flickr_group_pool_add_images_to_dataset(context, data):
       'task_type': 'flickr_import',
       'key': 'celery_task_id',
       'value': str(total) + ' images has already been imported. Approximate total number of images is ' + str(rough_total),
-      'state':'in_progress',
+      'state': total,
       'error': u'',
       'last_updated': datetime.now().isoformat(' '),
       'entity_type': 'resource'
