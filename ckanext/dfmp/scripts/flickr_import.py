@@ -125,6 +125,11 @@ def flickr_group_pool_add_images_to_dataset(context, data):
   # counter init
   total = 0
 
+  ckan = ckanapi.RemoteCKAN(
+    context['site_url'],
+    context['apikey'],
+  )
+
   for iteration in range(1, int(number_of_iterations) + 1):
     batch = flickr.groups.pools.getPhotos(group_id=group['group']['id'], per_page=photos_per_iteration, page=iteration,
                                           extras=u"description, license, original_format, geo,tags, machine_tags, url_sq, url_t, url_s, url_q, url_m, url_n, url_z, url_c, url_l, url_o")
@@ -166,21 +171,31 @@ def flickr_group_pool_add_images_to_dataset(context, data):
       'task_type': 'flickr_import',
       'key': 'celery_task_id',
       'value': str(total) + ' images has already been imported. Approximate total number of images is ' + str(rough_total),
-      'state':'in progress',
+      'state':'in_progress',
       'error': u'',
       'last_updated': datetime.now().isoformat(' '),
       'entity_type': 'resource'
     }
-
-    ckan = ckanapi.RemoteCKAN(
-      context['site_url'],
-      context['apikey'],
-    )
-
     update = ckan.call_action(
       'task_status_update',
       task_status
     )
+
+  # update job status
+  task_status = {
+    'entity_id': datastore['id'],
+    'task_type': 'flickr_import',
+    'key': 'celery_task_id',
+    'value': 'All images have been haccessfully imported.',
+    'state':'done',
+    'error': u'',
+    'last_updated': datetime.now().isoformat(' '),
+    'entity_type': 'resource'
+  }
+  update = ckan.call_action(
+    'task_status_update',
+    task_status
+  )
 
 def flickr_group_pool_import(context, url):
   # Harvesting options

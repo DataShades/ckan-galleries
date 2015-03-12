@@ -49,11 +49,22 @@
                   data : { url : url }
               })
               .done(function(response) {
+                // enables spinner
                 $('.dataset-form').spin(false);
+
+                // disables import button
                 $('#flickr_import_button').attr('disabled', false);
+
+                // nwe need to notify user that the import has been started
                 flickr_notify('success', response.result.text);
+
+                // gets datastore id of further status updates
                 var entity_id = response.result.datasrore;
-                      console.log(entity_id);
+
+                // updates status message
+                $('.flash-messages .status-update').html('Starting import...');
+
+                // udates stutus and notify user how many images have alreade been imported
                 var update = setInterval(function () {
                   $.ajax({
                     method : 'POST',
@@ -66,13 +77,18 @@
                     }
                   })
                   .done(function(response) {
-                    console.log(response);
+                    // updates status message
+                    $('.flash-messages .status-update').fadeOut().html(response.result.value).fadeIn();
+                    // clears interval when import is done
+                    if (response.result.state == 'done') {
+                      clearInterval(update);
+                      $('#flickr_import_button').attr('disabled', false);
+                    }
                   });
                 }, 5000)
               })
               .fail(function(response) {
                 $('.dataset-form').spin(false);
-                $('#flickr_import_button').attr('disabled', false);
                 flickr_notify('error', $.parseJSON(response.responseText).error.message);
               });
           }
@@ -87,7 +103,7 @@
             $('.alert-error').show();
           }
           else if (status == 'success') {
-            $('.flash-messages div').html(message);
+            $('.flash-messages div.text').html(message);
             $('.flash-messages').show();
           }
       }
