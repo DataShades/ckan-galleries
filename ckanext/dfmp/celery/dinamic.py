@@ -179,19 +179,8 @@ def streaming_tweets(data, context, post_data, offlim):
     except Exception, e:
       print e
       print 'Restart in 1000 seconds'
-      sleep(60)
+      sleep(1800)
       print 'Restarting...'
-
-def revoke(context, data):
-  from ckan.lib.celery_app import celery
-  i = celery.control.inspect() 
-  help(i)
-  # i.revoke('60d09c4d-299a-43d3-b2f1-6e92380b83a1')
-  print dir(i)
-  # print i.active()
-  # print i.registered_tasks()
-  # .control.revoke(task_id='86c0992a-1f8a-4c4d-a74a-b7a3df9ed490', terminate=True, signal='SIGKILL')
-  print 'done'
 
 def _change_status(context, data, status, task_type, state=''):
   task_status = {
@@ -200,7 +189,7 @@ def _change_status(context, data, status, task_type, state=''):
       'key': u'celery_task_id',
       'value': status,
       'state':state,
-      'error': u'',
+      # 'error': u'',
       'last_updated': datetime.now().isoformat(),
       'entity_type': 'resource'
     }
@@ -279,27 +268,6 @@ class TwitterListener(StreamListener):
       print 'Error %d' % status
     def on_connect(self):
       print 'on_connect'
-    def on_delete(self, status_id, user_id):
-      print 'on_delete'
-      print status_id
-      print user_id
-    def on_disconnect(self, notice):
-      print 'on_disconnect'
-      print notice
-    def on_event(self, status):
-      print 'on_event'
-      print status
-    def on_exception(self, exception):
-      print 'on_exception'
-      print exception
-    def on_limit(self, track):
-      print 'on_limit'
-      print track
-    def on_timeout(self):
-      print 'on_timeout'
-    def on_warning(self, notice):
-      print 'on_warning'
-      print notice
 
 
 def init_twitter_stream(listener):

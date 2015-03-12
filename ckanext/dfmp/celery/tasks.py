@@ -1,7 +1,7 @@
 from ckan.lib.celery_app import celery
 
 
-import dinamic
+import dinamic, os
 
 @celery.task(name = "dfmp.cleaning")
 def clearing( context, data ):
@@ -30,5 +30,5 @@ def flickr_images( context, data ):
 
 @celery.task(name = "dfmp.revoke")
 def revoke( context, data ):
-    reload(dinamic)
-    dinamic.revoke(context, data)
+    int(data['id'])
+    os.system('kill -9 %s' % data['id'])

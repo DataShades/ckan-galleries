@@ -285,7 +285,7 @@ def user_create_with_dataset(context, data_dict):
   _validate(data_dict, 'password', 'name', 'email' )
   title = data_dict.get('title', data_dict['name'])
   notes = data_dict.get('description', '')
-  tags = None
+  tags = []
   if 'tags' in data_dict and type(data_dict['tags']) in (str, unicode):
     tags = [{'name':name}
       for name

@@ -27,26 +27,25 @@ class DFMPController(base.BaseController):
   def twitter_listeners(self):
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
-    tasks = session.query(model.TaskStatus).filter_by(task_type='streaming_tweets').all()
-    resources = session.query(model.Resource)\
+
+    tasks = []
+    for task, resource in session.query(model.TaskStatus, model.Resource)\
       .filter(
-        model.Resource.id.in_(
-          [ task.entity_id for task in tasks ])
-      ).all()
+        model.TaskStatus.entity_id == model.Resource.id,
+        model.TaskStatus.task_type == 'streaming_tweets',
+        model.Resource.state == 'active').all():
 
-    assets = {}
-    for res in resources:
-      assets[res.id] = (res.get_package_id(), res.name)
-
-    for task in tasks:
       pid = _get_pid( task.value or '' )
       if pid:
         task.pid = pid
         if not os.system('ps %s' % pid):
             task.is_active = True
-      task.name = assets[task.entity_id][1]
-      task.pkg = assets[task.entity_id][0]
+      task.name = resource.name
+      task.pkg = resource.get_package_id()
+      tasks.append(task)
 
+
+   
     extra_vars = {
       'listeners':tasks,
     }
@@ -74,33 +73,18 @@ class DFMPController(base.BaseController):
         if not pid:
           h.flash_error("Can't get PID of process")
         else:
-          if os.system('kill %s' % pid):
-            h.flash_error("Can't terminate process")
-          else:
-            h.flash_success('Success')
-            toolkit.get_action('task_status_update')(None, {
-              'entity_id': resource_id,
-              'task_type': 'streaming_tweets',
-              'key': 'celery_task_id',
-              'state': 'Terminated',
-              'value': 'Ready for start',
-              'error': u'',
-              'last_updated': datetime.datetime.now().isoformat(),
-              'entity_type': 'resource'
-            })
-
-
-    base.redirect( c.environ['HTTP_REFERER'] )
-    os.system('kill %s' % pid)
-    toolkit.get_action('task_status_update')(None, {
-      'entity_id': resource_id,
-      'task_type': 'streaming_tweets',
-      'key': 'celery_task_id',
-      'value': 'Terminated',
-      'error': u'',
-      'last_updated': datetime.datetime.now().isoformat(),
-      'entity_type': 'resource'
-    })
+          toolkit.get_action('celery_revoke')(context, {'id': pid})
+          h.flash_success('Success')
+          toolkit.get_action('task_status_update')(None, {
+            'entity_id': resource_id,
+            'task_type': 'streaming_tweets',
+            'key': 'celery_task_id',
+            'state': 'Terminated',
+            'value': 'Ready for start',
+            'error': u'',
+            'last_updated': datetime.datetime.now().isoformat(),
+            'entity_type': 'resource'
+          })
     base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
     
 
