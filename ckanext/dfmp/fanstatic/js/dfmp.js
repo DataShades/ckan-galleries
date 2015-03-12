@@ -90,6 +90,7 @@
               .fail(function(response) {
                 $('.dataset-form').spin(false);
                 flickr_notify('error', $.parseJSON(response.responseText).error.message);
+                $('#flickr_import_button').attr('disabled', false);
               });
           }
 

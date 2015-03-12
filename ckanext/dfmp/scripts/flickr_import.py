@@ -1,9 +1,18 @@
-import flickrapi, math, json, uuid, logging, ckanapi
+import flickrapi, math, json, uuid, logging, ckanapi, string
 import ckan.plugins.toolkit as toolkit
 from datetime import datetime
 
 log = logging.getLogger(__name__)
 from pylons import config
+
+KEY_CHARS = string.digits + string.letters + "_-"
+def _name_normalize(name):
+  return ''.join([
+      c
+      for c
+      in name
+      if c in KEY_CHARS
+    ]).lower()
 
 # FLICKR INIT
 api_key = u'1903a21d2f1e99652164ad8c681e4b22'
@@ -22,7 +31,7 @@ def group_not_found(type, message):
 def flickr_group_pool_create_dataset(context, dataset):
   try:
     package = toolkit.get_action('package_create')(context, {
-      'name': u"flickr_pool_" + dataset[u"path_alias"],
+      'name': u"flickr_pool_" + (dataset[u"path_alias"] or _name_normalize(dataset[u"group_id"])),
       'title': u"Flickr - " + dataset[u"name"],
       'notes': dataset[u"description"],
       'tags': []
@@ -39,7 +48,7 @@ def flickr_group_pool_create_dataset(context, dataset):
     site_url = config.get('ckan.site_url')
     group_not_found('ValidationError',
                     "This group pool has been allready imported: <a href='" + site_url + "/dataset/" + u"flickr_pool_" +
-                    dataset[u"path_alias"] + "'>Please visit</a> it.")
+                    (dataset[u"path_alias"] or _name_normalize(dataset[u"group_id"])) + "'>Please visit</a> it.")
 
   return package
 
@@ -78,10 +87,10 @@ def flickr_group_pool_add_resource(context, resource, datastore):
       {
         'assetID': str(unicode(uuid.uuid4())),
         'lastModified': datetime.now().isoformat(' '),
-        'name': resource['name'],
-        'url': resource['url'],
+        'name': resource[u"name"],
+        'url': resource[u"url"],
         'spatial': location,
-        'metadata': resource,
+        'metadata': resource[u"metadata"]
       }
     ],
     'method': 'insert'
@@ -186,7 +195,7 @@ def flickr_group_pool_add_images_to_dataset(context, data):
     'entity_id': datastore['id'],
     'task_type': 'flickr_import',
     'key': 'celery_task_id',
-    'value': 'All images have been haccessfully imported.',
+    'value': 'All images have been successfully imported.',
     'state':'done',
     'error': u'',
     'last_updated': datetime.now().isoformat(' '),
@@ -216,7 +225,7 @@ def flickr_group_pool_import(context, url):
     dataset = {
       u"group_id": group[u"group"][u"id"],
       u"name": group[u"group"][u"groupname"][u"_content"],
-      u"path_alias": group_info[u"group"][u"path_alias"],
+      u"path_alias": group_info[u"group"][u"path_alias"] if group_info[u"group"][u"path_alias"] else None,
       u"description": group_info[u"group"][u"description"][u"_content"]
     }
     dataset = flickr_group_pool_create_dataset(context, dataset)
