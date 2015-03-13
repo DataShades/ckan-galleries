@@ -22,7 +22,7 @@
 {% block previous_button %}
   {% if type == 'getting' %}
   {% elif type == 'streaming' and may_kill%}
-      <button class="btn btn-warning" name="kill_listener" value="killlistener" type="submit">{{ _('Kill listener') }}</button>
+      <button class="btn btn-danger pull-left" name="kill_listener" value="killlistener" type="submit">{{ _('Kill listener') }}</button>
   {% endif %}
 {% endblock %}
 
@@ -31,6 +31,9 @@
     {{ _("Pull tweets") }}
   {% elif type == 'streaming' %}
     {{ _("Start listening") }}
+    {% if may_kill %}
+     ({{ _('You should terminate active listener before starting new one') }})
+    {% endif %}
   {% endif %}
 {% endblock %}
 

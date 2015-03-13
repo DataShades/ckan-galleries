@@ -1,10 +1,10 @@
 import uuid
 from ckan.lib.celery_app import celery
-
+import celery as ce
+import celery.events.state as st
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
-
 
 import logging
 log = logging.getLogger(__name__)
@@ -36,17 +36,12 @@ def celery_streaming_tweets(context, data_dict):
   task_id, celery_context = _prepare_celery(context, data_dict, 'streaming_tweets')
   log.warn('task_id')
   log.warn(task_id)
-  a = celery.send_task("dfmp.streaming_tweets", args=[celery_context, data_dict], task_id=task_id)
-  log.warn(a)
+  celery.send_task("dfmp.streaming_tweets", args=[celery_context, data_dict], task_id=task_id)
 
 
-@side_effect_free
 def celery_revoke(context, data_dict):
   task_id, celery_context = _prepare_celery(context, data_dict, 'revoke')
-  log.warn(task_id)
-  a = celery.send_task("dfmp.revoke", args=[celery_context, data_dict], task_id=task_id)
-  log.warn(a)
-
+  celery.send_task("dfmp.revoke", args=[celery_context, data_dict], task_id=task_id)
 
 def _prepare_celery(context, data_dict, task_type):
   task_id = str(uuid.uuid4())
@@ -68,7 +63,7 @@ def _prepare_celery(context, data_dict, task_type):
             'key': u'celery_task_id',
             'value': data_dict.get('word', ''),
             'state':'Preparing',
-            'error': u'',
+            'error': u'task_id:%s' % task_id,
             'last_updated': datetime.now().isoformat()
         }
 

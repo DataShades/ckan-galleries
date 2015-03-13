@@ -55,7 +55,7 @@ ckan.module('asset_last_items', function ($, _) {
       var chtml = '<table class="table table-striped table-bordered table-condensed center-aligned" >';
       for (var i = 0; i < ammount; i++){
         var time =records[i]['lastModified'].slice(0, 19);
-        chtml += '<tr><td>' + records[i]['name'] + '</td><td>' +  moment(time, "YYYY-MM-DD hh:mm:ss").fromNow()  + '</td></tr>';
+        chtml += '<tr><td>' + records[i]['name'] + '</td><td>' +  moment(time, "YYYY-MM-DD hh:mm:ss").from(this.options.stime)  + '</td></tr>';
        
       }
       chtml += '</table>';
