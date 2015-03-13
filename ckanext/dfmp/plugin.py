@@ -1,6 +1,8 @@
 import ckan.plugins as plugins
 from time import sleep
 from ckanext.dfmp.actions.action import *
+from ckanext.dfmp.actions.action import _get_pkid_and_resource
+
 from ckanext.dfmp.actions.datastore_action import *
 from ckan.logic import side_effect_free
 from ckanext.dfmp.actions.background import *
@@ -8,6 +10,9 @@ from ckanext.dfmp.actions.social import *
 import datetime
 from dateutil.parser import parse
 from ckan.common import c
+
+import ckan.model as model
+session = model.Session
 
 import logging
 log = logging.getLogger(__name__)
@@ -47,7 +52,6 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
   def get_helpers(self):
     return {'dfmp_with_gallery':dfmp_with_gallery,
             'is_sysadmin':is_sysadmin,
-            'rel_date':rel_date,
             }
 
   def update_config(self, config):
@@ -87,7 +91,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
 def custom_stack(func):
   """Execute actions in queue"""
   def waiter(a, b):
-    while DFMPPlugin.inProgress: sleep(.1)
+    while DFMPPlugin.inProgress: sleep(.5)
     DFMPPlugin.inProgress += 1
     log.warn('in')
     try:
@@ -105,7 +109,8 @@ def custom_stack(func):
 @custom_stack
 def user_add_asset(context, data_dict):
   """Add new assets"""
-  return user_add_asset_inner(context, data_dict)
+  package_id, resources = _get_pkid_and_resource(context)
+  return user_add_asset_inner(context, data_dict, package_id, resources)
 
 @custom_stack
 def user_update_asset(context, data_dict):
@@ -126,25 +131,3 @@ def is_sysadmin():
   if c.userobj:
     return c.userobj.sysadmin
   return False
-
-def rel_date(d):
-  diff = datetime.datetime.now() - d
-  s = diff.seconds
-  if diff.days > 7 or diff.days < 0:
-    return d.strftime('%d %b %y')
-  elif diff.days == 1:
-    return '1 day ago'
-  elif diff.days > 1:
-    return '{} days ago'.format(diff.days)
-  elif s <= 1:
-    return 'just now'
-  elif s < 60:
-    return '{} seconds ago'.format(s)
-  elif s < 120:
-    return '1 minute ago'
-  elif s < 3600:
-    return '{} minutes ago'.format(s/60)
-  elif s < 7200:
-    return '1 hour ago'
-  else:
-    return '{} hours ago'.format(s/3600)

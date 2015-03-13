@@ -14,7 +14,7 @@ from sqlalchemy import func
 from ckanext.dfmp.actions.action import indexer
 
 DEF_LIMIT = 21
-DEF_FIELDS = '_id, CAST("assetID" AS TEXT), CAST(url AS TEXT), CAST("lastModified" AS TEXT), CAST(metadata  AS TEXT), name, CAST(spatial  AS TEXT)'
+DEF_FIELDS = '_id, CAST("assetID" AS TEXT), CAST(url AS TEXT), CAST("lastModified" AS TEXT), metadata, name, spatial'
 session = model.Session
 
 @side_effect_free
@@ -153,10 +153,10 @@ def _filter_metadata(rec):
 def _check_datastore_json(rec, field):
   try:
     if type( rec[field] ) in (str, unicode) and rec[field]:
-      rec[field] = json.loads( _unjson(rec[field]) )
+      rec[field] = json.loads( rec[field] )
   except ValueError, e:
     try:
-      rec[field] = json.loads( _unjson(rec[field]).replace('""','"') )
+      rec[field] = json.loads( _unjson(rec[field]) )
     except ValueError, e:
       log.warn(e)
       log.warn(rec)

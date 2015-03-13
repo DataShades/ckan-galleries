@@ -11,14 +11,14 @@
     </li>
     {{ super() }}
 
-    {# if h.is_sysadmin() %}
+    {% if h.is_sysadmin() %}
       <li>
-        <a href="/data/api/3/action/celery_cleaning?resource={{ res.id }}" >
+        <a href="{{ g.site_url }}/api/3/action/celery_cleaning?resource={{ res.id }}" >
           <i class="icon-time"></i>
           {{ _('Check URLs') }} 
         </a>
       </li>
-    {% endif #}
+    {% endif %}
 
   {% else %}
     {{ super() }}

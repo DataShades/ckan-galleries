@@ -2,27 +2,27 @@ import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
 from datetime import datetime
-import logging, copy
+import logging, copy, uuid, string, json
+from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
+import ckan.model as model
+from pylons import config
+
 log = logging.getLogger(__name__)
-from ckanext.dfmp.dfmp_solr import DFMPSolr
-indexer = DFMPSolr()
-
-import json
-
-import dateutil.parser as parser
-
-import string
 KEY_CHARS = string.digits + string.letters + "_-"
-
-import uuid
-def make_uuid():
-    return unicode(uuid.uuid4())
-
+session = model.Session
+indexer = DFMPSolr()
+searcher = DFMPSearchQuery()
 #GET functions
-
 @side_effect_free
 def solr(context, data_dict):
-  pass
+  if 'commit' in data_dict: indexer.commit()
+  elif 'search' in data_dict: 
+    return searcher({
+      'q':data_dict['q'],
+      'fl':'data_dict',
+    })
+  else:indexer.delete_asset(data_dict)
+
   
 @side_effect_free
 def all_user_list(context, data_dict):
@@ -30,15 +30,11 @@ def all_user_list(context, data_dict):
   users = [
 
     dict(name=user.name,
-
       api_key=user.apikey,
-
       organization=_organization_from_list(_user_get_groups(user))[1]
     ) for user
-
       in context['session'].query(U).filter(
         ~U.name.in_( ['default', 'visitor', 'logged_in'] ), U.state!='deleted'
-
     ).all()
   ]
 
@@ -55,11 +51,8 @@ def user_get_organization(context, data_dict):
 @side_effect_free
 def all_organization_list(context, data_dict):
   orgs = [ [key, value['title'], value['id']]
-
     for key, value
-
     in enumerate(toolkit.get_action('organization_list')(context, {'all_fields':True}), 1)
-
   ]
   return orgs
 
@@ -72,16 +65,12 @@ def user_get_assets(context, data_dict):
     raise toolkit.NotAuthorized
   try:
 
-    package_id = _get_assets_container_name(context['auth_user_obj'].name)
-    package = context['session']\
-      .query(context['model'].Package)\
-      .filter_by(name=package_id)\
-      .first()
-
-    if not package.resources:
+    package_id, resources = _get_pkid_and_resource(context)
+    if not resources:
       return {}
     else:
-      parent_id = package.resources[0].id
+      log.warn(resources)
+      parent_id = resources[0].id
       assets = toolkit.get_action('resource_items')(context, {'id':parent_id})
       for record in assets['records']:
         record['parent_id'] = parent_id
@@ -100,10 +89,10 @@ def dfmp_tags(context, data_dict):
   return dict(zip(tags,tags))
 
 # ASSET functions
-def user_add_asset_inner(context, data_dict):
+def user_add_asset_inner(context, data_dict, package_id, resources):
   organization = _organization_from_list(context['auth_user_obj'].get_groups())[2]
-
   data_dict['owner_name'] = organization.title if organization else context['auth_user_obj'].name
+  data_dict['organization'] = organization.name if organization else None
 
   if data_dict.get('geoLocation'):
     location =  { "type": "Point", "coordinates": [
@@ -112,51 +101,32 @@ def user_add_asset_inner(context, data_dict):
       ]}
   else:
     location = None
-
+  
   if data_dict.get('license'):
     data_dict['license_id']   = data_dict['license']
     data_dict['license_name'] = _get_license_name(data_dict['license'])
-
-  package_id = _get_assets_container_name(context['auth_user_obj'].name)
-  package = context['session']\
-    .query(context['model'].Package)\
-    .filter_by(name=package_id)\
-    .first()
-
-  if not package.resources:
+  
+  if not resources:
+    new_id = make_uuid()
     parent = toolkit.get_action('resource_create')(context, {
       'package_id':package_id,
-      'url':'http://web.actgdfmp.links.com.au',
-      'name':'Asset'
+      'id':new_id,
+      'url': config.get('ckan.site_url') + '/datastore/dump/' + new_id,
+      'name':'Assets',
+      'resource_type':'asset',
     })
 
   else:
-    parent = toolkit.get_action('resource_show')(context, {'id': package.resources[0].id})
+    parent = toolkit.get_action('resource_show')(context, {'id': resources[0].id})
 
-  if parent.get('datastore_active'): pass
-
-  else:
-    toolkit.get_action('datastore_create')(context, {
-      'resource_id':parent['id'],
-      'force': True,
-      'fields':[
-        {'id':'assetID', 'type':'text'},
-        {'id':'lastModified', 'type':'text'},
-        {'id':'name', 'type':'text'},
-        {'id':'url', 'type':'text'},
-        {'id':'spatial', 'type':'json'},
-        {'id':'metadata', 'type':'json'},
-
-      ],
-      'primary_key':['assetID'],
-      'indexes':['name', 'assetID']
-    })
+  if not parent.get('datastore_active'):
+    _default_datastore_create(context, parent['id'])
 
   datastore_item = toolkit.get_action('datastore_upsert')(context, {
     'resource_id':parent['id'],
     'force': True,
     'records':[{
-      'assetID':str(make_uuid()),
+      'assetID':make_uuid(),
       'lastModified':datetime.now().isoformat(' '),
       'name':data_dict['name'],
       'url':data_dict['url'],
@@ -168,13 +138,13 @@ def user_add_asset_inner(context, data_dict):
   })
 
   result = datastore_item['records'][0]
+  log.warn(result)
   if type( result['metadata'] ) == tuple:
     result['metadata'] = json.loads(result['metadata'][0])
 
-  log.warn(result)
-  ind = {'id': package_id}
-  ind.update(result)
-  # _asset_to_solr(ind)
+  ind = {'id': parent['id']}
+  ind.update(copy.deepcopy(result))
+  _asset_to_solr(ind)
 
   result['parent_id'] = parent['id']
   return result
@@ -213,7 +183,7 @@ def _update_generator(context, data_dict):
         res['metadata']['license_id']   = res['metadata']['license'] = item['license']
         res['metadata']['license_name'] = _get_license_name(item['license'])
 
-        # ind_res = copy.deepcopy(res)
+        ind_res = copy.deepcopy(res)
         result = toolkit.get_action('datastore_upsert')(context,{
           'resource_id' : item['id'],
           'force':True,
@@ -221,10 +191,9 @@ def _update_generator(context, data_dict):
           'records':[res]}
         )['records'][0]
 
-        # ind = {'id': _get_assets_container_name(context['auth_user_obj'].name)}
-        # ind.update(ind_res)
-        log.warn(res)
-        # _asset_to_solr(ind)
+        ind = {'id': item['id']}
+        ind.update(ind_res)
+        _asset_to_solr(ind)
       yield res
 
     except toolkit.ObjectNotFound:
@@ -234,8 +203,6 @@ def _update_generator(context, data_dict):
 def _delete_generator(context, data_dict):
   for item in data_dict:
     try:
-      log.warn('inner')
-      log.warn(item)
       log.warn(toolkit.get_action('datastore_delete')(context,{
         'resource_id': item['id'],
         'force': True,
@@ -244,11 +211,10 @@ def _delete_generator(context, data_dict):
         }
       }))
 
-      # indexer.remove_dict({
-      #   'id' :  _get_assets_container_name(context['auth_user_obj'].name),
-
-      #   'assetID' : item['assetID']
-      # })
+      indexer.remove_dict({
+        'id' : item['id'],
+        'assetID' : item['assetID']
+      })
       yield {item['id']:True}
 
     except toolkit.ObjectNotFound:
@@ -342,7 +308,6 @@ def delete_user_test(context, data_dict):
   user.delete()
   context['session'].commit()
 
-
 # ORGANIZATION functions
 
 def create_organization(context, data_dict):
@@ -385,9 +350,7 @@ def organization_remove_user(context, data_dict):
   })
   return True
 
-
 # ADDITIONAL functions
-
 
 def _validate(data, *fields):
   for field in fields:
@@ -403,7 +366,6 @@ def _unjson(string):
     .replace('}","")','}')\
     .replace('\\\\""','\\""')\
     .replace('""','"')
-  # .replace('""','"')
 
 def _organization_from_list(groups):
   if not len(groups):
@@ -446,12 +408,39 @@ def _name_normalize(name):
       in name
       if c in KEY_CHARS
     ])
+def _get_package_id_by_res(id):
+  return session.query(model.Resource).filter_by(id=id).first().get_package_id()
+
+def _get_pkid_and_resource(context):
+  package_id = _get_assets_container_name(context['auth_user_obj'].name)
+  package = session.query(model.Package).filter(
+    model.Package.name == package_id
+  ).first()
+  resources = filter(lambda x: x.state == 'active' and x.resource_type == 'asset', package.resources)
+  return package_id, resources
+
+def _default_datastore_create(context, id):
+  toolkit.get_action('datastore_create')(context, {
+    'resource_id':id,
+    'force': True,
+    'fields':[
+      {'id':'assetID', 'type':'text'},
+      {'id':'lastModified', 'type':'text'},
+      {'id':'name', 'type':'text'},
+      {'id':'url', 'type':'text'},
+      {'id':'spatial', 'type':'json'},
+      {'id':'metadata', 'type':'json'},
+
+    ],
+    'primary_key':['assetID'],
+    'indexes':['name', 'assetID']
+  })
 
 def _asset_to_solr(data_dict):
   _validate(data_dict,'name', 'lastModified', 'id', 'assetID')
-  try:
-    data_dict['metadata_modified'] = parser.parse(data_dict['lastModified'][:19]).isoformat() + 'Z'
-  except ValueError:
-    data_dict['metadata_modified'] = None
-  indexer.index_asset(data_dict)
+  
+  indexer.index_asset(data_dict, defer_commit=False)
   return True
+
+def make_uuid():
+  return unicode(uuid.uuid4())

@@ -4,13 +4,12 @@ from dateutil.parser import parse
 from pylons import config
 from paste.deploy.converters import asbool
 
+from ckan.lib.search.query import SearchQuery, VALID_SOLR_PARAMETERS, SearchQueryError
+from solr import SolrException
+
 from ckan.lib.search.common import SearchIndexError, make_connection
 from ckan.lib.search.index import SearchIndex
 import ckan.model as model
-
-# import ckan.logic as logic
-# import ckan.lib.plugins as lib_plugins
-# import ckan.lib.navl.dictization_functions
 
 
 log = logging.getLogger(__name__)
@@ -26,172 +25,270 @@ RESERVED_FIELDS = SOLR_FIELDS + ["tags", "groups", "res_description",
 _illegal_xml_chars_re = re.compile(u'[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
 
 def escape_xml_illegal_chars(val, replacement=''):
-    '''
-        Replaces any character not supported by XML with
-        a replacement string (default is an empty string)
-        Thanks to http://goo.gl/ZziIz
-    '''
-    return _illegal_xml_chars_re.sub(replacement, val)
+  '''
+    Replaces any character not supported by XML with
+    a replacement string (default is an empty string)
+    Thanks to http://goo.gl/ZziIz
+  '''
+  return _illegal_xml_chars_re.sub(replacement, val)
 
 
 class DFMPSolr(SearchIndex):
-    def remove_dict(self, ast_dict):self.delete_asset(ast_dict)
+  def remove_dict(self, ast_dict):self.delete_asset(ast_dict)
 
-    def update_dict(self, ast_dict, defer_commit=False):self.index_asset(ast_dict, defer_commit)
+  def update_dict(self, ast_dict, defer_commit=False):self.index_asset(ast_dict, defer_commit)
 
-    def index_asset(self, ast_dict, defer_commit=False):
-        if ast_dict is None:
-            return
-        ast_dict['data_dict'] = json.dumps(ast_dict)
+  def index_asset(self, ast_dict, defer_commit=False):
+    if ast_dict is None:
+      return
 
-        index_fields = RESERVED_FIELDS + ast_dict.keys()
+    ast_dict[TYPE_FIELD] = ASSET_TYPE
+    ast_dict['capacity'] = 'public'
 
-        # include the extras in the main namespace
-        extras = ast_dict.get('metadata', {})
-        for extra in extras:
-            key, value = extra, extras[extra]
-            if isinstance(value, (tuple, list)):
-                value = " ".join(map(unicode, value))
-            key = ''.join([c for c in key if c in KEY_CHARS])
-            ast_dict['extras_' + key] = value
-            if key not in index_fields:
-                ast_dict[key] = value
-        ast_dict.pop('metadata', None)
+    bogus_date = datetime.datetime(1, 1, 1)
+    try:
+      ast_dict['metadata_modified'] = parse(ast_dict['lastModified'][:19],  default=bogus_date).isoformat() + 'Z'
+    except ValueError:
+      ast_dict['metadata_modified'] = None
 
-        # add tags, removing vocab tags from 'tags' list and adding them as
-        # vocab_<tag name> so that they can be used in facets
-        non_vocab_tag_names = []
-        tags = ast_dict.pop('tags', [])
-        context = {'model': model}
+    for field in ('organization', 'text', 'notes'):
+      if not ast_dict['metadata'].get(field):
+        ast_dict[field] = None
 
-        for tag in tags:
-            non_vocab_tag_names.append(tag)
+    tags = ast_dict['metadata'].get('tags')
+    if type(tags) in (str, unicode): tags = [name.strip() for name in tags.split(',') if name]
+    if type(tags) not in (list, tuple, set): tags = []
+    ast_dict['tags'] = tags
 
-        ast_dict['tags'] = non_vocab_tag_names
+    ast_dict['data_dict'] = json.dumps(ast_dict)
 
-        # we use the capacity to make things private in the search index
-        ast_dict['capacity'] = 'public'
+    index_fields = RESERVED_FIELDS + ast_dict.keys()
 
-        # if there is an owner_org we want to add this to groups for index
-        # purposes
-        if not ast_dict.get('organization'):
-           ast_dict['organization'] = None
+    # include the extras in the main namespace
+    extras = ast_dict.get('metadata', {})
+    for extra in extras:
+      key, value = extra, extras[extra]
+      if isinstance(value, (tuple, list)):
+          value = " ".join(map(unicode, value))
+      key = ''.join([c for c in key if c in KEY_CHARS])
+      ast_dict['extras_' + key] = value
+      if key not in index_fields:
+        ast_dict[key] = value
+    ast_dict.pop('metadata', None)
 
-        ast_dict[TYPE_FIELD] = ASSET_TYPE
+    context = {'model': model}
 
-        # clean the dict fixing keys
-        new_dict = {}
-        for key, value in ast_dict.items():
-            key = key.encode('ascii', 'ignore')
-            new_dict[key] = value
-        ast_dict = new_dict
+    # clean the dict fixing keys
+    new_dict = {}
+    for key, value in ast_dict.items():
+      key = key.encode('ascii', 'ignore')
+      new_dict[key] = value
+    ast_dict = new_dict
 
-        for k in ('title', 'notes', 'title_string', 'name'):
-            if k in ast_dict and ast_dict[k]:
-                ast_dict[k] = escape_xml_illegal_chars(ast_dict[k])
+    for k in ('title', 'notes', 'title_string', 'name'):
+      if k in ast_dict and ast_dict[k]:
+        ast_dict[k] = escape_xml_illegal_chars(ast_dict[k])
 
-        # modify dates (SOLR is quite picky with dates, and only accepts ISO dates
-        # with UTC time (i.e trailing Z)
-        # See http://lucene.apache.org/solr/api/org/apache/solr/schema/DateField.html
-
-
-        new_dict = {}
-        bogus_date = datetime.datetime(1, 1, 1)
-        for key, value in ast_dict.items():
-            key = key.encode('ascii', 'ignore')
-            if key.endswith('_date'):
-                try:
-                    date = parse(value, default=bogus_date)
-                    if date != bogus_date:
-                        value = date.isoformat() + 'Z'
-                    else:
-                        # The date field was empty, so dateutil filled it with
-                        # the default bogus date
-                        value = None
-                except ValueError:
-                    continue
-            new_dict[key] = value
-        ast_dict = new_dict
-        # log.warn(ast_dict)
-
-        # mark this CKAN instance as data source:
-        ast_dict['site_id'] = config.get('ckan.site_id')
-
-        # Strip a selection of the fields.
-        # These fields are possible candidates for sorting search results on,
-        # so we strip leading spaces because solr will sort " " before "a" or "A".
-        for field_name in ['title', 'name']:
-            try:
-                value = ast_dict.get(field_name)
-                if value:
-                    ast_dict[field_name] = value.lstrip()
-            except KeyError:
-                pass
-
-        # add a unique index_id to avoid conflicts
-        
-        ast_dict['index_id'] = hashlib.md5('%s%s' % (ast_dict['id']+ast_dict['assetID'],config.get('ckan.site_id'))).hexdigest()
-
-
-        # send to solr:
+    # modify dates (SOLR is quite picky with dates, and only accepts ISO dates
+    # with UTC time (i.e trailing Z)
+    # See http://lucene.apache.org/solr/api/org/apache/solr/schema/DateField.html
+    new_dict = {}
+    for key, value in ast_dict.items():
+      key = key.encode('ascii', 'ignore')
+      if key.endswith('_date'):
         try:
-            conn = make_connection()
-            commit = not defer_commit
-            if not asbool(config.get('ckan.search.solr_commit', 'true')):
-                commit = False
-            conn.add_many([ast_dict], _commit=commit)
-        except solr.core.SolrException, e:
-            msg = 'Solr returned an error: {0} {1} - {2}'.format(
-                e.httpcode, e.reason, e.body[:1000] # limit huge responses
-            )
-            raise SearchIndexError(msg)
-        except socket.error, e:
-            err = 'Could not connect to Solr using {0}: {1}'.format(conn.url, str(e))
-            log.error(err)
-            raise SearchIndexError(err)
-        finally:
-            conn.close()
-        commit_debug_msg = 'Not commited yet' if defer_commit else 'Commited'
-        log.debug('Updated index for %s [%s]' % (ast_dict.get('name'), commit_debug_msg))
+          date = parse(value, default=bogus_date)
+          if date != bogus_date:
+            value = date.isoformat() + 'Z'
+          else:
+            # The date field was empty, so dateutil filled it with
+            # the default bogus date
+            value = None
+        except ValueError:
+          continue
+      new_dict[key] = value
+    ast_dict = new_dict
 
-    def commit(self):
-        try:
-            conn = make_connection()
-            conn.commit(wait_searcher=False)
-        except Exception, e:
-            log.exception(e)
-            raise SearchIndexError(e)
-        finally:
-            conn.close()
+    # mark this CKAN instance as data source:
+    ast_dict['site_id'] = config.get('ckan.site_id')
 
-
-    def delete_asset(self, ast_dict):
-        conn = make_connection()
-        query = "+{type}:{asset} +index_id:\"{index}\" +site_id:\"{site}\"".format(
-            type=TYPE_FIELD,
-            asset=ASSET_TYPE,
-            index=hashlib.md5('%s%s' % (ast_dict['id']+ast_dict['assetID'],config.get('ckan.site_id'))).hexdigest(),
-            site=config.get('ckan.site_id'))
-        try:
-            conn.delete_query(query)
-            if asbool(config.get('ckan.search.solr_commit', 'true')):
-                conn.commit()
-        except Exception, e:
-            log.exception(e)
-            raise SearchIndexError(e)
-        finally:
-            conn.close()
-
-    def search_asset(self):
-        # query = search.PackageSearchQuery()
-        # q = {
-        #     'q': q,
-        #     'fl': 'data_dict',
-        #     'wt': 'json',
-        #     'fq': 'site_id:"%s"' % config.get('ckan.site_id'),
-        #     'rows': BATCH_SIZE
-        # }
-
-        # for result in query.run(q)['results']:
-        #     data_dict = json.loads(result['data_dict'])
+    # Strip a selection of the fields.
+    # These fields are possible candidates for sorting search results on,
+    # so we strip leading spaces because solr will sort " " before "a" or "A".
+    for field_name in ['title', 'name']:
+      try:
+        value = ast_dict.get(field_name)
+        if value:
+          ast_dict[field_name] = value.lstrip()
+      except KeyError:
         pass
+
+    # add a unique index_id to avoid conflicts
+    ast_dict['index_id'] = hashlib.md5('%s%s' % (ast_dict['id']+ast_dict['assetID'],config.get('ckan.site_id'))).hexdigest()
+
+
+    # send to solr:
+    try:
+      conn = make_connection()
+      commit = not defer_commit
+      if not asbool(config.get('ckan.search.solr_commit', 'true')):
+        commit = False
+      conn.add_many([ast_dict], _commit=commit)
+    except solr.core.SolrException, e:
+      msg = 'Solr returned an error: {0} {1} - {2}'.format(
+        e.httpcode, e.reason, e.body[:1000] # limit huge responses
+      )
+      raise SearchIndexError(msg)
+    except socket.error, e:
+      err = 'Could not connect to Solr using {0}: {1}'.format(conn.url, str(e))
+      log.error(err)
+      raise SearchIndexError(err)
+    finally:
+      conn.close()
+    commit_debug_msg = 'Not commited yet' if defer_commit else 'Commited'
+    log.debug('Updated index for %s [%s]' % (ast_dict.get('name'), commit_debug_msg))
+
+  def commit(self):
+    try:
+      conn = make_connection()
+      conn.commit(wait_searcher=False)
+    except Exception, e:
+      log.exception(e)
+      raise SearchIndexError(e)
+    finally:
+      conn.close()
+
+
+  def delete_asset(self, ast_dict):
+    conn = make_connection()
+    query = "+{type}:{asset} {index} +site_id:\"{site}\"".format(
+      type=TYPE_FIELD,
+      asset=ASSET_TYPE,
+      index='' if ast_dict.get('remove_all_assets') else '+index_id:\"{index}\"'.format(
+        index=hashlib.md5(
+          '%s%s' % (
+            ast_dict['id']+ast_dict['assetID'],
+            config.get('ckan.site_id')
+          )
+        ).hexdigest()
+      ),
+      site=config.get('ckan.site_id'))
+    try:
+      conn.delete_query(query)
+      if asbool(config.get('ckan.search.solr_commit', 'true')):
+        conn.commit()
+    except Exception, e:
+      log.exception(e)
+      raise SearchIndexError(e)
+    finally:
+      conn.close()
+
+class DFMPSearchQuery(SearchQuery):
+  """Search for resources."""
+    
+  def run(self, query):
+    '''
+    Performs a asset search using the given query.
+
+    @param query - dictionary with keys like: q, fq, sort, rows, facet
+    @return - dictionary with keys results and count
+
+    May raise SearchQueryError or SearchError.
+    '''
+    # check that query keys are valid
+    if not set(query.keys()) <= VALID_SOLR_PARAMETERS:
+      invalid_params = [s for s in set(query.keys()) - VALID_SOLR_PARAMETERS]
+      raise SearchQueryError("Invalid search parameters: %s" % invalid_params)
+
+    # default query is to return all documents
+    q = query.get('q')
+    if not q or q == '""' or q == "''":
+      query['q'] = "*:*"
+
+    # number of results
+    rows_to_return = min(1000, int(query.get('rows', 10)))
+    if rows_to_return > 0:
+      # #1683 Work around problem of last result being out of order
+      #       in SOLR 1.4
+      rows_to_query = rows_to_return + 1
+    else:
+      rows_to_query = rows_to_return
+    query['rows'] = rows_to_query
+
+    # show only results from this CKAN instance
+    fq = query.get('fq', '')
+    if not '+site_id:' in fq:
+      fq += ' +site_id:"%s"' % config.get('ckan.site_id')
+
+    # filter for asset entity_type
+    if not '+entity_type:' in fq:
+      fq += " +entity_type:asset"
+    query['fq'] = [fq]
+
+    fq_list = query.get('fq_list', [])
+    query['fq'].extend(fq_list)
+
+    # faceting
+    query['facet'] = query.get('facet', 'true')
+    query['facet.limit'] = query.get('facet.limit', config.get('search.facets.limit', '50'))
+    query['facet.mincount'] = query.get('facet.mincount', 1)
+
+    # return the package ID and search scores
+    query['fl'] = query.get('fl', 'name')
+
+    # return results as json encoded string
+    query['wt'] = query.get('wt', 'json')
+
+    # If the query has a colon in it then consider it a fielded search and do use dismax.
+    defType = query.get('defType', 'dismax')
+    if ':' not in query['q'] or defType == 'edismax':
+      query['defType'] = defType
+      query['tie'] = query.get('tie', '0.1')
+      # this minimum match is explained
+      # http://wiki.apache.org/solr/DisMaxQParserPlugin#mm_.28Minimum_.27Should.27_Match.29
+      query['mm'] = query.get('mm', '2<-1 5<80%')
+      query['qf'] = query.get('qf', QUERY_FIELDS)
+
+
+    conn = make_connection()
+    log.debug('Package query: %r' % query)
+    try:
+      solr_response = conn.raw_query(**query)
+    except SolrException, e:
+      raise SearchError('SOLR returned an error running query: %r Error: %r' %
+                        (query, e.reason))
+    try:
+      data = json.loads(solr_response)
+      response = data['response']
+      self.count = response.get('numFound', 0)
+      self.results = response.get('docs', [])
+
+      # #1683 Filter out the last row that is sometimes out of order
+      self.results = self.results[:rows_to_return]
+
+      # get any extras and add to 'extras' dict
+      for result in self.results:
+        extra_keys = filter(lambda x: x.startswith('extras_'), result.keys())
+        extras = {}
+        for extra_key in extra_keys:
+          value = result.pop(extra_key)
+          extras[extra_key[len('extras_'):]] = value
+        if extra_keys:
+          result['extras'] = extras
+
+      # if just fetching the id or name, return a list instead of a dict
+      if query.get('fl') in ['id', 'name']:
+        self.results = [r.get(query.get('fl')) for r in self.results]
+
+      # get facets and convert facets list to a dict
+      self.facets = data.get('facet_counts', {}).get('facet_fields', {})
+      for field, values in self.facets.iteritems():
+        self.facets[field] = dict(zip(values[0::2], values[1::2]))
+    except Exception, e:
+      log.exception(e)
+      raise SearchError(e)
+    finally:
+      conn.close()
+
+    return {'results': self.results, 'count': self.count}
+  __call__ = run
