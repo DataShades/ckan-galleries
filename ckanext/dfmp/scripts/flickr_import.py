@@ -54,49 +54,55 @@ def flickr_group_pool_create_dataset(context, dataset):
 
 
 # adds resource to dataset
-def flickr_group_pool_add_resource(context, resource, datastore):
+def flickr_group_pool_add_resource(context, resources, datastore):
   # organization = _organization_from_list(context['auth_user_obj'].get_groups())[2]
   # data_dict['owner_name'] = organization.title  if organization else context['auth_user_obj'].name
 
-  # Gets spatial coords if they exist
-  if resource[u"spatial"][u"latitude"] and resource[u"spatial"][u"longitude"]:
-    location = {
-      "type": "Point",
-      "coordinates": [
-        float(resource[u"spatial"][u"longitude"]),
-        float(resource[u"spatial"][u"latitude"])
-      ]
-    }
-  else:
-    location = None
-
-  # Gets resource license
-  if resource[u"metadata"][u"license"]:
-    resource['license_name'] = resource[u"metadata"][u"license"]
-
+  # ckan api init
   ckan = ckanapi.RemoteCKAN(
     context['site_url'],
     context['apikey'],
   )
 
+  # collects records for dataset
+  records = []
+
+  # prepares resources
+  for resource in resources:
+    # Gets spatial coords if they exist
+    if resource[u"spatial"][u"latitude"] and resource[u"spatial"][u"longitude"]:
+      location = {
+        "type": "Point",
+        "coordinates": [
+          float(resource[u"spatial"][u"longitude"]),
+          float(resource[u"spatial"][u"latitude"])
+        ]
+      }
+    else:
+      location = None
+
+    # Gets resource license
+    if resource[u"metadata"][u"license"]:
+      resource['license_name'] = resource[u"metadata"][u"license"]
+
+    records.append({
+      'assetID': str(unicode(uuid.uuid4())),
+      'lastModified': datetime.fromtimestamp(int(resource[u"dateadded"])).isoformat(' '),
+      'name': resource[u"name"],
+      'url': resource[u"url"],
+      'spatial': location,
+      'metadata': resource[u"metadata"]
+    })
+
   # adds item to datastore
-  datastore_item = ckan.call_action('datastore_upsert', {
+  datastore_items = ckan.call_action('datastore_upsert', {
     'resource_id': datastore['id'],
     'force': True,
-    'records': [
-      {
-        'assetID': str(unicode(uuid.uuid4())),
-        'lastModified': datetime.now().isoformat(' '),
-        'name': resource[u"name"],
-        'url': resource[u"url"],
-        'spatial': location,
-        'metadata': resource[u"metadata"]
-      }
-    ],
+    'records': records,
     'method': 'insert'
   })
 
-  return datastore_item
+  return datastore_items
 
 
 # get existing original url
@@ -143,13 +149,17 @@ def flickr_group_pool_add_images_to_dataset(context, data):
     batch = flickr.groups.pools.getPhotos(group_id=group['group']['id'], per_page=photos_per_iteration, page=iteration,
                                           extras=u"description, license, original_format, geo,tags, machine_tags, url_sq, url_t, url_s, url_q, url_m, url_n, url_z, url_c, url_l, url_o")
 
+    # collects resources
+    resources = []
+
     # process each photo
     for photo in batch[u"photos"][u"photo"]:
       # fetches resource data
-      resource = {
+      resources.append({
         u"name": photo.get(u"title", photo[u"title"]),
         # gets first available url
         u"url": flickr_group_pull_get_existing_correct_url(photo),
+        u"dateadded": photo[u"dateadded"],
         u"spatial": {
           u"latitude": photo.get(u"latitude"),
           u"longitude": photo.get(u"longitude"),
@@ -166,13 +176,13 @@ def flickr_group_pool_add_images_to_dataset(context, data):
           u"license": photo.get(u"license"),
           u"flickr_id": photo.get(u"license"),
         }
-      }
+      })
 
       # updates counter
       total += 1
 
-      # adds resource to dataset
-      flickr_group_pool_add_resource(context, resource, datastore)
+    # adds resources to dataset
+    flickr_group_pool_add_resource(context, resources, datastore)
 
     # update job status
     task_status = {
