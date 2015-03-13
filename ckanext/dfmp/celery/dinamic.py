@@ -178,7 +178,6 @@ def streaming_tweets(data, context, post_data, offlim):
       init_twitter_stream( TwitterListener(context, data) ).filter(track=[data['word']])
     except Exception, e:
       print e
-      print 'Restart in 1000 seconds'
       sleep(1800)
       print 'Restarting...'
 
@@ -217,8 +216,6 @@ def _get_status(context, data, task_type):
 
   return status.get('value')
 
-
-
 class TwitterListener(StreamListener):
     def __init__(self, context, data):
       StreamListener.__init__(self)
@@ -255,17 +252,15 @@ class TwitterListener(StreamListener):
       )
       print 'Listening...'
       return True
-    def on_error(self, status, *car):
-      print self
-      print dir(self)
-      print car
+    def on_error(self, status):
       _change_status(self.context,
         self.data,
-        'Error %s, process %s' % (status, getpid()),
+        'Error %s, process %s will be restarted in 30 minutes' % (status, getpid()),
         'streaming_tweets',
-        state='Listening'
+        state='Restarting'
       )
       print 'Error %d' % status
+      raise Exception('Restart in 30 minutes')
     def on_connect(self):
       print 'on_connect'
 

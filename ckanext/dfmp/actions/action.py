@@ -216,11 +216,8 @@ def _update_generator(context, data_dict):
         # ind_res = copy.deepcopy(res)
         result = toolkit.get_action('datastore_upsert')(context,{
           'resource_id' : item['id'],
-
           'force':True,
-
           'method': 'update',
-
           'records':[res]}
         )['records'][0]
 

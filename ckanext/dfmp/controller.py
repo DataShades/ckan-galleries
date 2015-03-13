@@ -48,6 +48,7 @@ class DFMPController(base.BaseController):
    
     extra_vars = {
       'listeners':tasks,
+      'now':datetime.datetime.now()
     }
     return base.render('admin/twitter_listeners.html', extra_vars=extra_vars)
   

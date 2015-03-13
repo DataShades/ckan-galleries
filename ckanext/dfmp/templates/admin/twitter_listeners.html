@@ -37,7 +37,7 @@
             <a class="btn btn-success" href="{{ h.url_for('getting_tweets', id=listener.pkg, resource_id=listener.entity_id) }}">{{ _('Start listening') }}</a>
           {% endif %}
         </p>
-            <p><input type="button" class="btn btn-info" value="Last activity" data-module="asset_last_items" data-module-res="{{listener.entity_id}}" data-module-host="{{ g.site_url }}"></p>
+            <p><input type="button" class="btn btn-info" value="Last activity" data-module="asset_last_items" data-module-res="{{listener.entity_id}}" data-module-host="{{ g.site_url }}" data-module-stime="{{ now }}"></p>
         </td>
       </tr>
       {% endfor %}
