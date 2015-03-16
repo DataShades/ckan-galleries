@@ -18,6 +18,14 @@
           {{ _('Check URLs') }} 
         </a>
       </li>
+      <li>
+        <a href="{{ g.site_url }}/api/3/action/celery_cleaning?solr_index=true&resource={{ res.id }}" >
+          <i class="icon-search"></i>
+          {{ _('Add to SOLR Index') }} 
+        </a>
+      </li>
+
+      
     {% endif %}
 
   {% else %}

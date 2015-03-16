@@ -46,6 +46,10 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'ckanadmin_twitter_streamers', '/ckan-admin/twitter-listeners',
         controller='ckanext.dfmp.controller:DFMPController',
         action='twitter_listeners', ckan_icon='twitter-sign')
+    map.connect(
+        'solr_commit', '/ckan-admin/solr_commit',
+        controller='ckanext.dfmp.controller:DFMPController',
+        action='solr_commit', ckan_icon='twitter-sign')
     
     return map
 
@@ -84,7 +88,9 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'celery_flickr_import':celery_flickr_import,
         'flickr_import_group_pool':flickr_import_group_pool,
         'solr':solr,
+        'solr_add_assets':solr_add_assets,
         'user_update_dataset':user_update_dataset,
+
       }
 
 

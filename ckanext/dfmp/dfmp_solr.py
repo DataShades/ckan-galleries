@@ -11,6 +11,7 @@ from ckan.lib.search.common import SearchIndexError, make_connection
 from ckan.lib.search.index import SearchIndex
 import ckan.model as model
 
+from ckanext.dfmp.bonus import _unjson, _unjson_base
 
 log = logging.getLogger(__name__)
 
@@ -50,6 +51,12 @@ class DFMPSolr(SearchIndex):
       ast_dict['metadata_modified'] = parse(ast_dict['lastModified'][:19],  default=bogus_date).isoformat() + 'Z'
     except ValueError:
       ast_dict['metadata_modified'] = None
+
+    if type(ast_dict['metadata']) in (unicode, str):
+      try:
+        ast_dict['metadata'] = json.loads(_unjson_base(ast_dict['metadata']))
+      except ValueError:
+        ast_dict['metadata'] = json.loads(_unjson(ast_dict['metadata']))
 
     for field in ('organization', 'text', 'notes'):
       if not ast_dict['metadata'].get(field):
@@ -206,7 +213,7 @@ class DFMPSearchQuery(SearchQuery):
       query['q'] = "*:*"
 
     # number of results
-    rows_to_return = min(1000, int(query.get('rows', 10)))
+    rows_to_return = min(1000, int(query.get('rows', 20)))
     if rows_to_return > 0:
       # #1683 Work around problem of last result being out of order
       #       in SOLR 1.4
@@ -219,6 +226,7 @@ class DFMPSearchQuery(SearchQuery):
     fq = query.get('fq', '')
     if not '+site_id:' in fq:
       fq += ' +site_id:"%s"' % config.get('ckan.site_id')
+    # fstate = 
 
     # filter for asset entity_type
     if not '+entity_type:' in fq:
@@ -233,8 +241,8 @@ class DFMPSearchQuery(SearchQuery):
     query['facet.limit'] = query.get('facet.limit', config.get('search.facets.limit', '50'))
     query['facet.mincount'] = query.get('facet.mincount', 1)
 
-    # return the package ID and search scores
-    query['fl'] = query.get('fl', 'name')
+    # return the asset ID and search scores
+    query['fl'] = query.get('fl', 'data_dict')
 
     # return results as json encoded string
     query['wt'] = query.get('wt', 'json')
@@ -251,7 +259,7 @@ class DFMPSearchQuery(SearchQuery):
 
 
     conn = make_connection()
-    log.debug('Package query: %r' % query)
+    log.debug('Asset query: %r' % query)
     try:
       solr_response = conn.raw_query(**query)
     except SolrException, e:

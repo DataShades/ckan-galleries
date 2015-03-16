@@ -6,7 +6,7 @@ import logging, copy, uuid, string, json
 from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
 import ckan.model as model
 from pylons import config
-
+from ckanext.dfmp.bonus import _validate
 log = logging.getLogger(__name__)
 KEY_CHARS = string.digits + string.letters + "_-"
 session = model.Session
@@ -17,12 +17,24 @@ searcher = DFMPSearchQuery()
 def solr(context, data_dict):
   if 'commit' in data_dict: indexer.commit()
   elif 'search' in data_dict: 
-    return searcher({
+    result = searcher({
       'q':data_dict['q'],
       'fl':'data_dict',
+      'fq':'-state:hidden'
     })
+    for item in result.get('results', []):
+      try:
+        json_str = item['data_dict']
+        json_dict = json.loads(json_str)
+        item['data_dict'] = json_dict
+      except:
+        pass
+    return result
   else:indexer.delete_asset(data_dict)
 
+def solr_add_assets(context, data_dict):
+  for item in data_dict['items']:
+    _asset_to_solr(item)
   
 @side_effect_free
 def all_user_list(context, data_dict):
@@ -190,7 +202,6 @@ def _update_generator(context, data_dict):
           'method': 'update',
           'records':[res]}
         )['records'][0]
-
         ind = {'id': item['id']}
         ind.update(ind_res)
         _asset_to_solr(ind)
@@ -352,21 +363,6 @@ def organization_remove_user(context, data_dict):
 
 # ADDITIONAL functions
 
-def _validate(data, *fields):
-  for field in fields:
-    if not field in data:
-
-      raise toolkit.ValidationError('Parameter {%s} must be defined' % field)
-
-def _unjson(string):
-  return string\
-    .replace('"("{','{')\
-    .replace('("{','{')\
-    .replace('}","")"','}')\
-    .replace('}","")','}')\
-    .replace('\\\\""','\\""')\
-    .replace('""','"')
-
 def _organization_from_list(groups):
   if not len(groups):
     return (None, '', None)
@@ -438,8 +434,7 @@ def _default_datastore_create(context, id):
 
 def _asset_to_solr(data_dict):
   _validate(data_dict,'name', 'lastModified', 'id', 'assetID')
-  
-  indexer.index_asset(data_dict, defer_commit=False)
+  indexer.index_asset(data_dict, defer_commit=True)
   return True
 
 def make_uuid():

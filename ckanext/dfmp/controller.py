@@ -4,10 +4,10 @@ import ckan.lib.helpers as h
 import datetime, os, re
 from dateutil import parser
 import ckan.model as model
-
+from pylons import config
 from ckan.common import c
 session = model.Session
-
+from ckanext.dfmp.dfmp_solr import DFMPSolr
 import logging
 log = logging.getLogger(__name__)
 
@@ -23,6 +23,10 @@ class DFMPController(base.BaseController):
 
   def start_listener(self, id, resource_id):
     self._listener_route('start', id, resource_id)
+
+  def solr_commit(self):
+    DFMPSolr().commit()
+    base.redirect(c.environ.get('HTTP_REFERER', config.get('ckan.site_url','/')))
 
   def twitter_listeners(self):
     if not c.userobj or not c.userobj.sysadmin:

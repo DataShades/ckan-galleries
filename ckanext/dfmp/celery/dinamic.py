@@ -81,24 +81,36 @@ def clearing(data, context, post_data, offlim):
 
   items = []
   for record in datastore['records']:
-    if not record['url'].startswith('http'):
-      log.warn(
-        'URL without schema {url}'.format(url=record['url'])
+    if data.get('solr_index'):
+      record.update(id=data['resource'])
+      items.append(record)
+    else:
+      if not record['url'].startswith('http'):
+        log.warn(
+          'URL without schema {url}'.format(url=record['url'])
+        )
+        continue
+
+      resp = requests.head( record['url'] )
+      if resp.status_code > 310:
+        items.append({
+          'id':data['resource'],
+          'assetID':record['assetID']
+        })
+
+  if data.get('solr_index'):
+    response = _celery_api_request(
+        'solr_add_assets',
+        context,
+        {'items':items}
       )
-      continue
+  else:
+    response = _celery_api_request(
+      'user_remove_asset',
+      context,
+      { 'items' : items }
+    )
 
-    resp = requests.head( record['url'] )
-    if resp.status_code > 310:
-      items.append({
-        'id':data['resource'],
-        'assetID':record['assetID']
-      })
-
-  response = _celery_api_request(
-    'user_remove_asset',
-    context,
-    { 'items' : items }
-  )
   print response
   # print items
   # print 'removed'
@@ -128,7 +140,10 @@ def getting_tweets(data, context, post_data, offlim):
     records = []
     for item in piece:
       item_json = item._json
-      item_json.update(mimetype = 'image/jpeg', type = 'image/jpeg')
+      item_json.update(
+        mimetype = 'image/jpeg',
+        type = 'image/jpeg',
+        tags = ','.join( [ tag['text'] for tag in item.entities.get('hashtags', []) ] ) )
       records.append({
         'assetID': item.entities['media'][0]['id_str'],
         'lastModified': item.created_at.isoformat(' '),
@@ -152,6 +167,14 @@ def getting_tweets(data, context, post_data, offlim):
       context,
       post_data
     )
+    for record in records:
+      record.update(id=resource)
+    _celery_api_request(
+      'solr_add_assets',
+      context,
+      {'items':records}
+    )
+
     total += len(records)
     status = 'Added {0} tweets, from {1} to {2}'.format(total, records[0]['lastModified'], records[-1]['lastModified'])
     _change_status(
@@ -287,30 +310,38 @@ def _twitter_save_data(data, context, data_dict):
     print e
     print 'Data not saved'
     return
+  tags = ','.join( [ tag['text'] for tag in data['extended_entities'].get('hashtags', []) ] )
   for asset in data['extended_entities']['media']:
     try:
       resource.update(
         thumb=asset['media_url'],
         mimetype='image/jpeg',
-        id=asset['id_str']
+        id=asset['id_str'],
+        tags=tags
       )
-
+      tweet = {
+        'assetID': resource['id'],
+        'lastModified': datetime\
+          .fromtimestamp( int(resource['time']) )\
+          .strftime('%Y-%m-%d %H:%M:%S'),
+        'name':resource['name'],
+        'url':resource['thumb'],
+        'metadata':resource,
+        'spatial': spatial,
+      }
       _celery_api_request('datastore_upsert', context, {
         'resource_id':data_dict['resource'],
         'force':True,
-        'records':[{
-          'assetID': resource['id'],
-          'lastModified': datetime\
-            .fromtimestamp( int(resource['time']) )\
-            .strftime('%Y-%m-%d %H:%M:%S'),
-          'name':resource['name'],
-          'url':resource['thumb'],
-          'metadata':resource,
-          'spatial': spatial,
-        }],
+        'records':[tweet],
         'method': 'insert'
       })
 
+      tweet.update(id=data_dict['resource'])
+      _celery_api_request(
+        'solr_add_assets',
+        context,
+        {'items':[tweet]}
+      )
       print 'Proccess %d. Item saved...' % getpid()
     except Exception, e:
       print e
