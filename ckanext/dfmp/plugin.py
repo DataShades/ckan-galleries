@@ -94,6 +94,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'solr':solr,
         'solr_add_assets':solr_add_assets,
         'user_update_dataset':user_update_dataset,
+        'dfmp_all_assets':dfmp_all_assets,
 
       }
 

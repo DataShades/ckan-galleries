@@ -296,6 +296,5 @@ class DFMPSearchQuery(SearchQuery):
       raise SearchError(e)
     finally:
       conn.close()
-
-    return {'results': self.results, 'count': self.count}
+    return {'results': self.results, 'count': self.count, 'facets':self.facets}
   __call__ = run

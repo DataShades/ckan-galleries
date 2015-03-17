@@ -11,6 +11,7 @@ from dateutil.parser import parse
 from ckanext.dfmp.dfmp_model import DFMPAssets
 from sqlalchemy import func
 
+from ckanext.dfmp.actions.action import _get_package_id_by_res
 from ckanext.dfmp.actions.action import indexer, searcher
 
 DEF_LIMIT = 21
@@ -87,8 +88,46 @@ def dfmp_static_gallery(context, data_dict):
   return records
 
 @side_effect_free
+def dfmp_all_assets(context, data_dict):
+  limit = int(data_dict.get('limit', 8))
+  offset = int(data_dict.get('offset', 0))
+  result = searcher({
+    'q':'',
+    'facet.field':'id',
+    'rows':0,
+  })
+  log.warn(result['facets']['id'].keys())
+  ids = result['facets']['id'].keys()[offset:]
+  log.warn(ids)
+  response = []
+  for item in ids:
+    try:
+      package_id = _get_package_id_by_res(item)
+    except AttributeError:
+      continue
+    log.warn(package_id)
+    package = toolkit.get_action('package_show')( 
+      context,
+      {'id':package_id}
+    )
+    package['asset'] = filter(lambda x: x['id'] == item, package['resources'])[0]
+    del package['resources']
+
+    package['tags'] = [tag['display_name'] for tag in package['tags']]
+
+    package['dataset_link']=url_for(controller='package', action='read', id=package_id)
+    package['asset_link'] = package['dataset_link'] + '/resource/{res}'.format(res=item)
+
+    response.append(package)
+    if len(response) >= limit:
+      break
+
+  return response
+
+@side_effect_free
 def search_item(context, data_dict):
   '''Search by name'''
+  log.warn(data_dict)
   # {'query_string': {'date': u'2015-03-11', 'name': u'f', 'tags': u'awesome'}, 'limit': 12}
   _validate(data_dict, 'query_string')
 
@@ -96,12 +135,11 @@ def search_item(context, data_dict):
 
   limit = data_dict.get('limit', 21)
   offset = data_dict.get('offset', 0)
-
   atype = data_dict['query_string'].get('type', '')
   if atype:
     atype = '+(extras_mimetype:{type}* OR extras_type:{type}*)'.format(type=atype)
 
-  tags = data_dict['query_string'].get('tags', [])
+  tags = data_dict['query_string'].get('tags')
   if type(tags) in (str, unicode):
     tags = [tag.strip() for tag in tags.split(',') if tag]
   tags = '+tags:({tags})'.format(tags = ' OR '.join(tags)) if tags else ''
@@ -109,15 +147,15 @@ def search_item(context, data_dict):
   name = data_dict['query_string'].get('name', '')
   if name:
     name = '+name:"{name}"'.format(name = name)
-
-  date = data_dict['query_string'].get('date', '1111-11-11')
+  
+  date = data_dict['query_string'].get('date') or '1111-11-11'
   try:
     date = '+metadata_modified:[{start} TO *]'.format(
       start= parse(date).isoformat() + 'Z'
     )
   except ValueError:
     date = ''
-
+  log.warn(date)
   result = searcher({
     'q':'{name} {tags} {date} {type}'.format(
       name = name,
@@ -130,6 +168,7 @@ def search_item(context, data_dict):
     'rows':limit,
     'start':offset,
   })
+  log.warn(result)
   records = []
   for item in result['results']:
     try:
@@ -139,7 +178,8 @@ def search_item(context, data_dict):
     except:
       pass
   del result['results']
-  result.update(records=records, limit=limit, offset=offset, has_more=None)
+  log.warn(records)
+  result.update(records=records, limit=limit, offset=offset)
   return result
 
 

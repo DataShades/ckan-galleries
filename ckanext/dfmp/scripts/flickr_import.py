@@ -252,7 +252,8 @@ def flickr_group_pool_import(context, url):
       datastore = toolkit.get_action('resource_create')(context, {
         'package_id': package_id,
         'url': 'http://web.actgdfmp.links.com.au',
-        'name': 'Asset'
+        'name': 'Asset',
+        'resource_type':'asset',
       })
     else:
       datastore = toolkit.get_action('resource_show')(context, {'id': package.resources[0].id})
