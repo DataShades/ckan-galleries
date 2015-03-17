@@ -82,9 +82,9 @@ def dfmp_static_gallery(context, data_dict):
       records.append(json_dict)
     except:
       pass
-  del result['results']
-  result.update(records=records, limit=limit, has_more=None)
-  return result
+  # del result['results']
+  # result.update(records=records, limit=limit, has_more=None)
+  return records
 
 @side_effect_free
 def search_item(context, data_dict):

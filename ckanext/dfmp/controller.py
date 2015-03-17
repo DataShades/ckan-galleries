@@ -18,6 +18,16 @@ class DFMPController(base.BaseController):
   def get_flickr(self):
     return base.render('package/dataset_from_flickr.html')
 
+  def search_assets(self):
+    c.page = h.Page(
+        collection=range(100),#query['results'],
+        page=2,#page,
+        url='/search_assets',#pager_url,
+        item_count=100,#query['count'],
+        items_per_page=10,#limit
+    )
+    return base.render('package/search_assets.html')
+
   def terminate_listener(self, id, resource_id):
     self._listener_route('terminate', id, resource_id)
 

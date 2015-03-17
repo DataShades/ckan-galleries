@@ -50,6 +50,10 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'solr_commit', '/ckan-admin/solr_commit',
         controller='ckanext.dfmp.controller:DFMPController',
         action='solr_commit', ckan_icon='twitter-sign')
+    map.connect(
+        'search_assets', '/search_assets',
+        controller='ckanext.dfmp.controller:DFMPController',
+        action='search_assets', ckan_icon='')
     
     return map
 
