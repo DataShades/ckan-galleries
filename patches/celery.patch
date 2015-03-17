@@ -1,0 +1,15 @@
+diff --git a/ckan/lib/cli.py b/ckan/lib/cli.py
+index 6fff5ab..b3466f1 100644
+--- a/ckan/lib/cli.py
++++ b/ckan/lib/cli.py
+@@ -963,8 +963,8 @@ class Celery(CkanCommand):
+         os.environ['CKAN_CONFIG'] = os.path.abspath(self.options.config)
+         from ckan.lib.celery_app import celery
+         celery_args = []
+-        if len(self.args) == 2 and self.args[1] == 'concurrency':
+-            celery_args.append['--concurrency=1']
++        if len(self.args) == 2 and self.args[1].startswith('concurrency='):
++            celery_args.append('--concurrency=%d' % int(self.args[1].replace('concurrency=','') ))
+         celery.worker_main(argv=['celeryd', '--loglevel=INFO'] + celery_args)
+ 
+     def view(self):
