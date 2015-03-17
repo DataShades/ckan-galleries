@@ -26,7 +26,13 @@ class DFMPController(base.BaseController):
         item_count=100,#query['count'],
         items_per_page=10,#limit
     )
-    return base.render('package/search_assets.html')
+
+
+    extra_vars = {
+      'assets':[{'notes':'2323234'},{'notes':'44444'},{'notes':'22'}],
+
+    }
+    return base.render('package/search_assets.html', extra_vars = extra_vars)
 
   def terminate_listener(self, id, resource_id):
     self._listener_route('terminate', id, resource_id)

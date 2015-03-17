@@ -1,18 +1,3 @@
-{#
-Displays a single of dataset.
-
-asset        - A asset to display.
-item_class     - The class name to use on the list item.
-hide_resources - If true hides the resources (default: false).
-banner         - If true displays a popular banner (default: false).
-truncate       - The length to trucate the description to (default: 180)
-truncate_title - The length to truncate the title to (default: 80).
-
-Example:
-
-  {% snippet 'snippets/asset_item.html', asset=c.datasets[0] %}
-
-#}
 {% set truncate = truncate or 180 %}
 {% set truncate_title = truncate_title or 80 %}
 {% set title = asset.title or asset.name %}
@@ -22,35 +7,11 @@ Example:
   {% block asset_item_content %}
     <div class="dataset-content">
       <h3 class="dataset-heading">
-        {% if asset.private %}
-          <span class="dataset-private label label-inverse">
-            <i class="icon-lock"></i>
-            {{ _('Private') }}
-          </span>
-        {% endif %}
-        {{ h.link_to(h.truncate(title, truncate_title), h.url_for(controller='asset', action='read', id=asset.name)) }}
-        {% if asset.get('state', '').startswith('draft') %}
-          <span class="label label-info">{{ _('Draft') }}</span>
-        {% elif asset.get('state', '').startswith('deleted') %}
-          <span class="label label-important">{{ _('Deleted') }}</span>
-        {% endif %}
-        {{ h.popular('recent views', asset.tracking_summary.recent, min=10) if asset.tracking_summary }}
+        {{ h.link_to(h.truncate(title, truncate_title), asset.gallery_link) }}
       </h3>
-      {% if banner %}
-        <span class="banner">{{ _('Popular') }}</span>
-      {% endif %}
       {% if notes %}
         <div>{{ notes|urlize }}</div>
       {% endif %}
     </div>
-    {% if asset.resources and not hide_resources %}
-      <ul class="dataset-resources unstyled">
-        {% for resource in h.dict_list_reduce(asset.resources, 'format') %}
-          <li>
-            <a href="{{ h.url_for(controller='asset', action='read', id=asset.name) }}" class="label" data-format="{{ resource.lower() }}">{{ resource }}</a>
-          </li>
-        {% endfor %}
-      </ul>
-    {% endif %}
   {% endblock %}
 </li>

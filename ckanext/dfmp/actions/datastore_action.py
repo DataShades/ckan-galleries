@@ -46,6 +46,8 @@ def resource_items(context, data_dict):
   result['backlink'] = url_for(controller='package', action='resource_read', resource_id=data_dict['id'], id=package_id)[1:]
   package = toolkit.get_action('package_show')(context, {'id':package_id})
 
+  result['organization'] = package['organization']
+
   result['title'] = package.get('title')
   result['description'] = package.get('notes')
   result['tags'] = ','.join([item['display_name'] for item in package.get('tags')])
