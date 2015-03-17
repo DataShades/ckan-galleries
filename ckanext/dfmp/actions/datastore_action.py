@@ -92,7 +92,7 @@ def search_item(context, data_dict):
   # {'query_string': {'date': u'2015-03-11', 'name': u'f', 'tags': u'awesome'}, 'limit': 12}
   _validate(data_dict, 'query_string')
 
-  data_dict['query_string'] = json.loads(data_dict['query_string'])
+  # data_dict['query_string'] = json.loads(data_dict['query_string'])
 
   limit = data_dict.get('limit', 21)
   offset = data_dict.get('offset', 0)

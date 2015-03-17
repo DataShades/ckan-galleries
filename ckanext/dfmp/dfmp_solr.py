@@ -5,7 +5,6 @@ from pylons import config
 from paste.deploy.converters import asbool
 
 from ckan.lib.search.query import SearchQuery, VALID_SOLR_PARAMETERS, SearchQueryError
-from solr import SolrException
 
 from ckan.lib.search.common import SearchIndexError, make_connection
 from ckan.lib.search.index import SearchIndex
@@ -262,7 +261,7 @@ class DFMPSearchQuery(SearchQuery):
     log.debug('Asset query: %r' % query)
     try:
       solr_response = conn.raw_query(**query)
-    except SolrException, e:
+    except solr.core.SolrException, e:
       raise SearchError('SOLR returned an error running query: %r Error: %r' %
                         (query, e.reason))
     try:
