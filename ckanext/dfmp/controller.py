@@ -1,17 +1,18 @@
 import ckan.plugins.toolkit as toolkit
 import ckan.lib.base as base
 import ckan.lib.helpers as h
-import datetime, os, re
+import datetime, os, re, json
+from ckan.common import request
 from dateutil import parser
 import ckan.model as model
 from pylons import config
 from ckan.common import c
 session = model.Session
-from ckanext.dfmp.dfmp_solr import DFMPSolr
+from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
 import logging
 log = logging.getLogger(__name__)
 
-
+ASSETS_PER_PAGE = 20
 
 class DFMPController(base.BaseController):
 
@@ -19,17 +20,28 @@ class DFMPController(base.BaseController):
     return base.render('package/dataset_from_flickr.html')
 
   def search_assets(self):
-    c.page = h.Page(
-        collection=range(100),#query['results'],
-        page=2,#page,
-        url='/search_assets',#pager_url,
-        item_count=100,#query['count'],
-        items_per_page=10,#limit
-    )
+    result = DFMPSearchQuery()({
+        'q':'',
+        'fl':'data_dict',
+        'wt':'json',
+        'rows':ASSETS_PER_PAGE,
+        'start':request.GET.get('offset', 0)
 
+      })
+    assets = [ json.loads(item['data_dict']) for item in result['results'] ]
+    # log.warn(assets)
+
+    c.page = h.Page(
+        collection=assets,#query['results'],
+        page=request.GET.get('page', 1),#page,
+        url='/search_assets?page=3',#pager_url,
+        item_count=result['count'],
+        items_per_page=ASSETS_PER_PAGE,#limit
+    )
+    c.page.items = assets
 
     extra_vars = {
-      'assets':[{'notes':'2323234'},{'notes':'44444'},{'notes':'22'}],
+      'assets':assets,
 
     }
     return base.render('package/search_assets.html', extra_vars = extra_vars)
