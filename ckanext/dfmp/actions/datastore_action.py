@@ -11,6 +11,8 @@ from dateutil.parser import parse
 from ckanext.dfmp.dfmp_model import DFMPAssets
 from sqlalchemy import func
 
+from pylons import config
+
 from ckanext.dfmp.actions.action import _get_package_id_by_res
 from ckanext.dfmp.actions.action import indexer, searcher
 
@@ -46,8 +48,25 @@ def resource_items(context, data_dict):
   result['backlink'] = url_for(controller='package', action='resource_read', resource_id=data_dict['id'], id=package_id)[1:]
   package = toolkit.get_action('package_show')(context, {'id':package_id})
 
-  result['organization'] = package['organization']
+  organization = package['organization']
+  if organization:
+    organization['dfmp_link'] = config.get('ckan.site_url') + '/organization/{name}'.format(name=organization['name'])
 
+    pkgs = session.query(model.Group).get(organization['id']).packages()
+    all_res = []
+    for pkg in pkgs:
+      for res in pkg.resources:
+        all_res.append(res.id)
+    ids = ' OR '.join(all_res)
+    ammount = searcher({
+      'q':'id:({ids})'.format(ids=ids),
+      'fq':'-state:hidden',
+      'rows':0,
+    })['count']
+    organization['dfmp_assets'] = ammount
+  result['organization'] = organization
+  if result['records']:
+    result['records'][0]['organization'] = organization
   result['title'] = package.get('title')
   result['description'] = package.get('notes')
   result['tags'] = ','.join([item['display_name'] for item in package.get('tags')])

@@ -3,7 +3,7 @@ import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
 from datetime import datetime
 from ckanext.dfmp.celery import twitter
-import ckanapi
+import ckanapi, os
 import ckan.model as model
 import logging, urlparse, json, requests, urllib2
 log = logging.getLogger(__name__)
@@ -68,6 +68,10 @@ def _celery_api_request(action, context, post_data):
   result = ckan.call_action(action, post_data)
   return result
 
+def revoke(pid):
+  print pid
+  print os.system('kill -9 %s' % pid)
+  print 'done'
 def clearing(data, context, post_data, offlim):
   try:
     datastore = _celery_api_request(
