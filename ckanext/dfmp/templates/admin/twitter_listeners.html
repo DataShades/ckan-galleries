@@ -20,13 +20,6 @@
         <td><a class='btn btn-primary' href="{{ h.url_for( controller='package', action='resource_read', id=listener.pkg, resource_id=listener.entity_id) }}">{{ listener.name or _('Unnamed asset') }}</a></td>
         <td>
           {{ listener.state }}
-        
-          {% if listener.state and listener.state != 'Preparing' and listener.pid and not listener.is_active %}
-            {{ _(' - Failed') }}
-          {% elif listener.state =='Preparing' %}
-            {{ _(' - Make sure that celery daemon running') }}
-          {% endif %}
-
           <span data-module="dfmp_relative_time">({{ listener.last_updated }})</span></td>
         <td>{{ listener.value}}</td>
         <td>

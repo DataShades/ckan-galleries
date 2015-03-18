@@ -14,6 +14,7 @@ from ckanext.dfmp.bonus import _unjson, _unjson_base
 
 log = logging.getLogger(__name__)
 
+QUERY_FIELDS = "name^4 title^4 tags^2 groups^2 text"
 
 TYPE_FIELD = "entity_type"
 ASSET_TYPE = "asset"
@@ -60,6 +61,8 @@ class DFMPSolr(SearchIndex):
     for field in ('organization', 'text', 'notes'):
       if not ast_dict['metadata'].get(field):
         ast_dict[field] = None
+    if 'text' in ast_dict['metadata'] and not ast_dict['notes']:
+      ast_dict['notes'] = ast_dict['metadata']['text']
 
     tags = ast_dict['metadata'].get('tags')
     if type(tags) in (str, unicode): tags = [name.strip() for name in tags.split(',') if name]

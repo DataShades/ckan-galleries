@@ -68,3 +68,12 @@ ckan.module('asset_last_items', function ($, _) {
 
   };
 });
+
+
+ckan.module('hide-parent', function ($, _) {
+  return {
+    initialize: function () {
+      this.el.parent().css('display', 'none');
+    },
+  };
+});

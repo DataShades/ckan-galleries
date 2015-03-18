@@ -33,6 +33,7 @@
     {{ _("Start listening") }}
     {% if may_kill %}
      ({{ _('You should terminate active listener before starting new one') }})
+     <span data-module='hide-parent'></span>
     {% endif %}
   {% endif %}
 {% endblock %}

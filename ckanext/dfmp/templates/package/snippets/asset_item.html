@@ -9,6 +9,7 @@
       <h3 class="dataset-heading">
         {{ h.link_to(h.truncate(title, truncate_title), asset.gallery_link) }}
       </h3>
+      {{asset}}
       {% if notes %}
         <div>{{ notes|urlize }}</div>
       {% endif %}
