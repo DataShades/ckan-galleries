@@ -48,6 +48,11 @@ def resource_items(context, data_dict):
   result['backlink'] = url_for(controller='package', action='resource_read', resource_id=data_dict['id'], id=package_id)[1:]
   package = toolkit.get_action('package_show')(context, {'id':package_id})
 
+  result['count'] = searcher({
+    'q':'id:({ids})'.format(ids=data_dict['id']),
+    'fq':'-state:hidden',
+    'rows':0,
+  })['count']
   organization = package['organization']
   if organization:
     organization['dfmp_link'] = config.get('ckan.site_url') + '/organization/{name}'.format(name=organization['name'])
@@ -133,7 +138,13 @@ def dfmp_all_assets(context, data_dict):
     )
     package['asset'] = filter(lambda x: x['id'] == item, package['resources'])[0]
     del package['resources']
-
+    dfmp_img = searcher({
+      'q':'id:{id}'.format(id=item),
+      'fl':'url',
+      'rows':1,
+    })
+    package['dfmp_img'] = dfmp_img['results'].pop() if len(dfmp_img['results']) else {}
+    package['dfmp_total']=dfmp_img['count']
     package['tags'] = [tag['display_name'] for tag in package['tags']]
 
     package['dataset_link']=url_for(controller='package', action='read', id=package_id)

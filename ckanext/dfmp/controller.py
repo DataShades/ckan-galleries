@@ -11,7 +11,8 @@ session = model.Session
 from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
 import logging
 log = logging.getLogger(__name__)
-
+import ckanext.dfmp.scripts as scripts
+from ckanext.dfmp.actions.action import _name_normalize
 ASSETS_PER_PAGE = 20
 
 class DFMPController(base.BaseController):
@@ -202,7 +203,8 @@ class DFMPController(base.BaseController):
           })
           base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
 
-      elif 'stream_word' in pst:
+      elif 'stream_word' in pst:       
+
         log.warn(pst)
         word = pst.get('stream_word')
         if not word:
@@ -210,9 +212,17 @@ class DFMPController(base.BaseController):
           extra_vars['stream_error_summary'].update( { 'Hashtag': 'Must be defined' } )
         
         if stable:
+
+          valid_word = _name_normalize(word)
+          status = os.system('nohup ' + os.path.dirname(scripts.__file__) + os.path.sep + 't.py > /var/logs/httpd/dfmp_{word}.log & 1'.format(word=valid_word))
+          log.warn('hhhhhh')
+          log.warn(status)
+          return 'fuck'
+
+
           streaminging = toolkit.get_action('celery_streaming_tweets')(context,{
             'resource': resource_id,
-            'word': pst['stream_word'],
+            'word': word,
           })
           base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
 

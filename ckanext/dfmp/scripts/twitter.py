@@ -112,28 +112,21 @@ def get_args():
                       help='Access Token Secret')
   return parser.parse_args()
 
-def init_package(args, ckan):
-  # try:
-  #   return ckan.call_action('package_show',{'id': args.dataset})
-  # except NotFound:
-  #   return ckan.call_action('package_create',{'name': args.dataset})
-
-  # ckan.call_action('datastore_delete', {'resource_id':args.resource,
-  #                                                   'force': True})
-  ckan.call_action('datastore_create', {'resource_id':args.resource,
-                                                    'force': True,
-                                                    'fields':[
-                                                      {'id':'assetID', 'type':'text'},
-                                                      {'id':'lastModified', 'type':'text'},
-                                                      {'id':'name', 'type':'text'},
-                                                      {'id':'url', 'type':'text'},
-                                                      {'id':'spatial', 'type':'json'},
-                                                      {'id':'metadata', 'type':'json'},
-
-                                                    ],
-                                                    'primary_key':['assetID'],
-                                                    'indexes':['name', 'assetID']
-                                                    })
+def init_datastore(args, ckan):
+  ckan.call_action('datastore_create', {
+    'resource_id':args.resource,
+    'force': True,
+    'fields':[
+      {'id':'assetID', 'type':'text'},
+      {'id':'lastModified', 'type':'text'},
+      {'id':'name', 'type':'text'},
+      {'id':'url', 'type':'text'},
+      {'id':'spatial', 'type':'json'},
+      {'id':'metadata', 'type':'json'},
+    ],
+    'primary_key':['assetID'],
+    'indexes':['name', 'assetID']
+  })
 
 
 def init_stream(args):
@@ -157,10 +150,44 @@ def start_parsing(args, twitterStream):
       print 'Terminated'
       exit(0)
 
+def _change_status(data, status, task_type, state=''):
+  task_status = {
+      'entity_id': data['resource'],
+      'task_type': task_type,
+      'key': u'celery_task_id',
+      'value': status,
+      'state':state,
+      # 'error': u'',
+      'last_updated': datetime.now().isoformat(),
+      'entity_type': 'resource'
+    }
+  _celery_api_request(
+    'task_status_update',
+    context,
+    task_status
+  )
 
 args = get_args()
 ckan = ckanapi.RemoteCKAN(args.host, args.apikey)
-package = init_package(args, ckan)
 
+init_datastore(args, ckan)
+
+_change_status(
+  data,
+  'Started, process %s' % pid,
+  'streaming_tweets',
+  state='Listening'
+)
 start_parsing(args, init_stream(args))
 
+
+
+  
+  print 'Starting %s...' % getpid()
+  while True:
+    try:
+      init_twitter_stream( TwitterListener(context, data) ).filter(track=[data['word']])
+    except Exception, e:
+      print e
+      sleep(1800)
+      print 'Restarting...'
