@@ -183,6 +183,21 @@ class DFMPController(base.BaseController):
     }
     return base.render('package/search_assets.html', extra_vars = extra_vars)
 
+  def flags(self):
+    if not c.userobj or not c.userobj.sysadmin:
+      base.abort(404)
+    flagged = DFMPSearchQuery()({
+      'q':'',
+      'rows':100,
+      'start':0,
+      'fq':'+extras_flag:[* TO *]',
+    })['results']
+    assets = []
+    if flagged:
+      for item in flagged:
+        assets.append(json.loads(item['data_dict']))
+    return base.render('admin/flags.html', extra_vars={'assets':assets})
+
   def terminate_listener(self, id, resource_id):
     self._listener_route('terminate', id, resource_id)
 

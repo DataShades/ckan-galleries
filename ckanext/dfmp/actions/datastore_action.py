@@ -1,11 +1,10 @@
 import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
-from ckanext.dfmp.bonus import _validate, _unjson, _unjson_base
-import json
+from ckanext.dfmp.bonus import _validate, _unjson, _unjson_base, _get_package_id_by_res
 from ckan.lib.helpers import url_for
 import ckan.model as model
 from random import shuffle, sample, randint
-import logging
+import logging, requests, json
 log = logging.getLogger(__name__)
 from dateutil.parser import parse
 from ckanext.dfmp.dfmp_model import DFMPAssets
@@ -13,7 +12,6 @@ from sqlalchemy import func
 
 from pylons import config
 
-from ckanext.dfmp.actions.action import _get_package_id_by_res
 from ckanext.dfmp.actions.action import indexer, searcher
 
 DEF_LIMIT = 21
@@ -143,7 +141,10 @@ def dfmp_all_assets(context, data_dict):
       'fl':'url',
       'rows':1,
     })
-    package['dfmp_img'] = dfmp_img['results'].pop() if len(dfmp_img['results']) else {}
+    package['dfmp_img'] = dfmp_img['results'].pop() if len(dfmp_img['results']) else {'url':''}
+    if not package['dfmp_img']['url'].startswith('http') or requests.head( package['dfmp_img']['url'] ).status_code != 200:
+      package['dfmp_img'] = {'url':'http://lorempixel.com/300/300/'}
+
     package['dfmp_total']=dfmp_img['count']
     package['tags'] = [tag['display_name'] for tag in package['tags']]
 

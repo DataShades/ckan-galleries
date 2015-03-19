@@ -6,7 +6,7 @@ import logging, copy, uuid, string, json
 from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
 import ckan.model as model
 from pylons import config
-from ckanext.dfmp.bonus import _validate
+from ckanext.dfmp.bonus import _validate, _get_index_id
 log = logging.getLogger(__name__)
 KEY_CHARS = string.digits + string.letters + "_-"
 session = model.Session
@@ -99,6 +99,20 @@ def dfmp_tags(context, data_dict):
   log.warn(q)
   tags = toolkit.get_action('tag_list')(context,{'query':q})
   return dict(zip(tags,tags))
+
+@side_effect_free
+def flag_asset(context, data_dict):
+  _validate(data_dict, 'id', 'assetID')
+  index_id = _get_index_id(data_dict['id'], data_dict['assetID'])
+  dd = searcher({
+    'q':'+index_id:{index_id}'.format(index_id=index_id)
+  })['results']
+  if len(dd):
+    asset = json.loads(dd[0]['data_dict'])
+    asset['metadata']['flag'] = data_dict.get('flag','warning')
+    _asset_to_solr(asset)
+    return True
+  return False
 
 # ASSET functions
 def user_add_asset_inner(context, data_dict, package_id, resources):
@@ -404,8 +418,6 @@ def _name_normalize(name):
       in name
       if c in KEY_CHARS
     ])
-def _get_package_id_by_res(id):
-  return session.query(model.Resource).filter_by(id=id).first().get_package_id()
 
 def _get_pkid_and_resource(context):
   package_id = _get_assets_container_name(context['auth_user_obj'].name)

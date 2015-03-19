@@ -1,5 +1,6 @@
-import socket, string, logging, json, hashlib, re, solr, datetime
+import socket, string, logging, json, re, solr, datetime
 from dateutil.parser import parse
+from ckanext.dfmp.bonus import _get_index_id
 
 from pylons import config
 from paste.deploy.converters import asbool
@@ -10,7 +11,7 @@ from ckan.lib.search.common import SearchIndexError, make_connection
 from ckan.lib.search.index import SearchIndex
 import ckan.model as model
 
-from ckanext.dfmp.bonus import _unjson, _unjson_base
+from ckanext.dfmp.bonus import _unjson, _unjson_base, _get_package_id_by_res
 
 log = logging.getLogger(__name__)
 
@@ -45,6 +46,8 @@ class DFMPSolr(SearchIndex):
 
     ast_dict[TYPE_FIELD] = ASSET_TYPE
     ast_dict['capacity'] = 'public'
+
+    ast_dict['package_id'] = _get_package_id_by_res(ast_dict['id'])
 
     bogus_date = datetime.datetime(1, 1, 1)
     try:
@@ -135,7 +138,7 @@ class DFMPSolr(SearchIndex):
         pass
 
     # add a unique index_id to avoid conflicts
-    ast_dict['index_id'] = hashlib.md5('%s%s' % (ast_dict['id']+ast_dict['assetID'],config.get('ckan.site_id'))).hexdigest()
+    ast_dict['index_id'] = _get_index_id(ast_dict['id'], ast_dict['assetID'])
 
 
     # send to solr:
@@ -176,12 +179,7 @@ class DFMPSolr(SearchIndex):
       type=TYPE_FIELD,
       asset=ASSET_TYPE,
       index='' if ast_dict.get('remove_all_assets') else '+index_id:\"{index}\"'.format(
-        index=hashlib.md5(
-          '%s%s' % (
-            ast_dict['id']+ast_dict['assetID'],
-            config.get('ckan.site_id')
-          )
-        ).hexdigest()
+        index=h_get_index_id(ast_dict['id'], ast_dict['assetID'])
       ),
       site=config.get('ckan.site_id'))
     try:

@@ -47,6 +47,10 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         controller='ckanext.dfmp.controller:DFMPController',
         action='twitter_listeners', ckan_icon='twitter-sign')
     map.connect(
+        'ckanadmin_flags', '/ckan-admin/flags',
+        controller='ckanext.dfmp.controller:DFMPController',
+        action='flags', ckan_icon='exclamation-sign')    
+    map.connect(
         'solr_commit', '/ckan-admin/solr_commit',
         controller='ckanext.dfmp.controller:DFMPController',
         action='solr_commit', ckan_icon='twitter-sign')
@@ -95,6 +99,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'solr_add_assets':solr_add_assets,
         'user_update_dataset':user_update_dataset,
         'dfmp_all_assets':dfmp_all_assets,
+        'flag_asset':flag_asset,
 
       }
 

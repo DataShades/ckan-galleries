@@ -1,0 +1,51 @@
+{% import 'macros/autoform.html' as autoform %}
+
+{% extends "admin/base.html" %}
+
+{% block primary_content_inner %}
+  {% if assets %}
+  <table class="table table-striped table-bordered table-condensed ">
+    <thead>
+      <tr>
+        <th>Link to gallery</th>
+        <th>Link to resource</th>
+        <th>Asset ID</th>
+        <th>Flag</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for asset in assets %}
+      <tr>
+        <td><a class='btn btn-primary' href="/view/item/{{asset.id}}/{{asset.assetID}}">{{ _('Gallery') }}</a></td>
+        <td><a class='btn btn-primary' href="{{ h.url_for( controller='package', action='resource_read', id=asset.get('package_id'), resource_id=asset['id']) }}">{{ _('Resource') }}</a></td>
+        <td>{{ asset.assetID }}</td>
+        <td>{{ asset.flag }}</td>
+        <td></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+   {{ _('There are no any flagged assets') }}
+  {% endif %}
+{% endblock %}
+
+{% block secondary_content %}
+  <div class="module module-narrow module-shallow">
+    <h2 class="module-heading">
+      <i class="icon-info-sign"></i>
+      {{ _('Flagged assets') }}
+    </h2>
+    <div class="module-content">
+      {% block admin_form_help %}
+      {% set about_url = h.url_for(controller='home', action='about') %}
+      {% set home_url = h.url_for(controller='home', action='index') %}
+      {% set docs_url = "http://docs.ckan.org/en/{0}/theming.html".format(g.ckan_doc_version) %}
+      {% trans %}
+        <p><strong>Info:</strong> Will be implemented</p>
+      {% endtrans %}
+      {% endblock %}
+    </div>
+  </div>
+{% endblock %}
