@@ -68,10 +68,19 @@ def _celery_api_request(action, context, post_data):
   result = ckan.call_action(action, post_data)
   return result
 
-def revoke(pid):
-  print pid
-  print os.system('kill -9 %s' % pid)
-  print 'done'
+def revoke(data, context):
+  print data['id']
+  result = os.system('kill -9 %s' % data['id'])
+  if result:
+    print 'ERROR'
+    _change_status(
+      context,
+      data,
+      status='Error %s (256 means that user has not permissions to terminate process. Try to do it manually by "kill %s"' % (result, data['id']),
+      task_type='twitter_streaming'
+    )
+  else:
+    print 'done'
 def clearing(data, context, post_data, offlim):
   try:
     datastore = _celery_api_request(
@@ -145,6 +154,7 @@ def getting_tweets(data, context, post_data, offlim):
     for item in piece:
       item_json = item._json
       item_json.update(
+        thumb = item.entities['media'][0]['media_url'] + ':thumb',
         mimetype = 'image/jpeg',
         type = 'image/jpeg',
         tags = ','.join( [ tag['text'] for tag in item.entities.get('hashtags', []) ] ) )

@@ -4,7 +4,7 @@ from dateutil.parser import parse
 from pylons import config
 from paste.deploy.converters import asbool
 
-from ckan.lib.search.query import SearchQuery, VALID_SOLR_PARAMETERS, SearchQueryError
+from ckan.lib.search.query import SearchQuery, VALID_SOLR_PARAMETERS, SearchQueryError, SearchError
 
 from ckan.lib.search.common import SearchIndexError, make_connection
 from ckan.lib.search.index import SearchIndex
@@ -48,9 +48,11 @@ class DFMPSolr(SearchIndex):
 
     bogus_date = datetime.datetime(1, 1, 1)
     try:
-      ast_dict['metadata_modified'] = parse(ast_dict['lastModified'][:19],  default=bogus_date).isoformat() + 'Z'
+      ast_dict['metadata_created'] = parse(ast_dict['lastModified'][:19],  default=bogus_date).isoformat() + 'Z'
     except ValueError:
-      ast_dict['metadata_modified'] = None
+      ast_dict['metadata_created'] = None
+
+    ast_dict['metadata_modified'] = datetime.datetime.now().isoformat()[:19] + 'Z'
 
     if type(ast_dict['metadata']) in (unicode, str):
       try:
@@ -143,15 +145,15 @@ class DFMPSolr(SearchIndex):
       if not asbool(config.get('ckan.search.solr_commit', 'true')):
         commit = False
       conn.add_many([ast_dict], _commit=commit)
-    except solr.core.SolrException, e:
-      msg = 'Solr returned an error: {0} {1} - {2}'.format(
-        e.httpcode, e.reason, e.body[:1000] # limit huge responses
-      )
-      raise SearchIndexError(msg)
     except socket.error, e:
       err = 'Could not connect to Solr using {0}: {1}'.format(conn.url, str(e))
       log.error(err)
       raise SearchIndexError(err)
+    except Exception, e:
+      msg = 'Solr returned an error: {0} {1} - {2}'.format(
+        e.httpcode, e.reason, e.body[:1000] # limit huge responses
+      )
+      raise SearchIndexError(msg)
     finally:
       conn.close()
     commit_debug_msg = 'Not commited yet' if defer_commit else 'Commited'
@@ -264,7 +266,7 @@ class DFMPSearchQuery(SearchQuery):
     log.debug('Asset query: %r' % query)
     try:
       solr_response = conn.raw_query(**query)
-    except solr.core.SolrException, e:
+    except Exception, e:
       raise SearchError('SOLR returned an error running query: %r Error: %r' %
                         (query, e.reason))
     try:

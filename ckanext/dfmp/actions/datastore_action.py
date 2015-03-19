@@ -187,7 +187,6 @@ def search_item(context, data_dict):
     )
   except ValueError:
     date = ''
-  log.warn(date)
   result = searcher({
     'q':'{name} {tags} {date} {type}'.format(
       name = name,
@@ -200,7 +199,6 @@ def search_item(context, data_dict):
     'rows':limit,
     'start':offset,
   })
-  log.warn(result)
   records = []
   for item in result['results']:
     try:
@@ -210,7 +208,6 @@ def search_item(context, data_dict):
     except:
       pass
   del result['results']
-  log.warn(records)
   result.update(records=records, limit=limit, offset=offset)
   return result
 

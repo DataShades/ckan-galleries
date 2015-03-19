@@ -4,3 +4,10 @@
   vertical-align: middle;
 }
 .flickr-flash .close {display: none;}
+.asset-item{
+  border-bottom: 1px dotted #dddddd;
+  padding-bottom: 20px;
+  margin-bottom: 20px
+}
+.asset-list .asset-content{position: relative;}
+.asset-list .asset-content img{max-width: 150px;}

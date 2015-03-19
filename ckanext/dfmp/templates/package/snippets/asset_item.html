@@ -1,15 +1,29 @@
 {% set truncate = truncate or 180 %}
 {% set truncate_title = truncate_title or 80 %}
-{% set title = asset.title or asset.name %}
+{% set title = asset.title or asset.name or _('Unnamed') %}
+{% if asset.notes %}
 {% set notes = h.markdown_extract(asset.notes, extract_length=truncate) %}
+{% endif %}
 
-<li class="{{ item_class or "dataset-item" }}">
+<li class="{{ item_class or "asset-item" }}">
   {% block asset_item_content %}
-    <div class="dataset-content">
-      <h3 class="dataset-heading">
-        {{ h.link_to(h.truncate(title, truncate_title), asset.gallery_link) }}
+    <div class="asset-content">
+      <h3 class="asset-heading">
+        {{ h.link_to(h.truncate(title, truncate_title), '/gallery/item/%s/%s' % (asset.id,asset.assetID)) }}
       </h3>
-      {{asset}}
+      {% if 'thumb' in asset.metadata %}
+        <img src="{{ asset.metadata.thumb }}" alt="">
+      {% endif %}
+      {% if asset.tags %}
+        <ul class="tag-list well">
+          {% for tag in asset.tags %}
+            <li>
+              <a class="tag" href="{{ h.url_for('search_assets', tags=tag) }}">{{ tag }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+
       {% if notes %}
         <div>{{ notes|urlize }}</div>
       {% endif %}

@@ -35,9 +35,7 @@ def flickr_images( context, data ):
 
 @celery.task(name = "dfmp.revoke_listener")
 def revoke_listener( context, data ):
-    print 'begin'
-    print data
     int(data['id'])
     reload(dinamic)
-    print 'GO'
-    dinamic.revoke(data['id'])
+    print 'TRY TO KILL PROCESS'
+    dinamic.revoke(data)

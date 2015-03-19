@@ -67,6 +67,7 @@ class DFMPController(base.BaseController):
       return search_url(params)
     c.sort_by = _sort_by
     if sort_by is None:
+      sort_by = 'metadata_modified desc'
       c.sort_by_fields = []
     else:
       c.sort_by_fields = [field.split()[0]
@@ -84,7 +85,12 @@ class DFMPController(base.BaseController):
       return search_url(params)
     c.search_url_params = urlencode(_encode_params(params_nopage))
 
-    facet_fields = ['organization', 'groups', 'tags', 'res_format', 'license_id']
+    facet_fields = [
+      'organization',
+      # 'groups',
+      'tags',
+      # 'res_format',
+      'license_id']
 
     fq = ''
     # log.warn(params_nosort)
@@ -114,7 +120,7 @@ class DFMPController(base.BaseController):
     }
 
     facets = OrderedDict()
-    for facet in g.facets:
+    for facet in facet_fields:
       if facet in default_facet_titles:
         facets[facet] = default_facet_titles[facet]
       else:
@@ -235,7 +241,6 @@ class DFMPController(base.BaseController):
         if not pid:
           h.flash_error("Can't get PID of process")
         else:
-          toolkit.get_action('celery_revoke')(context, {'id': pid})
           h.flash_success('Success')
           toolkit.get_action('task_status_update')(None, {
             'entity_id': resource_id,
@@ -247,6 +252,8 @@ class DFMPController(base.BaseController):
             'last_updated': datetime.datetime.now().isoformat(),
             'entity_type': 'resource'
           })
+          if os.system('kill -9 %s' % pid):
+            toolkit.get_action('celery_revoke')(context, {'id': pid, 'resource': resource_id})
     base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
     
 
