@@ -164,41 +164,47 @@ def search_item(context, data_dict):
   # {'query_string': {'date': u'2015-03-11', 'name': u'f', 'tags': u'awesome'}, 'limit': 12}
   _validate(data_dict, 'query_string')
 
-  # data_dict['query_string'] = json.loads(data_dict['query_string'])
+  data_dict['query_string'] = json.loads(data_dict['query_string'])
 
   limit = data_dict.get('limit', 21)
   offset = data_dict.get('offset', 0)
-  atype = data_dict['query_string'].get('type', '')
+  atype = data_dict['query_string'].get('type') or ''
   if atype:
     atype = '+(extras_mimetype:{type}* OR extras_type:{type}*)'.format(type=atype)
 
-  tags = data_dict['query_string'].get('tags')
+  tags = data_dict['query_string'].get('tags') or ''
   if type(tags) in (str, unicode):
     tags = [tag.strip() for tag in tags.split(',') if tag]
   tags = '+tags:({tags})'.format(tags = ' OR '.join(tags)) if tags else ''
 
-  name = data_dict['query_string'].get('name', '')
+  name = data_dict['query_string'].get('name') or ''
   if name:
-    name = '+name:"{name}"'.format(name = name)
+    name = '{name}'.format(name = name)
   
-  date = data_dict['query_string'].get('date') or '1111-11-11'
+  date = data_dict['query_string'].get('date')
   try:
     date = '+metadata_modified:[{start} TO *]'.format(
       start= parse(date).isoformat() + 'Z'
     )
   except ValueError:
     date = ''
+  except AttributeError:
+    date = ''
+  query = '{name} {tags} {date} {type}'.format(
+    name = name,
+    tags = tags,
+    date = date,
+    type = atype
+  )
+  if not query.strip():
+    query = '*:*'
   result = searcher({
-    'q':'{name} {tags} {date} {type}'.format(
-      name = name,
-      tags = tags,
-      date = date,
-      type = atype
-    ),
+    'q':query,
     'fl':'data_dict',
     'fq':'-state:hidden',
     'rows':limit,
     'start':offset,
+    'sort':'score desc, metadata_modified desc'
   })
   records = []
   for item in result['results']:

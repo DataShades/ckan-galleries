@@ -69,6 +69,9 @@ class DFMPSolr(SearchIndex):
     if 'text' in ast_dict['metadata'] and not ast_dict['notes']:
       ast_dict['notes'] = ast_dict['metadata']['text']
 
+    if not 'state' in ast_dict['metadata']:
+      ast_dict['metadata']['state'] = 'active'
+
     tags = ast_dict['metadata'].get('tags')
     if type(tags) in (str, unicode): tags = [name.strip() for name in tags.split(',') if name]
     if type(tags) not in (list, tuple, set): tags = []
@@ -79,7 +82,7 @@ class DFMPSolr(SearchIndex):
     index_fields = RESERVED_FIELDS + ast_dict.keys()
 
     # include the extras in the main namespace
-    extras = ast_dict.get('metadata', {})
+    extras = ast_dict['metadata']
     for extra in extras:
       key, value = extra, extras[extra]
       if isinstance(value, (tuple, list)):
