@@ -98,6 +98,15 @@ def dfmp_tags(context, data_dict):
   q = data_dict.get('query', '')
   log.warn(q)
   tags = toolkit.get_action('tag_list')(context,{'query':q})
+  log.warn(tags)
+  asset_tags = searcher({
+    'q':'*:*',
+    'facet.field':'tags',
+    'rows':0
+  })['facets']['tags'].keys()
+  for tag in asset_tags:
+    if tag.lower().find(q.lower()) != -1:
+      tags.append(tag)
   return dict(zip(tags,tags))
 
 @side_effect_free

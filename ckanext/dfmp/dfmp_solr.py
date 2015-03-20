@@ -71,6 +71,9 @@ class DFMPSolr(SearchIndex):
 
     if not 'state' in ast_dict['metadata']:
       ast_dict['metadata']['state'] = 'active'
+    for field in (('type', 'mimetype'),('mimetype', 'type')):
+      if field[0] in ast_dict['metadata'] and field[1] not in ast_dict['metadata']:
+        ast_dict['metadata'][field[1]] = ast_dict['metadata'][field[0]]
 
     tags = ast_dict['metadata'].get('tags')
     if type(tags) in (str, unicode): tags = [name.strip() for name in tags.split(',') if name]
@@ -228,10 +231,12 @@ class DFMPSearchQuery(SearchQuery):
     query['rows'] = rows_to_query
 
     # show only results from this CKAN instance
+    
     fq = query.get('fq', '')
     if not '+site_id:' in fq:
       fq += ' +site_id:"%s"' % config.get('ckan.site_id')
-    # fstate = 
+    if not '+type:' in q and not '+mimetype:' in q:
+      fq += ' -type:image/x* -mimetype:image/x* '
 
     # filter for asset entity_type
     if not '+entity_type:' in fq:

@@ -139,6 +139,7 @@ def dfmp_all_assets(context, data_dict):
     dfmp_img = searcher({
       'q':'id:{id}'.format(id=item),
       'fl':'url',
+      'fq':'+url:http*',
       'rows':1,
     })
     package['dfmp_img'] = dfmp_img['results'].pop() if len(dfmp_img['results']) else {'url':''}
@@ -164,13 +165,16 @@ def search_item(context, data_dict):
   # {'query_string': {'date': u'2015-03-11', 'name': u'f', 'tags': u'awesome'}, 'limit': 12}
   _validate(data_dict, 'query_string')
 
-  # data_dict['query_string'] = json.loads(data_dict['query_string'])
+  # data_dict['queryery_string'] = json.loads(data_dict['query_string'])
 
   limit = data_dict.get('limit', 21)
   offset = data_dict.get('offset', 0)
   atype = data_dict['query_string'].get('type') or ''
   if atype:
-    atype = '+(extras_mimetype:{type}* OR extras_type:{type}*)'.format(type=atype)
+    if atype == 'cc':
+      atype = '+license_id:{type}*'.format(type=atype)
+    else:
+      atype = '+(extras_mimetype:{type}* OR extras_type:{type}*)'.format(type=atype)
 
   tags = data_dict['query_string'].get('tags') or ''
   if type(tags) in (str, unicode):
