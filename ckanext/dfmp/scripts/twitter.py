@@ -95,7 +95,7 @@ def _save_data(data):
           .fromtimestamp( int(resource['time']) )\
           .strftime('%Y-%m-%d %H:%M:%S'),
         'name':resource['name'],
-        'url':resource['thumb'],
+        'url':asset['media_url'],
         'metadata':resource,
         'spatial': spatial,
       }

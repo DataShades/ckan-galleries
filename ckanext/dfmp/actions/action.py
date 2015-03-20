@@ -98,7 +98,6 @@ def dfmp_tags(context, data_dict):
   q = data_dict.get('query', '')
   log.warn(q)
   tags = toolkit.get_action('tag_list')(context,{'query':q})
-  log.warn(tags)
   asset_tags = searcher({
     'q':'*:*',
     'facet.field':'tags',
@@ -176,6 +175,8 @@ def user_add_asset_inner(context, data_dict, package_id, resources):
   log.warn(result)
   if type( result['metadata'] ) == tuple:
     result['metadata'] = json.loads(result['metadata'][0])
+  if type( result['spatial'] ) == tuple:
+    result['spatial'] = json.loads(result['spatial'][0])
 
   ind = {'id': parent['id']}
   ind.update(copy.deepcopy(result))
