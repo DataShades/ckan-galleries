@@ -120,16 +120,13 @@ def dfmp_all_assets(context, data_dict):
     'facet.field':'id',
     'rows':0,
   })
-  log.warn(result['facets']['id'].keys())
   ids = result['facets']['id'].keys()[offset:]
-  log.warn(ids)
   response = []
   for item in ids:
     try:
       package_id = _get_package_id_by_res(item)
     except AttributeError:
       continue
-    log.warn(package_id)
     package = toolkit.get_action('package_show')( 
       context,
       {'id':package_id}
@@ -161,14 +158,18 @@ def dfmp_all_assets(context, data_dict):
 @side_effect_free
 def search_item(context, data_dict):
   '''Search by name'''
-  log.warn(data_dict)
   # {'query_string': {'date': u'2015-03-11', 'name': u'f', 'tags': u'awesome'}, 'limit': 12}
   _validate(data_dict, 'query_string')
 
   # data_dict['queryery_string'] = json.loads(data_dict['query_string'])
-
-  limit = data_dict.get('limit', 21)
-  offset = data_dict.get('offset', 0)
+  try:
+    limit = int(data_dict.get('limit', 21))
+  except:
+    limit = 21
+  try:
+    offset = int(data_dict.get('offset', 0))
+  except:
+    offset = 0
   atype = data_dict['query_string'].get('type') or ''
   if atype:
     if atype == 'cc':

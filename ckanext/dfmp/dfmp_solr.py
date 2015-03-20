@@ -269,7 +269,7 @@ class DFMPSearchQuery(SearchQuery):
 
 
     conn = make_connection()
-    log.debug('Asset query: %r' % query)
+    # log.debug('Asset query: %r' % query)
     try:
       solr_response = conn.raw_query(**query)
     except Exception, e:
