@@ -1,0 +1,18 @@
+{% set text_query = ungettext('{number} asset found for "{query}"', '{number} assets found for "{query}"', count) %}
+{% set text_query_none = _('No assets found for "{query}"') %}
+{% set text_no_query = ungettext('{number} asset found', '{number} assets found', count) %}
+{% set text_no_query_none = _('No assets found') %}
+
+{% if query %}
+  {%- if count -%}
+    {{ text_query.format(number=h.localised_number(count), query=query) }}
+  {%- else -%}
+    {{ text_query_none.format(query=query) }}
+  {%- endif -%}
+{%- else -%}
+  {%- if count -%}
+    {{ text_no_query.format(number=h.localised_number(count)) }}
+  {%- else -%}
+    {{ text_no_query_none }}
+  {%- endif -%}
+{%- endif -%}

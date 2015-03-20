@@ -41,7 +41,7 @@ class DFMPController(base.BaseController):
     c.query_error = False
     sort_by = request.params.get('sort', None)
     c.sort_by_selected = sort_by
-
+    log.warn(request.params)
     try:
       page = int(request.params.get('page', 1))
     except ValueError, e:
@@ -51,7 +51,6 @@ class DFMPController(base.BaseController):
       if k != 'page'
     ]
     params_nosort = [(k, v) for k, v in params_nopage if k != 'sort']
-
     def _sort_by(fields):
       """
       Sort by the given list of fields.
@@ -93,7 +92,22 @@ class DFMPController(base.BaseController):
       'license_id']
 
     fq = ''
-    # log.warn(params_nosort)
+    c.fields = []
+    c.fields_grouped = {}
+    search_extras = {}
+    for (param, value) in request.params.items():
+      if param not in ['q', 'page', 'sort'] \
+          and len(value) and not param.startswith('_'):
+        if not param.startswith('ext_'):
+          c.fields.append((param, value))
+          fq += ' %s:"%s"' % (param, value)
+          if param not in c.fields_grouped:
+            c.fields_grouped[param] = [value]
+          else:
+            c.fields_grouped[param].append(value)
+        else:
+          search_extras[param] = value
+
     for param in params_nosort:
       if param[0] in facet_fields:
         fq += ' +{0}:"{1}"'.format(*param)
