@@ -68,6 +68,8 @@ class DFMPSolr(SearchIndex):
         ast_dict[field] = None
     if 'text' in ast_dict['metadata'] and not ast_dict['notes']:
       ast_dict['notes'] = ast_dict['metadata']['text']
+    elif 'description' in ast_dict['metadata'] and not ast_dict['notes']:
+      ast_dict['notes'] = ast_dict['metadata']['description']
 
     if not 'state' in ast_dict['metadata']:
       ast_dict['metadata']['state'] = 'active'
@@ -185,7 +187,7 @@ class DFMPSolr(SearchIndex):
       type=TYPE_FIELD,
       asset=ASSET_TYPE,
       index='' if ast_dict.get('remove_all_assets') else '+index_id:\"{index}\"'.format(
-        index=h_get_index_id(ast_dict['id'], ast_dict['assetID'])
+        index=_get_index_id(ast_dict['id'], ast_dict['assetID'])
       ),
       site=config.get('ckan.site_id'))
     try:
@@ -241,6 +243,9 @@ class DFMPSearchQuery(SearchQuery):
     # filter for asset entity_type
     if not '+entity_type:' in fq:
       fq += " +entity_type:asset"
+    if not '+state:' in fq:
+      fq += " -state:hidden -state:deleted"
+
     query['fq'] = [fq]
 
     fq_list = query.get('fq_list', [])

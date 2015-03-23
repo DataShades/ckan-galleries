@@ -11,3 +11,4 @@
 }
 .asset-list .asset-content{position: relative;}
 .asset-list .asset-content img{max-width: 150px;}
+.asset-actions i{cursor: pointer;}

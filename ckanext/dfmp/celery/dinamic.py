@@ -154,7 +154,7 @@ def getting_tweets(data, context, post_data, offlim):
     for item in piece:
       item_json = item._json
       item_json.update(
-        thumb = item.entities['media'][0]['media_url'] + ':thumb',
+        thumb = item.entities['media'][0]['media_url'] + ':small',
         mimetype = 'image/jpeg',
         type = 'image/jpeg',
         tags = ','.join( [ tag['text'] for tag in item.entities.get('hashtags', []) ] ) )

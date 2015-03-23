@@ -2,10 +2,10 @@
 {% set truncate_title = truncate_title or 80 %}
 {% set title = asset.title or asset.name or _('Unnamed') %}
 {% if asset.notes %}
-{% set notes = h.markdown_extract(asset.notes, extract_length=truncate) %}
+{% set notes = h.truncate(asset.notes, truncate) %}
 {% endif %}
 
-<li class="{{ item_class or "asset-item" }}">
+<li class="{{ item_class or 'asset-item' }}">
   {% block asset_item_content %}
     <div class="asset-content">
       <h3 class="asset-heading">

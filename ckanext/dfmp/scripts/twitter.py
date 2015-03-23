@@ -84,7 +84,7 @@ def _save_data(data):
   for asset in data['extended_entities']['media']:
     try:
       resource.update(
-        thumb=asset['media_url']+':thumb',
+        thumb=asset['media_url']+':small',
         mimetype='image/jpeg',
         id=asset['id_str'],
         tags=tags

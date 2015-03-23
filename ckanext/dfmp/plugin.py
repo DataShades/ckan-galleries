@@ -7,6 +7,7 @@ from ckanext.dfmp.actions.datastore_action import *
 from ckan.logic import side_effect_free
 from ckanext.dfmp.actions.background import *
 from ckanext.dfmp.actions.social import *
+from ckanext.dfmp.helpers import *
 import datetime
 from dateutil.parser import parse
 from ckan.common import c
@@ -47,6 +48,14 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         controller='ckanext.dfmp.controller:DFMPController',
         action='twitter_listeners', ckan_icon='twitter-sign')
     map.connect(
+        'manage_assets', '/dataset/{id}/manage-assets/{resource_id}',
+        controller='ckanext.dfmp.controller:DFMPController',
+        action='manage_assets', ckan_icon='terminal')
+    map.connect(
+        'ajax_actions', '/admin/ajax_actions',
+        controller='ckanext.dfmp.controller:DFMPController',
+        action='ajax_actions')
+    map.connect(
         'ckanadmin_flags', '/ckan-admin/flags',
         controller='ckanext.dfmp.controller:DFMPController',
         action='flags', ckan_icon='exclamation-sign')    
@@ -55,7 +64,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         controller='ckanext.dfmp.controller:DFMPController',
         action='solr_commit', ckan_icon='twitter-sign')
     map.connect(
-        'search_assets', '/search_assets',
+        'search_assets', '/asset',
         controller='ckanext.dfmp.controller:DFMPController',
         action='search_assets', ckan_icon='')
     
@@ -64,6 +73,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
   def get_helpers(self):
     return {'dfmp_with_gallery':dfmp_with_gallery,
             'is_sysadmin':is_sysadmin,
+            'total_ammount_of_assets':total_ammount_of_assets,
             }
 
   def update_config(self, config):
@@ -137,13 +147,3 @@ def user_update_asset(context, data_dict):
 def user_remove_asset(context, data_dict):
   """Remove assets"""
   return user_remove_asset_inner(context, data_dict)
-
-def dfmp_with_gallery(id):
-  res = toolkit.get_action('resource_show')(None, {'id':id})
-  result = res.get('datastore_active', False)
-  return result
-
-def is_sysadmin():
-  if c.userobj:
-    return c.userobj.sysadmin
-  return False

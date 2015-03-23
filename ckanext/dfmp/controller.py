@@ -245,7 +245,69 @@ class DFMPController(base.BaseController):
       'now':datetime.datetime.now()
     }
     return base.render('admin/twitter_listeners.html', extra_vars=extra_vars)
-  
+
+  def ajax_actions(self):
+    return 'pass'
+
+  def manage_assets(self, id, resource_id):
+    if not c.userobj or not c.userobj.sysadmin:
+      base.abort(404)
+    try:
+      toolkit.c.pkg_dict = toolkit.get_action('package_show')(None, {'id': id})
+      toolkit.c.resource = toolkit.get_action('resource_show')(None, {'id': resource_id})
+    except toolkit.ObjectNotFound:
+      base.abort(404, _('Resource not found'))
+    except toolkit.NotAuthorized:
+      base.abort(401, _('Unauthorized to edit this resource'))
+    context = {
+      'model': model,
+      'user': c.user or c.author,
+      'auth_user_obj': c.userobj
+    }
+    page = int(request.params.get('page',1))
+    assets = []
+    try:
+      result = toolkit.get_action('datastore_search')(context,{
+        'id':resource_id,
+        'limit':ASSETS_PER_PAGE,
+        'offset':(page-1)*ASSETS_PER_PAGE,
+        'sort':'_id asc'
+      })
+      assets.extend(result['records'])
+    except toolkit.ObjectNotFound:
+      return base.render('package/manage_assets.html')
+    # flagged = DFMPSearchQuery()({
+    #   'q':'',
+    #   'rows':100,
+    #   'start':0,
+    #   'fq':'+extras_flag:[* TO *]',
+    # })['results']
+    # if flagged:
+    #   for item in flagged:
+    #     assets.append(json.loads(item['data_dict']))
+
+    extra_vars = {
+      'assets':assets,
+      'action_url':config.get('ckan.site_url') + h.url_for('ajax_actions'),
+    }
+
+
+
+    def pager_url(q=None, page=None):
+      params = [
+        ('page', page),
+      ]
+      url = h.url_for('manage_assets', id=id, resource_id=resource_id)
+      return url_with_params(url, params)
+    c.page = h.Page(
+        collection=assets,
+        page=page,
+        url=pager_url,#pager_url,
+        item_count=result['total'],
+        items_per_page=ASSETS_PER_PAGE,
+    )
+
+    return base.render('package/manage_assets.html', extra_vars=extra_vars)
 
   def _listener_route(self, action, id, resource_id):
     if not c.userobj or not c.userobj.sysadmin:
@@ -394,8 +456,8 @@ class DFMPController(base.BaseController):
           base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
 
     try:
-      toolkit.c.pkg_dict = toolkit.get_action('package_show')(None, {'id': id})
-      toolkit.c.resource = toolkit.get_action('resource_show')(None, {'id': resource_id})
+      c.pkg_dict = toolkit.get_action('package_show')(None, {'id': id})
+      c.resource = toolkit.get_action('resource_show')(None, {'id': resource_id})
     except toolkit.ObjectNotFound:
       base.abort(404, _('Resource not found'))
     except toolkit.NotAuthorized:

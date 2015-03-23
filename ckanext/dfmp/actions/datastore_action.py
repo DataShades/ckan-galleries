@@ -121,6 +121,7 @@ def dfmp_all_assets(context, data_dict):
     'rows':0,
   })
   ids = result['facets']['id'].keys()[offset:]
+  log.warn(ids)
   response = []
   for item in ids:
     try:
@@ -206,7 +207,6 @@ def search_item(context, data_dict):
   result = searcher({
     'q':query,
     'fl':'data_dict',
-    'fq':'-state:hidden',
     'rows':limit,
     'start':offset,
     'sort':'score desc, metadata_modified desc'
