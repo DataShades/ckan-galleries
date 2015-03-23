@@ -146,12 +146,21 @@ def getting_tweets(data, context, post_data, offlim):
 
   searcher = twitter.search_tweets(twitter_api, word, **data)
   total = 0
+
+  forbidden_id = _celery_api_request(
+    'resource_show',
+    context,
+    {'id': data['resource']}
+  ).get('forbidden_id', '')
+
   _create_datastore(data['resource'], context)
   for piece in searcher:
     if not piece:
       continue
     records = []
     for item in piece:
+      assetID = item.entities['media'][0]['id_str']
+      if assetID in forbidden_id: continue
       item_json = item._json
       item_json.update(
         thumb = item.entities['media'][0]['media_url'] + ':small',
@@ -159,7 +168,7 @@ def getting_tweets(data, context, post_data, offlim):
         type = 'image/jpeg',
         tags = ','.join( [ tag['text'] for tag in item.entities.get('hashtags', []) ] ) )
       records.append({
-        'assetID': item.entities['media'][0]['id_str'],
+        'assetID': assetID,
         'lastModified': item.created_at.isoformat(' '),
         'name': item.user.screen_name,
         'url': item.entities['media'][0]['media_url'],
@@ -190,7 +199,9 @@ def getting_tweets(data, context, post_data, offlim):
     )
 
     total += len(records)
-    status = 'Added {0} tweets, from {1} to {2}'.format(total, records[0]['lastModified'], records[-1]['lastModified'])
+    if len(records) < 1: break
+    from_time , to_time = records[0]['lastModified'], records[-1]['lastModified']
+    status = 'Added {0} tweets, from {1} to {2}'.format(total, from_time , to_time)
     _change_status(
       context,
       data,
@@ -198,6 +209,8 @@ def getting_tweets(data, context, post_data, offlim):
       task_type='getting_tweets'
     )
     print status
+    if from_time == to_time:
+      break
   return {'done':True}
 
 def streaming_tweets(data, context, post_data, offlim):

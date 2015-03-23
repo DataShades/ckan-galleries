@@ -128,13 +128,14 @@ def user_add_asset_inner(context, data_dict, package_id, resources):
   data_dict['owner_name'] = organization.title if organization else context['auth_user_obj'].name
   data_dict['organization'] = organization.name if organization else None
 
-  if data_dict.get('geoLocation'):
-    location =  { "type": "Point", "coordinates": [
-        float(data_dict['geoLocation']['lng']),
-        float(data_dict['geoLocation']['lat'])
-      ]}
-  else:
-    location = None
+  if not data_dict.get('spatial'):
+    if data_dict.get('geoLocation'):
+      location =  { "type": "Point", "coordinates": [
+          float(data_dict['geoLocation']['lng']),
+          float(data_dict['geoLocation']['lat'])
+        ]}
+    else:
+      location = None
   
   if data_dict.get('license'):
     data_dict['license_id']   = data_dict['license']
@@ -249,7 +250,7 @@ def _delete_generator(context, data_dict):
       indexer.remove_dict({
         'id' : item['id'],
         'assetID' : item['assetID']
-      })
+      }, defer_commit=True)
       yield {item['id']:True}
 
     except toolkit.ObjectNotFound:
@@ -454,9 +455,9 @@ def _default_datastore_create(context, id):
     'indexes':['name', 'assetID']
   })
 
-def _asset_to_solr(data_dict):
+def _asset_to_solr(data_dict, defer_commit=True):
   _validate(data_dict,'name', 'lastModified', 'id', 'assetID')
-  indexer.index_asset(data_dict, defer_commit=True)
+  indexer.index_asset(data_dict, defer_commit=defer_commit)
   return True
 
 def make_uuid():

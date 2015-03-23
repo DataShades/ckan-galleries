@@ -36,7 +36,7 @@ def escape_xml_illegal_chars(val, replacement=''):
 
 
 class DFMPSolr(SearchIndex):
-  def remove_dict(self, ast_dict):self.delete_asset(ast_dict)
+  def remove_dict(self, ast_dict, defer_commit):self.delete_asset(ast_dict, defer_commit)
 
   def update_dict(self, ast_dict, defer_commit=False):self.index_asset(ast_dict, defer_commit)
 
@@ -181,7 +181,7 @@ class DFMPSolr(SearchIndex):
       conn.close()
 
 
-  def delete_asset(self, ast_dict):
+  def delete_asset(self, ast_dict, defer_commit=False):
     conn = make_connection()
     query = "+{type}:{asset} {index} +site_id:\"{site}\"".format(
       type=TYPE_FIELD,
@@ -192,7 +192,8 @@ class DFMPSolr(SearchIndex):
       site=config.get('ckan.site_id'))
     try:
       conn.delete_query(query)
-      if asbool(config.get('ckan.search.solr_commit', 'true')):
+
+      if not defer_commit:
         conn.commit()
     except Exception, e:
       log.exception(e)
@@ -237,13 +238,13 @@ class DFMPSearchQuery(SearchQuery):
     fq = query.get('fq', '')
     if not '+site_id:' in fq:
       fq += ' +site_id:"%s"' % config.get('ckan.site_id')
-    if not '+type:' in q and not '+mimetype:' in q:
+    if not '+type:' in q and not '+mimetype:' in q and not '+type:' in fq and not '+mimetype:' in fq:
       fq += ' -type:image/x* -mimetype:image/x* '
 
     # filter for asset entity_type
     if not '+entity_type:' in fq:
       fq += " +entity_type:asset"
-    if not '+state:' in fq:
+    if not '+state:' in q and not '+state:' in fq:
       fq += " -state:hidden -state:deleted"
 
     query['fq'] = [fq]

@@ -23,6 +23,34 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
   plugins.implements(plugins.IActions)
   plugins.implements(plugins.ITemplateHelpers)
   plugins.implements(plugins.IRoutes, inherit=True)
+  plugins.implements(plugins.IDatasetForm, inherit=True)
+
+  def is_fallback(self):
+    return False
+
+  def package_types(self):
+    return []
+
+  def show_package_schema(self):
+    schema['resources'].update({
+      'forbidden_id' : [ tk.get_validator('ignore_missing') ]
+    })
+
+  def _modify_package_schema(self, schema):
+    schema['resources'].update({
+      'forbidden_id' : [ tk.get_validator('ignore_missing') ]
+      })
+    return schema
+
+  def create_package_schema(self):
+    schema = super(DFMPPlugin, self).create_package_schema()
+    schema = self._modify_package_schema(schema)
+    return schema
+
+  def update_package_schema(self):
+    schema = super(DFMPPlugin, self).update_package_schema()
+    schema = self._modify_package_schema(schema)
+    return schema
 
   inProgress = 0
 

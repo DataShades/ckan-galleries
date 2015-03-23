@@ -13,7 +13,7 @@ from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
 import logging
 log = logging.getLogger(__name__)
 import ckanext.dfmp.scripts as scripts
-from ckanext.dfmp.actions.action import _name_normalize
+from ckanext.dfmp.actions.action import _name_normalize, _asset_to_solr
 
 ASSETS_PER_PAGE = 20
 log_path = '/var/log/dfmp/'
@@ -41,7 +41,6 @@ class DFMPController(base.BaseController):
     c.query_error = False
     sort_by = request.params.get('sort', None)
     c.sort_by_selected = sort_by
-    log.warn(request.params)
     try:
       page = int(request.params.get('page', 1))
     except ValueError, e:
@@ -247,7 +246,116 @@ class DFMPController(base.BaseController):
     return base.render('admin/twitter_listeners.html', extra_vars=extra_vars)
 
   def ajax_actions(self):
-    return 'pass'
+    if not c.userobj or not c.userobj.sysadmin:
+      base.abort(404)
+    context = {
+      'model': model,
+      'user': c.user or c.author,
+      'auth_user_obj': c.userobj
+    }
+    action = request.params.get('action')
+    res_id = request.params.get('res_id')
+    assets = request.params.get('assets').split(' ')
+    parent = toolkit.get_action('resource_show')(context, {'id': res_id})
+    forbidden_str = parent.get('forbidden_id')
+    if not forbidden_str:
+      forbidden_str = ''
+
+    solr = DFMPSolr()
+
+    if action == 'delete':
+      toolkit.get_action('user_remove_asset')(context, {
+        'items':[{
+          'id': res_id,
+          'assetID':assetID
+        } for assetID in assets],
+      })
+      
+
+      forbidden_str += ' ' + ' '.join(assets)
+      parent['forbidden_id'] = forbidden_str
+      toolkit.get_action('resource_update')(context, parent)
+
+    elif action == 'hide':
+      for visible_asset in assets:
+        asset = toolkit.get_action('datastore_search')(context, {
+          'id': res_id,
+          'filters':{
+            'assetID':visible_asset
+          }
+        })['records'][0]
+
+        if type( asset['metadata'] ) == tuple:
+          asset['metadata'] = json.loads(asset['metadata'][0])
+        if type( asset['spatial'] ) == tuple:
+          asset['spatial'] = json.loads(asset['spatial'][0])
+
+        asset['metadata']['state'] = 'hidden'
+        asset['id'] = res_id
+
+        _asset_to_solr(asset, defer_commit=True)
+
+        toolkit.get_action('datastore_delete')(context,{
+          'resource_id': res_id,
+          'force': True,
+          'filters':{
+            'assetID':visible_asset,
+          }
+        })
+
+        forbidden_str += ' ' + visible_asset
+        parent['forbidden_id'] = forbidden_str
+        toolkit.get_action('resource_update')(context, parent)
+
+    elif action == 'solr-delete':
+      for assetID in assets:
+        solr.remove_dict({
+          'id' : res_id,
+          'assetID' : assetID
+        }, defer_commit=True)
+
+      forbidden_str += ' ' + ' '.join(assets)
+      parent['forbidden_id'] = forbidden_str
+      toolkit.get_action('resource_update')(context, parent)
+
+    elif action == 'unhide':
+      hidden_assets = DFMPSearchQuery()({
+        'q':'assetID:({assets})'.format(assets=' OR '.join(assets)),
+        'fl':'data_dict',
+        'fq':'+state:hidden',
+      })['results']
+      for asset in hidden_assets:
+        log.warn(asset)
+        asset = json.loads(asset['data_dict'])
+        asset['metadata']['state'] = 'active'
+
+        datastore_item = toolkit.get_action('datastore_upsert')(context, {
+          'resource_id':res_id,
+          'force': True,
+          'records':[{
+            'assetID':asset['assetID'],
+            'lastModified':asset['lastModified'],
+            'name':asset['name'],
+            'url':asset['url'],
+            'spatial':asset['spatial'],
+            'metadata':asset['metadata'],
+            }
+          ],
+          'method':'upsert'
+        })
+
+
+        _asset_to_solr(asset, defer_commit=True)
+      for assetID in assets:
+        forbidden_str = forbidden_str.replace(assetID, '')
+      parent['forbidden_id'] = forbidden_str
+      toolkit.get_action('resource_update')(context, parent)
+
+    else:
+      return 'Unrecognized action'
+
+    solr.commit()
+    return 'Done'
 
   def manage_assets(self, id, resource_id):
     if not c.userobj or not c.userobj.sysadmin:
@@ -276,18 +384,20 @@ class DFMPController(base.BaseController):
       assets.extend(result['records'])
     except toolkit.ObjectNotFound:
       return base.render('package/manage_assets.html')
-    # flagged = DFMPSearchQuery()({
-    #   'q':'',
-    #   'rows':100,
-    #   'start':0,
-    #   'fq':'+extras_flag:[* TO *]',
-    # })['results']
-    # if flagged:
-    #   for item in flagged:
-    #     assets.append(json.loads(item['data_dict']))
+    hidden_assets = []
+    hidden = DFMPSearchQuery()({
+      'q':'id:{res_id}'.format(res_id=resource_id),
+      'rows':100,
+      'start':0,
+      'fq':'+state:hidden',
+    })['results']
+    if hidden:
+      for item in hidden:
+        hidden_assets.append(json.loads(item['data_dict']))
 
     extra_vars = {
       'assets':assets,
+      'hidden_assets':hidden_assets,
       'action_url':config.get('ckan.site_url') + h.url_for('ajax_actions'),
     }
 
@@ -303,7 +413,7 @@ class DFMPController(base.BaseController):
         collection=assets,
         page=page,
         url=pager_url,#pager_url,
-        item_count=result['total'],
+        item_count=result.get('total',0),
         items_per_page=ASSETS_PER_PAGE,
     )
 
@@ -391,7 +501,6 @@ class DFMPController(base.BaseController):
         'entity_id': resource_id,
         'key':'celery_task_id'
         })
-      log.warn(streaming_status)
       extra_vars.update(streaming_status=streaming_status)
       if 'error' in streaming_status:
         try:
@@ -432,7 +541,6 @@ class DFMPController(base.BaseController):
           base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
 
       elif 'stream_word' in pst:       
-        log.warn(pst)
         word = pst['stream_word']
         if not word:
           stable = False
