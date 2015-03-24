@@ -118,7 +118,7 @@ def flag_asset(context, data_dict):
   if len(dd):
     asset = json.loads(dd[0]['data_dict'])
     asset['metadata']['flag'] = data_dict.get('flag','warning')
-    _asset_to_solr(asset)
+    _asset_to_solr(asset, defer_commit=False)
     return True
   return False
 

@@ -28,3 +28,8 @@ def _unjson(string):
 
 def _get_package_id_by_res(id):
   return session.query(model.Resource).filter_by(id=id).first().get_package_id()
+
+def _unique_list(array):
+  doppelganger = set()
+  doppelganger_add = doppelganger.add
+  return [ x for x in array if not (x in doppelganger or doppelganger_add(x))]

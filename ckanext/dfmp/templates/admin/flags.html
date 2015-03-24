@@ -17,7 +17,7 @@
     <tbody>
       {% for asset in assets %}
       <tr>
-        <td><a class='btn btn-primary' href="/view/item/{{asset.id}}/{{asset.assetID}}">{{ _('Gallery') }}</a></td>
+        <td><a class='btn btn-primary' href="/gallery/item/{{asset.id}}/{{asset.assetID}}">{{ _('Gallery') }}</a></td>
         <td><a class='btn btn-primary' href="{{ h.url_for( controller='package', action='resource_read', id=asset.get('package_id'), resource_id=asset['id']) }}">{{ _('Resource') }}</a></td>
         <td>{{ asset.assetID }}</td>
         <td>{{ asset.metadata.flag }}</td>

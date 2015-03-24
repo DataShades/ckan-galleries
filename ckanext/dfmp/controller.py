@@ -14,7 +14,7 @@ import logging
 log = logging.getLogger(__name__)
 import ckanext.dfmp.scripts as scripts
 from ckanext.dfmp.actions.action import _name_normalize, _asset_to_solr
-
+from ckanext.dfmp.bonus import _unique_list
 ASSETS_PER_PAGE = 20
 log_path = '/var/log/dfmp/'
 
@@ -257,10 +257,7 @@ class DFMPController(base.BaseController):
     res_id = request.params.get('res_id')
     assets = request.params.get('assets').split(' ')
     parent = toolkit.get_action('resource_show')(context, {'id': res_id})
-    forbidden_str = parent.get('forbidden_id')
-    if not forbidden_str:
-      forbidden_str = ''
-
+    forbidden = json.loads(parent.get('forbidden_id', '[]'))
     solr = DFMPSolr()
 
     if action == 'delete':
@@ -272,9 +269,7 @@ class DFMPController(base.BaseController):
       })
       
 
-      forbidden_str += ' ' + ' '.join(assets)
-      parent['forbidden_id'] = forbidden_str
-      toolkit.get_action('resource_update')(context, parent)
+      forbidden.extend(assets)
 
     elif action == 'hide':
       for visible_asset in assets:
@@ -303,9 +298,7 @@ class DFMPController(base.BaseController):
           }
         })
 
-        forbidden_str += ' ' + visible_asset
-        parent['forbidden_id'] = forbidden_str
-        toolkit.get_action('resource_update')(context, parent)
+      forbidden.extend(assets)
 
     elif action == 'solr-delete':
       for assetID in assets:
@@ -314,9 +307,7 @@ class DFMPController(base.BaseController):
           'assetID' : assetID
         }, defer_commit=True)
 
-      forbidden_str += ' ' + ' '.join(assets)
-      parent['forbidden_id'] = forbidden_str
-      toolkit.get_action('resource_update')(context, parent)
+      forbidden.extend(assets)
 
     elif action == 'unhide':
       hidden_assets = DFMPSearchQuery()({
@@ -346,14 +337,14 @@ class DFMPController(base.BaseController):
 
 
         _asset_to_solr(asset, defer_commit=True)
-      for assetID in assets:
-        forbidden_str = forbidden_str.replace(assetID, '')
-      parent['forbidden_id'] = forbidden_str
-      toolkit.get_action('resource_update')(context, parent)
-
+      forbidden = filter(lambda x, assets=assets: not x in assets, forbidden)
+      
     else:
       return 'Unrecognized action'
 
+    forbidden = _unique_list(forbidden)
+    parent['forbidden_id'] = json.dumps(forbidden)
+    toolkit.get_action('resource_update')(context, parent)
     solr.commit()
     return 'Done'
 
@@ -398,7 +389,7 @@ class DFMPController(base.BaseController):
     extra_vars = {
       'assets':assets,
       'hidden_assets':hidden_assets,
-      'action_url':config.get('ckan.site_url') + h.url_for('ajax_actions'),
+      'action_url':h.url_for('ajax_actions'),
     }
 
 

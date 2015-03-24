@@ -1,10 +1,6 @@
 import flickrapi, math, json, uuid, logging, ckanapi, string
 import ckan.plugins.toolkit as toolkit
-from ckanext.dfmp.dfmp_solr import DFMPSolr
 from datetime import datetime
-
-# Solr init
-solr = DFMPSolr()
 
 log = logging.getLogger(__name__)
 from pylons import config
@@ -105,11 +101,6 @@ def flickr_group_pool_add_resource(context, resources, datastore):
     'records': records,
     'method': 'insert'
   })
-
-  # adds records to SOLR index
-  for record in records:
-    record.update(id=datastore['id'])
-    solr.index_asset(record, defer_commit=True)
 
   return datastore_items
 
@@ -295,9 +286,6 @@ def flickr_group_pool_import(context, url):
     toolkit.get_action('celery_flickr_import')(context, data)
 
     site_url = config.get('ckan.site_url')
-
-    # triggers SOLR index update
-    solr.commit()
 
     return {
       'text': "Dataset has been created. <a target='_blank' href='" + site_url + "/dataset/" + dataset[

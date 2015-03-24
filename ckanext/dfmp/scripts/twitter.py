@@ -82,6 +82,12 @@ def _save_data(data):
     return
   tags = ','.join( [ tag['text'] for tag in data['extended_entities'].get('hashtags', []) ] )
   for asset in data['extended_entities']['media']:
+    forbidden_id = ckan.call_action(
+      'resource_show',
+      {'id': args.resource}
+    ).get('forbidden_id', '')
+    if asset['id_str'] in forbidden_id: continue
+    
     try:
       resource.update(
         thumb=asset['media_url']+':small',

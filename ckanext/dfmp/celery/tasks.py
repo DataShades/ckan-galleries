@@ -28,11 +28,6 @@ def flickr_images( context, data ):
     reload(dinamic)
     dinamic.flickr_add_image_to_dataset(context, data)
 
-@celery.task(name = "dfmp.flickr_images")
-def flickr_images( context, data ):
-    reload(dinamic)
-    dinamic.flickr_add_image_to_dataset(context, data)
-
 @celery.task(name = "dfmp.revoke_listener")
 def revoke_listener( context, data ):
     int(data['id'])

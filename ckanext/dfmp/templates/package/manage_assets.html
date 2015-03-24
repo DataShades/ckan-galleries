@@ -23,7 +23,7 @@
       <tbody>
         {% for asset in assets %}
         <tr>
-          <td><a class='' href="/view/item/{{c.resource.id}}/{{asset.assetID}}">ID:{{asset._id}}: {{ asset.name }}</a></td>
+          <td><a class='' href="/gallery/item/{{c.resource.id}}/{{asset.assetID}}">ID:{{asset._id}}: {{ asset.name }}</a></td>
           <td><a class='' href="{{ h.url_for( controller='package', action='resource_read', id=c.pkg_dict.id, resource_id=c.resource.id) }}">AssetID: {{ asset.assetID }}</a></td>
           <td>
             <input type="checkbox" class="bulk-action" value="s{{ asset.assetID }}">

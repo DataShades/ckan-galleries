@@ -132,6 +132,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'celery_streaming_tweets':celery_streaming_tweets,
         'celery_revoke':celery_revoke,
         'celery_flickr_import':celery_flickr_import,
+        'celery_solr_indexing':celery_solr_indexing,
         'flickr_import_group_pool':flickr_import_group_pool,
         'solr':solr,
         'solr_add_assets':solr_add_assets,
