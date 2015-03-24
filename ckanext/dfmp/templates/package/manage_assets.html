@@ -7,32 +7,60 @@
 {% endblock %}
 
 {% block primary_content_inner %}
-  {% if assets %}
-
-  <table class="table table-striped table-bordered table-condensed ">
-    <thead>
-      <tr>
-        <th>Link to gallery</th>
-        <th>Link to resource</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      {% for asset in assets %}
-      <tr>
-        <td><a class='' href="/view/item/{{asset.id}}/{{asset.assetID}}">ID:{{asset._id}}: {{ asset.name }}</a></td>
-        <td><a class='' href="{{ h.url_for( controller='package', action='resource_read', id=c.pkg_dict.id, resource_id=c.resource.id) }}">AssetID: {{ asset.assetID }}</a></td>
-        <td class="asset-actions" data-module="asset-actions" data-module-id="{{ c.resource.id }}" data-module-asset="{{ asset.assetID }}" data-module-url="{{ action_url }}">
-          <i class="icon-remove remove-action" title="Remove"></i>
-          <i class="icon-eye-close hide-action" title="Hide"></i>
-        </td>
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-  {{ c.page.pager() }}
+  {% if assets or hidden_assets %}
+    {% if assets %}
+    <table class="table table-striped table-bordered table-condensed " data-module="asset-actions" data-module-id="{{ c.resource.id }}" data-module-url="{{ action_url }}">
+      <thead>
+        <tr>
+          <th>Link to gallery</th>
+          <th>Link to resource</th>
+          <th class="asset-actions">
+            <i class="icon-eye-close hide-action" title="Hide"></i>
+            <i class="icon-remove remove-action" title="Remove"></i>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for asset in assets %}
+        <tr>
+          <td><a class='' href="/view/item/{{c.resource.id}}/{{asset.assetID}}">ID:{{asset._id}}: {{ asset.name }}</a></td>
+          <td><a class='' href="{{ h.url_for( controller='package', action='resource_read', id=c.pkg_dict.id, resource_id=c.resource.id) }}">AssetID: {{ asset.assetID }}</a></td>
+          <td>
+            <input type="checkbox" class="bulk-action" value="s{{ asset.assetID }}">
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    {% if hidden_assets %}
+    <table class="table table-striped table-bordered table-condensed " data-module="asset-actions" data-module-id="{{ c.resource.id }}" data-module-url="{{ action_url }}">
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Image URL</th>
+          <th class="asset-actions">
+            <i class="icon-remove solr-remove-action" title="Remove"></i>
+            <i class="icon-eye-open unhide-action" title="Show"></i>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for asset in hidden_assets %}
+        <tr>
+          <td>{{asset.name}}</td>
+          <td><a href="{{asset.url}}">{{asset.name}}</a></td>
+          <td>
+            <input type="checkbox" class="bulk-action" value="s{{ asset.assetID }}">
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+    {{ c.page.pager() }}
   {% else %}
-   {{ _('Datastore not exists') }}
+   {{ _('Empty datastore') }}
   {% endif %}
 {% endblock %}
 
