@@ -107,6 +107,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
   def update_config(self, config):
     toolkit.add_template_directory(config, 'templates')
     toolkit.add_resource('fanstatic', 'dfmp')
+    toolkit.add_public_directory(config, 'public')
 
   def get_actions(self):
       return {

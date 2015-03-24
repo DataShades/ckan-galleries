@@ -21,6 +21,15 @@
 .asset-actions i {
   cursor: pointer; }
 
+.float-right {
+  float: right; }
+
+.bold {
+  font-weight: bold; }
+
+body {
+  background: #18191b; }
+
 .account-masthead {
   background-color: #2693ac;
   border-bottom: 1px solid #00424d; }
@@ -35,3 +44,82 @@
         .account-masthead .account.not-authed ul li a.sub {
           color: #24211a;
           background-color: #eda712; }
+
+.masthead {
+  background: #09667c url("../../../../dfmp/images/texture.png"); }
+  .masthead .header-image {
+    margin: 20px 0; }
+  .masthead .header-image, .masthead .content {
+    display: inline-block;
+    position: relative; }
+  .masthead .site-search input {
+    width: 170px; }
+  .masthead .navigation .nav-pills li a {
+    font-weight: bold;
+    font-size: 14px; }
+  .masthead .navigation .nav-pills li.active a, .masthead .navigation .nav-pills li:hover a {
+    color: #ede112;
+    background-color: #027072; }
+
+[role=main], .main {
+  background: #e3e8ed; }
+
+h1, .toolbar .breadcrumb li a {
+  color: #056c7f; }
+
+.toolbar .breadcrumb li:after {
+  color: #b8c3d1; }
+
+.wrapper {
+  box-shadow: none;
+  border: none; }
+
+.btn, .btn:hover {
+  background: #ede112;
+  border: none;
+  text-shadow: none;
+  width: 170px; }
+
+.secondary {
+  background-color: #f5f8fb; }
+  .secondary .module-heading {
+    background-color: transparent;
+    border-top: none;
+    border-bottom: 1px solid #0992ad; }
+
+.site-footer {
+  background: #18191b;
+  border-top: 3px solid #027072; }
+  .site-footer .footer-links {
+    float: left; }
+  .site-footer .lang-select {
+    float: right; }
+  .site-footer .lang-container {
+    margin-left: 20px; }
+  .site-footer .footer-logo {
+    position: absolute;
+    left: 0;
+    bottom: 10px;
+    background: url("../../../../dfmp/images/full_logo.png") no-repeat;
+    background-size: contain;
+    height: 45px;
+    width: 179px; }
+  .site-footer .attribution {
+    float: right;
+    width: auto; }
+  .site-footer .footer-ckan-link {
+    background: url("../../../../dfmp/images/ckan_logo.png");
+    display: inline-block;
+    height: 24px;
+    width: 70px;
+    margin-left: 7px;
+    position: absolute;
+    top: -7px; }
+  .site-footer label {
+    font-weight: normal; }
+  .site-footer ul {
+    margin: 0 0 30px;
+    width: auto; }
+    .site-footer ul li {
+      margin-right: 15px;
+      display: inline; }
