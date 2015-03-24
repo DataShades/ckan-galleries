@@ -1,0 +1,30 @@
+@import "custom";
+$top_bar: #2693ac;
+$account_action_border: 1px solid #004049;
+$top_bar_border: 1px solid #00424d;
+$login_text: #ede112;
+$login_back: #003942;
+$register_text: #24211a;
+$register_back: #eda712;
+
+.account-masthead{
+  background-color: $top_bar;
+  border-bottom: $top_bar_border;
+  .account{
+    &.not-authed ul{ 
+      border-left: $account_action_border;
+      border-right: $account_action_border;
+      li{
+        border:none;
+        a{
+          color:$login_text;
+          background-color:$login_back;
+          &.sub{
+            color:$register_text;
+            background-color: $register_back;
+          }
+        }
+      }
+    }
+  }
+}

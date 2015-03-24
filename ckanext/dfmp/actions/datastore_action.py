@@ -159,6 +159,7 @@ def dfmp_all_assets(context, data_dict):
 @side_effect_free
 def search_item(context, data_dict):
   '''Search by name'''
+  log.warn(data_dict)
   # {'query_string': {'date': u'2015-03-11', 'name': u'f', 'tags': u'awesome'}, 'limit': 12}
   _validate(data_dict, 'query_string')
 
@@ -221,6 +222,7 @@ def search_item(context, data_dict):
       pass
   del result['results']
   result.update(records=records, limit=limit, offset=offset)
+  log.warn(result)
   return result
 
 
