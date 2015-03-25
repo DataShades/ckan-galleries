@@ -4,17 +4,19 @@
   vertical-align: middle;
 }
 .flickr-flash .close {display: none;}
-.asset-item{
-  border-bottom: 1px dotted #dddddd;
-  padding-bottom: 20px;
-  margin-bottom: 20px
-}
-.asset-list {
-  .asset-content{
-    position: relative;
-    img{max-width: 150px;}
+.asset{
+  &-item{
+    border-bottom: 1px dotted #dddddd;
+    padding-bottom: 20px;
+    margin-bottom: 20px
   }
+  &-list {
+    .asset-content{
+      position: relative;
+      img{max-width: 150px;}
+    }
+  }
+  &-actions i{cursor: pointer;}
 }
-.asset-actions i{cursor: pointer;}
 .float-right{float:right;}
 .bold{font-weight: bold;}

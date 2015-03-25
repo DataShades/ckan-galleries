@@ -12,12 +12,10 @@
   border-bottom: 1px dotted #dddddd;
   padding-bottom: 20px;
   margin-bottom: 20px; }
-
 .asset-list .asset-content {
   position: relative; }
   .asset-list .asset-content img {
     max-width: 150px; }
-
 .asset-actions i {
   cursor: pointer; }
 
@@ -31,27 +29,36 @@ body {
   background: #18191b; }
 
 .account-masthead {
-  background-color: #2693ac;
+  background-color: #056c7f;
   border-bottom: 1px solid #00424d; }
-  .account-masthead .account.not-authed ul {
-    border-left: 1px solid #004049;
+  .account-masthead .account ul li {
     border-right: 1px solid #004049; }
-    .account-masthead .account.not-authed ul li {
-      border: none; }
-      .account-masthead .account.not-authed ul li a {
-        color: #ede112;
-        background-color: #003942; }
-        .account-masthead .account.not-authed ul li a.sub {
-          color: #24211a;
-          background-color: #eda712; }
+    .account-masthead .account ul li a {
+      color: #fff; }
+  .account-masthead .account.not-authed ul li a:hover {
+    color: #ede112;
+    background-color: #003942; }
+    .account-masthead .account.not-authed ul li a:hover.sub {
+      color: #24211a;
+      background-color: #eda712; }
 
 .masthead {
-  background: #09667c url("../../../../dfmp/images/texture.png"); }
+  background: #017173 url("../../../../dfmp/images/texture.png");
+  background-image: url("../../../../dfmp/images/texture.png"), -moz-linear-gradient(left, #015772 0%, #017173 100%);
+  background-image: url("../../../../dfmp/images/texture.png"), -webkit-gradient(linear, left top, right top, color-stop(0%, #015772), color-stop(100%, #017173));
+  background-image: url("../../../../dfmp/images/texture.png"), -webkit-linear-gradient(left, #015772 0%, #017173 100%);
+  background-image: url("../../../../dfmp/images/texture.png"), -o-linear-gradient(left, #015772 0%, #017173 100%);
+  background-image: url("../../../../dfmp/images/texture.png"), -ms-linear-gradient(left, #015772 0%, #017173 100%);
+  background-image: url("../../../../dfmp/images/texture.png"), linear-gradient(to right, #015772 0%, #017173 100%);
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='$a', endColorstr='$b',GradientType=1 ); }
   .masthead .header-image {
-    margin: 20px 0; }
-  .masthead .header-image, .masthead .content {
-    display: inline-block;
+    margin: 20px 0;
     position: relative; }
+  .masthead .header-image, .masthead .content {
+    display: inline-block; }
+  .masthead .content {
+    position: absolute;
+    top: 40px; }
   .masthead .site-search input {
     width: 170px; }
   .masthead .navigation .nav-pills li a {
@@ -64,57 +71,123 @@ body {
 [role=main], .main {
   background: #e3e8ed; }
 
-h1, .toolbar .breadcrumb li a {
+h1, .toolbar .breadcrumb li a, a, .dataset-heading a, .module .read-more {
   color: #056c7f; }
 
 .toolbar .breadcrumb li:after {
   color: #b8c3d1; }
 
+.pill {
+  background-color: #ede112; }
+  .pill, .pill a {
+    color: #1e1e21; }
+
+.simple-input .field .btn-search, .search-form .search-input button i {
+  color: #056c7f; }
+  .simple-input .field .btn-search:hover, .search-form .search-input button i:hover {
+    color: #ede112; }
+
 .wrapper {
   box-shadow: none;
-  border: none; }
+  border: none;
+  background: white url("../../../../dfmp/images/nav.png") 0 0 repeat-y; }
+
+.toolbar .breadcrumb {
+  font-size: 20px; }
+
+.icon-home:before {
+  background-image: url("../../../../dfmp/images/home.png");
+  background-size: contain;
+  background-repeat: no-repeat;
+  content: "";
+  width: 24px;
+  height: 20px; }
+
+.search-form h2 {
+  color: #056c7f; }
+
+input[type=text], .masthead input[type=text], select, .masthead select {
+  border: 1px solid #e3e8ed;
+  box-shadow: none; }
 
 .btn, .btn:hover {
   background: #ede112;
   border: none;
-  text-shadow: none;
-  width: 170px; }
+  text-shadow: none; }
+.btn-primary {
+  width: 190px; }
+.secondary .btn {
+  width: 100%;
+  box-sizing: border-box; }
+
+.module .pagination {
+  padding-top: 20px; }
+  .module .pagination ul {
+    border-radius: 3px; }
+    .module .pagination ul, .module .pagination ul li a {
+      border: 1px solid #ccd4dc; }
+    .module .pagination ul li:first-child a {
+      border-left-width: 1px; }
+    .module .pagination ul li.active a, .module .pagination ul li:hover a {
+      border: 1px solid #056c7f;
+      background-color: #056c7f;
+      color: #fff; }
+    .module .pagination ul li:last-child:hover:not(.active) a {
+      border-left-width: 0px; }
 
 .secondary {
   background-color: #f5f8fb; }
   .secondary .module-heading {
     background-color: transparent;
+    color: #056c7f;
+    text-transform: uppercase;
     border-top: none;
     border-bottom: 1px solid #0992ad; }
+  .secondary .nav-facet .nav-item.active a:before {
+    background-image: none; }
+  .secondary .nav-facet .nav-item a:hover:after, .secondary .nav-facet .nav-item.active a:after {
+    background-image: url("../../../../dfmp/images/sprite-ckan-icons.png"); }
+  .secondary .nav-facet .nav-item.active a, .secondary .nav-facet .nav-item a:hover, .secondary .nav-facet .nav-item a:focus {
+    background-color: #ede112;
+    color: #1e1e21; }
 
 .site-footer {
   background: #18191b;
-  border-top: 3px solid #027072; }
+  border-top: 3px solid #027072;
+  color: #fff; }
+  .site-footer a, .site-footer label, .site-footer small {
+    color: #fff; }
   .site-footer .footer-links {
     float: left; }
   .site-footer .lang-select {
     float: right; }
   .site-footer .lang-container {
     margin-left: 20px; }
-  .site-footer .footer-logo {
+  .site-footer .footer-ckan-link, .site-footer .footer-logo {
+    background-repeat: no-repeat;
+    background-size: contain;
     position: absolute;
+    transition: background-image 0.5s; }
+  .site-footer .footer-logo {
     left: 0;
     bottom: 10px;
-    background: url("../../../../dfmp/images/full_logo.png") no-repeat;
-    background-size: contain;
+    background-image: url("../../../../dfmp/images/full_logo_footer.png");
     height: 45px;
     width: 179px; }
+    .site-footer .footer-logo:hover {
+      background-image: url("../../../../dfmp/images/full_logo.png"); }
   .site-footer .attribution {
     float: right;
     width: auto; }
   .site-footer .footer-ckan-link {
-    background: url("../../../../dfmp/images/ckan_logo.png");
+    background-image: url("../../../../dfmp/images/ckan_logo_footer.png");
     display: inline-block;
     height: 24px;
     width: 70px;
     margin-left: 7px;
-    position: absolute;
     top: -7px; }
+    .site-footer .footer-ckan-link:hover {
+      background-image: url("../../../../dfmp/images/ckan_logo.png"); }
   .site-footer label {
     font-weight: normal; }
   .site-footer ul {

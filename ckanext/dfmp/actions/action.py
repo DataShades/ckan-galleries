@@ -215,6 +215,9 @@ def _update_generator(context, data_dict):
       })['records'][0]
 
       del res['_id']
+      name = item.get('name')
+      if name:
+        res.update(name)
       res['metadata'].update(item)
       if item.get('license'):
         res['metadata']['license_id']   = res['metadata']['license'] = item['license']
