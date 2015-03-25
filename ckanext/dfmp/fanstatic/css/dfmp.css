@@ -29,7 +29,7 @@ body {
   background: #18191b; }
 
 .account-masthead {
-  background-color: #056c7f;
+  background-color: #014f5e;
   border-bottom: 1px solid #00424d; }
   .account-masthead .account ul li {
     border-right: 1px solid #004049; }
@@ -40,7 +40,7 @@ body {
     background-color: #003942; }
     .account-masthead .account.not-authed ul li a:hover.sub {
       color: #24211a;
-      background-color: #eda712; }
+      background-color: #ede112; }
 
 .masthead {
   background: #017173 url("../../../../dfmp/images/texture.png");
@@ -90,7 +90,7 @@ h1, .toolbar .breadcrumb li a, a, .dataset-heading a, .module .read-more {
 .wrapper {
   box-shadow: none;
   border: none;
-  background: white url("../../../../dfmp/images/nav.png") 0 0 repeat-y; }
+  background: #fff url("../../../../dfmp/images/nav.png") 0 0 repeat-y; }
 
 .toolbar .breadcrumb {
   font-size: 20px; }
@@ -196,3 +196,5 @@ input[type=text], .masthead input[type=text], select, .masthead select {
     .site-footer ul li {
       margin-right: 15px;
       display: inline; }
+
+/*# sourceMappingURL=dfmp.css.map */
