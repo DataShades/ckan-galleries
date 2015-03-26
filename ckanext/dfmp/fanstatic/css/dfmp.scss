@@ -26,9 +26,9 @@ body {
                 border-right: $account_action_border;
                 a {
                     color: #fff;
-                    &:hover{
-                      color: $register_text;
-                      background-color: $register_back;
+                    &:hover {
+                        color: $register_text;
+                        background-color: $register_back;
                     }
                 }
             }
@@ -39,9 +39,11 @@ body {
         }
     }
 }
-.homepage .module-search .module-content{
-  background-color: #fff;
+
+.homepage .module-search .module-content {
+    background-color: #fff;
 }
+
 .masthead {
     @include masthead_gradient(left, right, $masthead_gradient_from, $masthead_gradient_to);
     .header-image {
@@ -76,8 +78,8 @@ body {
     background: $gray;
     .primary {
         width: 719px;
-        .primary{
-          width: 467px;
+        .primary {
+            width: 467px;
         }
     }
 }
@@ -85,8 +87,9 @@ body {
 h1, h3, a, .dataset-heading a, .module .read-more, .editor .editor-info-block a {
     color: $green;
 }
-a:hover, a:focus{
-  color: $orange;
+
+a:hover, a:focus {
+    color: $orange;
 }
 
 .toolbar .breadcrumb {
@@ -161,6 +164,28 @@ a:hover, a:focus{
     }
 }
 
+.nav li a {
+    &:hover, &:focus {
+        background-color: $yellow;
+        color: $black;
+    }
+}
+
+.icon {
+    &-google-plus-sign, &-twitter-sign, &-facebook-sign {
+        font-size: 17px;
+    }
+    &-google-plus-sign {
+        color: #D14129;
+    }
+    &-twitter-sign {
+        color: #06A8E9;
+    }
+    &-facebook-sign {
+        color: #3B5999;
+    }
+}
+
 .media {
     &-grid {
         background-color: $dark_green;
@@ -171,36 +196,38 @@ a:hover, a:focus{
         }
     }
     &-item {
-        .count-wrapper{
+        .count-wrapper {
             text-align: center;
-            strong, span{
-              display: block;
-              border-radius: 3px;
+            strong, span {
+                display: block;
+                border-radius: 3px;
             }
-            strong{
-              @include masthead_gradient(bottom, top, $ybtn_gf, $ybtn_gt);
-              border: $bw $ybtn_b;
+            strong {
+                @include masthead_gradient(bottom, top, $ybtn_gf, $ybtn_gt);
+                border: $bw $ybtn_b;
             }
-            span{
-              background: $dbtn_c;
-              border: $bw $dbtn_b;
-              color: $black;
+            span {
+                background: $dbtn_c;
+                border: $bw $dbtn_b;
+                color: $black;
             }
         }
     }
 }
 
-.well{
-  border:none;
-  background: none;
+.well {
+    border: none;
+    background: $light_green;
 }
-.homepage .module-search .tags{
-  background: $gray;
+
+.homepage .module-search .tags {
+    background: $gray;
 }
+
 .pill, .well a, .tags .tag {
-    &, &:hover{
-      border: none;
-      box-shadow: none;
+    &, &:hover {
+        border: none;
+        box-shadow: none;
     }
     background-color: $yellow;
     &:hover {
@@ -224,10 +251,11 @@ a:hover, a:focus{
     background: #fff $nav_image 0 0 repeat-y;
 }
 
-.module > .module-content > small{
-  display: block;
-  text-align: center;
+.module > .module-content > small {
+    display: block;
+    text-align: center;
 }
+
 .toolbar .breadcrumb {
     font-size: $breadcrumb_font_size;
 }
@@ -258,32 +286,65 @@ input[type=text], input[type=password], select {
     }
 }
 
+.btn-primary, .btn-warning, .btn-danger, .btn-info, .btn-success, .btn-inverse {
+    .caret {
+        border-top-color: $black;
+        border-bottom-color: $black;
+    }
+}
+
 .btn {
     @include masthead_gradient(bottom, top, $ybtn_gf, $ybtn_gt);
     border: $bw $ybtn_b;
     text-shadow: none;
     box-shadow: none;
+    color: $black;
     &:hover, &.hover {
+        color: $black;
         background: $ybtn_h;
     }
-    &-primary {
+    &-primary, &-success {
         width: 190px;
+        &:hover, &:focus, .btn-group.open &.dropdown-toggle {
+            @extend .btn:hover;
+        }
+    }
+    &-green {
         @include masthead_gradient(bottom, top, $gbtn_gf, $gbtn_gt);
+        width: 190px;
         border: $bw $gbtn_b;
         &:hover {
             background: $gbtn_h;
         }
     }
-    &-danger{
-      @include masthead_gradient(bottom, top, $rbtn_gf, $rbtn_gt);
-      border: $bw $rbtn_b;
-      &:hover {
-          background: $rbtn_h;
-      }
+    &-danger {
+        @include masthead_gradient(bottom, top, $rbtn_gf, $rbtn_gt);
+        border: $bw $rbtn_b;
+        &:hover {
+            background: $rbtn_h;
+        }
     }
     .secondary & {
         width: 100%;
         box-sizing: border-box;
+    }
+}
+
+.btn {
+    @extend .btn;
+}
+
+.dropdown-menu li {
+    a:hover, a:focus {
+        @extend .btn:hover;
+    }
+}
+
+.dropdown-submenu {
+    &:hover, &:focus {
+        a {
+            @extend .btn:hover;
+        }
     }
 }
 
@@ -316,6 +377,7 @@ input[type=text], input[type=password], select {
     }
 }
 
+.nav-item.active>a:before{background-image: $nav_active_after;}
 .secondary, .tertiary {
     background-color: $sidebar_back;
     .module-heading {
@@ -327,7 +389,6 @@ input[type=text], input[type=password], select {
             bottom: $bw #0992ad;
         };
     }
-    // .nav-facet .nav-item>a:hover:after, .nav-facet .nav-item.active>a:after
     .nav-facet .nav-item {
         &.active a:before {
             background-image: none;
@@ -339,6 +400,64 @@ input[type=text], input[type=password], select {
             background-color: $yellow;
             color: $black;
         }
+    }
+    .nav-item.active, .nav-aside li.active {
+        a {
+            background-color: $blue;
+            &:hover {
+                color: #fff;
+            }
+        }
+    }
+}
+
+.table-striped tbody tr:nth-child(even) {
+    td, th {
+        background-color: $ta_row;
+    }
+}
+
+a {
+    .table & {
+        color: $t_a;
+    }
+}
+
+thead th {
+    color: #fff;
+    background: $tb_row;
+    text-shadow: none;
+}
+
+.recline-data-explorer {
+    background: #fff;
+    .well {
+        &, & a {
+            background: #fff;
+        }
+    }
+    .recline-slickgrid .slick-header-columns .slick-header-column {
+        color: #fff;
+        background: $tb_row;
+        text-shadow: none;
+    }
+    .ui-widget-content.slick-row.odd {
+        background-color: $ta_row;
+    }
+    .slick-cell a {
+        color: $t_a;
+    }
+    .btn, .recline-pager a {
+        border: $bw $rec_b;
+        color: #fff;
+        @include masthead_gradient(bottom, top, $rec_bf, $blue);
+        &.active, &:hover {
+            background: $dark_green;
+            color: $yellow;
+        }
+    }
+    .add-on {
+        background-color: #fff;
     }
 }
 

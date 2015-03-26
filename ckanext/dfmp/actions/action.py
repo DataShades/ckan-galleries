@@ -83,9 +83,14 @@ def user_get_assets(context, data_dict):
     else:
       log.warn(resources)
       parent_id = resources[0].id
-      assets = toolkit.get_action('resource_items')(context, {'id':parent_id})
+      assets = toolkit.get_action('resource_items')(context, {
+        'id':parent_id,
+        'limit':data_dict.get('limit',21),
+        'offset':data_dict.get('offset', 0)
+      })
       for record in assets['records']:
         record['parent_id'] = parent_id
+        record['total'] = assets['count']
 
     return assets['records']
   except Exception, e:
