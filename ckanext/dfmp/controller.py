@@ -109,7 +109,7 @@ class DFMPController(base.BaseController):
 
     for param in params_nosort:
       if param[0] in facet_fields:
-        fq += ' +{0}:"{1}"'.format(*param)
+        fq += u' +{0}:"{1}"'.format(*param)
 
     result = DFMPSearchQuery()({
       'q':q,
