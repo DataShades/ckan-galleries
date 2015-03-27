@@ -1,0 +1,31 @@
+.recline-data-explorer {
+    background: #fff;
+    .well {
+        &, & a {
+            background: #fff;
+        }
+    }
+    .recline-slickgrid .slick-header-columns .slick-header-column {
+        color: #fff;
+        background: $tb_row;
+        text-shadow: none;
+    }
+    .ui-widget-content.slick-row.odd {
+        background-color: $ta_row;
+    }
+    .slick-cell a {
+        color: $t_a;
+    }
+    .btn, .recline-pager a {
+        border: $bw $rec_b;
+        color: #fff;
+        @include masthead_gradient(bottom, top, $rec_bf, $blue);
+        &.active, &:hover {
+            background: $dark_green;
+            color: $yellow;
+        }
+    }
+    .add-on {
+        background-color: #fff;
+    }
+}

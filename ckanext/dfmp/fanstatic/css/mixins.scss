@@ -1,0 +1,10 @@
+@mixin masthead_gradient($gf, $gt, $a, $b) {
+    background: $b $masthead_back;
+    background-image: $masthead_back, -moz-linear-gradient($gf, $a 0%, $b 100%);
+    background-image: $masthead_back, -webkit-gradient(linear, $gf top, $gt top, color-stop(0%, $a), color-stop(100%, $b));
+    background-image: $masthead_back, -webkit-linear-gradient($gf, $a 0%, $b 100%);
+    background-image: $masthead_back, -o-linear-gradient($gf, $a 0%, $b 100%);
+    background-image: $masthead_back, -ms-linear-gradient($gf, $a 0%, $b 100%);
+    background-image: $masthead_back, linear-gradient(to $gt, $a 0%, $b 100%);
+    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='$a', endColorstr='$b',GradientType=1 );
+}

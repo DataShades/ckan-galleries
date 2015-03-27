@@ -1,0 +1,111 @@
+.homepage {
+    background: $gray;
+    .hero{
+        background: $home_back{
+            repeat: no-repeat;
+            size: 100% auto;
+        }
+    }
+    .module-search .module-content {
+        .search-giant input{
+            line-height: 1.5
+        }
+        .heading{
+            margin-bottom: 3px;
+        }
+    }
+    &.layout-2 {
+        .span12{
+            header{
+                width:43%;
+                float: left;
+                background: #fff;
+                padding: 0 20px;
+            }
+            header, img{
+                 height:162px;
+            }
+            .module-content{
+                &:last-child{padding:0}
+                &.box, .featured{
+                    background: none;
+                    border: none;
+                }
+
+            }
+            .media-image{float: right;}
+        }
+        .stats {
+            margin-top: 0;
+            table{width: 100%;}
+            td {
+                float: none;
+                text-align: center;
+                // -width: 23%;
+                // width: auto;
+                &:nth-child(1) a b{
+                    background: $yellow;
+                    border-top-left-radius:3px;
+                    border-bottom-left-radius:3px;
+                }
+                &:nth-child(2) a b{
+                    background: $dark_yellow;
+                }
+                &:nth-child(3) a b{
+                    background: $light_orange;}
+
+                &:nth-child(4) a b{
+                    background: $orange;
+                    border-top-right-radius:3px;
+                    border-bottom-right-radius:3px;
+                }
+                a{
+                    text-align: center;
+                    color:$yellow;
+                    text-transform: uppercase;
+                    font-size: 13px;
+                    &:hover{text-decoration:none;}
+                    b{  
+                        font-size: 35px;
+                        display:block;
+                        padding: 2px;
+                        margin-bottom: 20px;
+                        margin-left: -4px;
+                        line-height: 1.5;
+                    }
+                    span{
+                        color: $black;
+                    }
+                }
+            }
+        }
+        .home-top-row{
+            background: rgba(23,58,69,0.9);
+            margin: 60px 0 40px 20px;
+            position: relative;
+            border-radius: 3px;
+            .col{
+                &-left, &-right{
+                    width:50%;
+                    display:inline-block;
+                    .box, .tags,.module-search .module-content{
+                        background: none;
+                        border: none;
+                        box-shadow: none;
+                        h3{
+                            color: #fff;
+                        }
+                    }
+                }
+                &-right{
+                    position: absolute;right: 0;
+                    .box .inner{
+                        padding: 20px 10px;
+                    }
+                }
+
+            }
+        }
+
+    }
+}
