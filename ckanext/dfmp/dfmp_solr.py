@@ -4,7 +4,7 @@ from ckanext.dfmp.bonus import _get_index_id
 
 from pylons import config
 from paste.deploy.converters import asbool
-
+from ckan.common import c
 from ckan.lib.search.query import SearchQuery, VALID_SOLR_PARAMETERS, SearchQueryError, SearchError
 
 from ckan.lib.search.common import SearchIndexError, make_connection
@@ -43,11 +43,10 @@ class DFMPSolr(SearchIndex):
   def index_asset(self, ast_dict, defer_commit=False):
     if ast_dict is None:
       return
-
     ast_dict[TYPE_FIELD] = ASSET_TYPE
     ast_dict['capacity'] = 'public'
-
-    ast_dict['package_id'] = _get_package_id_by_res(ast_dict['id'])
+    if not ast_dict.get('package_id'):
+      ast_dict['package_id'] = _get_package_id_by_res(ast_dict['id'])
 
     bogus_date = datetime.datetime(1, 1, 1)
     try:
@@ -247,6 +246,17 @@ class DFMPSearchQuery(SearchQuery):
     if not '+state:' in q and not '+state:' in fq:
       fq += " -state:hidden -state:deleted"
 
+    user = c.userobj
+    if not user or not user.sysadmin:
+      user_groups = [ group.id for group in user.get_groups() if group.is_organization ] if user else []
+      private = model.Session.query(model.Package.id, model.Package.owner_org).\
+        filter(
+          model.Package.private==True,
+          ~model.Package.owner_org.in_(user_groups)
+        ).all()
+      for id in private:
+        log.warn(id[1])
+        fq += " -package_id:{id}".format(id=id[0])
     query['fq'] = [fq]
 
     fq_list = query.get('fq_list', [])
