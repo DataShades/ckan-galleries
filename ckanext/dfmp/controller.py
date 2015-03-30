@@ -13,8 +13,8 @@ from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
 import logging
 log = logging.getLogger(__name__)
 import ckanext.dfmp.scripts as scripts
-from ckanext.dfmp.actions.action import _name_normalize, _asset_to_solr
-from ckanext.dfmp.bonus import _unique_list
+from ckanext.dfmp.actions.action import _asset_to_solr
+from ckanext.dfmp.bonus import _unique_list, _name_normalize
 ASSETS_PER_PAGE = 20
 log_path = '/var/log/dfmp/'
 

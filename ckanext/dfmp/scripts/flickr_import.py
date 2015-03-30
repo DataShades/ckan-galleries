@@ -1,18 +1,11 @@
 import flickrapi, math, json, uuid, logging, ckanapi, string
 import ckan.plugins.toolkit as toolkit
 from datetime import datetime
+from ckanext.dfmp.bonus import _name_normalize
 
 log = logging.getLogger(__name__)
 from pylons import config
 
-KEY_CHARS = string.digits + string.letters + "_-"
-def _name_normalize(name):
-  return ''.join([
-      c
-      for c
-      in name
-      if c in KEY_CHARS
-    ]).lower()
 
 # FLICKR INIT
 api_key = u'1903a21d2f1e99652164ad8c681e4b22'

@@ -1,9 +1,10 @@
 import ckan.plugins as plugins
 from time import sleep
 from ckanext.dfmp.actions.action import *
+from ckanext.dfmp.actions.datastore_action import *
+from ckanext.dfmp.actions.get import *
 from ckanext.dfmp.actions.action import _get_pkid_and_resource
 
-from ckanext.dfmp.actions.datastore_action import *
 from ckan.logic import side_effect_free
 from ckanext.dfmp.actions.background import *
 from ckanext.dfmp.actions.social import *
@@ -140,6 +141,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
         'user_update_dataset':user_update_dataset,
         'dfmp_all_assets':dfmp_all_assets,
         'flag_asset':flag_asset,
+        'dfmp_user_info':dfmp_user_info,
 
       }
 

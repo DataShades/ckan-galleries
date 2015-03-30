@@ -2,13 +2,12 @@ import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
 from datetime import datetime
-import logging, copy, uuid, string, json
+import logging, copy, uuid, json
 from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
 import ckan.model as model
 from pylons import config
-from ckanext.dfmp.bonus import _validate, _get_index_id
+from ckanext.dfmp.bonus import _validate, _get_index_id, _name_normalize
 log = logging.getLogger(__name__)
-KEY_CHARS = string.digits + string.letters + "_-"
 session = model.Session
 indexer = DFMPSolr()
 searcher = DFMPSearchQuery()
@@ -428,14 +427,6 @@ def _get_license_name(id):
   if license:
     return license[0]['title']
   return ''
-
-def _name_normalize(name):
-  return ''.join([
-      c
-      for c
-      in name
-      if c in KEY_CHARS
-    ])
 
 def _get_pkid_and_resource(context):
   package_id = _get_assets_container_name(context['auth_user_obj'].name)

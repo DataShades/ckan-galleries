@@ -1,5 +1,10 @@
 .homepage {
-    background: $gray;
+    &, & [role=main]{
+        background: $gray $gray_back{
+            repeat: no-repeat;
+            size: 100% 100%;
+        }
+    }
     .hero{
         background: $home_back{
             repeat: no-repeat;

@@ -1,9 +1,13 @@
 import ckan.plugins.toolkit as toolkit
-import hashlib
+import hashlib, string
 from pylons import config
-
+from ckan.common import c
 import ckan.model as model
+
 session = model.Session
+
+KEY_CHARS = string.digits + string.letters + "_-"
+
 
 def _get_index_id(id, assetID):
   return hashlib.md5('%s%s' % (id + assetID, config.get('ckan.site_id'))).hexdigest()
@@ -33,3 +37,18 @@ def _unique_list(array):
   doppelganger = set()
   doppelganger_add = doppelganger.add
   return [ x for x in array if not (x in doppelganger or doppelganger_add(x))]
+
+def _only_admin(func):
+  def function(*pargs, **kargs):
+    if not c.userobj or not c.userobj.sysadmin:
+      raise toolkit.NotAuthorized
+    return func(*pargs, **kargs)
+  return function
+
+def _name_normalize(name):
+  return ''.join([
+      c
+      for c
+      in name
+      if c in KEY_CHARS
+    ])
