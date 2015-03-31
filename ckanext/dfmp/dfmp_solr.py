@@ -247,8 +247,40 @@ class DFMPSearchQuery(SearchQuery):
       fq += " -state:hidden -state:deleted"
 
     user = c.userobj
-    if not user or not user.sysadmin:
-      user_groups = [ group.id for group in user.get_groups() if group.is_organization ] if user else []
+    if user and (user.sysadmin or user.email.endswith('@act.gov.au')): pass
+    else:
+      user_groups = []
+      if user:
+        for group in user.get_groups():
+          user_groups.append(group.id)
+
+          #get all child orgs
+          user_groups.extend([
+            item.table_id for item
+            in filter(
+              lambda x: x.capacity=='child_organization' and x.state == 'active',
+              group.member_all
+            )
+          ])
+
+          #get all brothers
+          parents = model.Session.query(model.Group)\
+            .filter(model.Group.id.in_([
+              item.table_id for item
+              in filter(
+                lambda x: x.capacity=='parent_organization' and x.state == 'active',
+                group.member_all
+              )
+            ])).all()
+          for parent in parents:
+            user_groups.extend([
+              item.table_id for item
+              in filter(
+                lambda x: x.capacity=='child_organization' and x.state == 'active',
+                parent.member_all
+              )
+            ])
+
       private = model.Session.query(model.Package.id, model.Package.owner_org).\
         filter(
           model.Package.private==True,

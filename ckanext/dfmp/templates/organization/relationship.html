@@ -1,0 +1,44 @@
+{% extends "organization/edit_base.html" %}
+
+{% block subtitle %}{{ _('Relationship') }} - {{ super() }}{% endblock %}
+
+{% block page_primary_action %}
+{% endblock %}
+
+{% block primary_content_inner %}
+  <h3 class="page-heading">{{ _('{0} organisations'.format(all_organizations|length)) }}</h3>
+  <table class="table table-striped table-bordered table-condensed " >
+    <col width="70" />
+    <col width="10" />
+    <thead>
+      <tr>
+        <th scope="col">{{ _('Organisation') }}</th>
+        <th scope="col"></th>
+      </tr>
+    </thead>
+    <tbody>
+
+      {% for org in all_organizations %}
+        {% if org.id != c.group_dict.id %} 
+        <tr>
+          <td class="media">
+            {{ org.display_name or org.name }}
+          </td>
+          <td>
+            {% set locale = h.dump_json({'content': _('Are you sure you want to delete this member?')}) %}
+            <div class="btn-group pull-right">
+              {% if org.id not in children %}
+                <a class="btn btn-small" href="{{ h.url_for('ckanadmin_org_relationship', org=c.group_dict.id, child=org.id, route='add') }}" title="{{ _('Edit') }}">
+                  <i class="icon-plus"></i>
+                </a>
+              {% else %}
+                <a class="btn btn-danger btn-small" href="{{ h.url_for('ckanadmin_org_relationship', org=c.group_dict.id, child=org.id, route='remove') }}" data-module="confirm-action" data-module-i18n="{{ locale }}" title="{{ _('Delete') }}">{% block delete_button_text %}<i class="icon-remove"></i>{% endblock %}</a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+        {% endif %}
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

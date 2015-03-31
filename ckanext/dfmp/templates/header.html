@@ -20,3 +20,13 @@
     ('about', _('About'))
   ) }}
 {% endblock %}
+
+{% block header_site_search %}
+  <form class="section site-search simple-input" action="{{ h.url_for('search_assets') }}" method="get">
+    <div class="field">
+      <label for="field-sitewide-search">{{ _('Search Assets') }}</label>
+      <input id="field-sitewide-search" type="text" name="q" placeholder="{{ _('Search assets...') }}" />
+      <button class="btn-search" type="submit"><i class="icon-search"></i></button>
+    </div>
+  </form>
+{% endblock %}

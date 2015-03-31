@@ -219,6 +219,64 @@ class DFMPController(base.BaseController):
     DFMPSolr().commit()
     base.redirect(c.environ.get('HTTP_REFERER', config.get('ckan.site_url','/')))
 
+  def ckanadmin_org_relationship(self, org):
+    if not c.userobj or not c.userobj.sysadmin:
+      base.abort(404)
+    context = {
+      'model': model,
+      'user': c.user or c.author,
+      'auth_user_obj': c.userobj
+    }
+    
+    
+    
+
+    params = dict(request.params)
+    if 'route' in params and 'child' in params:
+      if params['route'] == 'add':
+        member_create = toolkit.get_action('member_create')
+        member_create(context,{
+          'id': org,
+          'object': params['child'],
+          'object_type': 'group',
+          'capacity': 'child_organization'
+          })
+        member_create(context,{
+          'id': params['child'],
+          'object': org,
+          'object_type': 'group',
+          'capacity': 'parent_organization'
+          })
+      elif params['route'] == 'remove':
+        log.warn('FFFFYYYUUUUUCK')
+        member_delete = toolkit.get_action('member_delete')
+        member_delete(context,{
+          'id': org,
+          'object': params['child'],
+          'object_type': 'group',
+          })
+        member_delete(context,{
+          'id': params['child'],
+          'object': org,
+          'object_type': 'group',
+          })
+
+    org_obj = session.query(model.Group).filter_by(id=org).first()
+    log.warn(org_obj.member_all)
+    children = [ item.table_id for item in filter(lambda x: x.capacity=='child_organization' and x.state == 'active', org_obj.member_all)]
+    log.warn(children)
+
+    all_organizations = toolkit.get_action('organization_list')(context, {'all_fields':True})
+    for o in all_organizations:
+      if o['id'] == org:
+        organization = o
+    c.group_dict = organization
+    return base.render('organization/relationship.html', extra_vars={
+      'all_organizations':all_organizations,
+      'children':children
+    })
+  
+
   def twitter_listeners(self):
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)

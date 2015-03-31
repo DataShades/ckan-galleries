@@ -87,7 +87,12 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
     map.connect(
       'ckanadmin_flags', '/ckan-admin/flags',
       controller='ckanext.dfmp.controller:DFMPController',
-      action='flags', ckan_icon='exclamation-sign')    
+      action='flags', ckan_icon='exclamation-sign')
+    map.connect(
+      'ckanadmin_org_relationship', '/organization/relationship/{org}',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='ckanadmin_org_relationship', ckan_icon='exclamation-sign')
+    
     map.connect(
       'solr_commit', '/ckan-admin/solr_commit',
       controller='ckanext.dfmp.controller:DFMPController',
