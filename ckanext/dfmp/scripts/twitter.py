@@ -2,38 +2,66 @@
 # encoding='utf-8'
 from tweepy import Stream, OAuthHandler
 from tweepy.streaming import StreamListener
-import argparse
-import json
+import argparse, copy, json,ckanapi
 from time import sleep
 from os import getpid
 from datetime import datetime
 
 from  ckan.logic import NotFound
-import ckanapi
 
 
 from sys import stdout
 flush = stdout.flush
 
 pid = getpid()
-waiting = 300
+waiting = 2000
+
+CK  = 'vKAo073zpwfmuiTkyR83qyZEe'
+CS  = 'cciB0ZCwQnBASvRp9HPN1vbBdZSCEzyu118igFhQFxOwDVFmVD'
+AT  = '23904345-OmiSA5CLpceClmy46IRJ98ddEKoFJAPura2j53ryN'
+ATS = 'QYJwGyYODIFB5BJM8F5IXNUDn9coJnKzY6scJOErKRcAE'
+
 
 class TwitterListener(StreamListener):
-    def on_data(self, data):
-      print 'Proccess %d. %s. Data received...' % (pid, datetime.now())
+  def on_data(self, data):
+    print data
+    print 'Data received...'
+
+    _change_status(
+      args,
+      'Proccessing data',
+      state='Proccessing'
+    )
+    try:
       _save_data(json.loads(data))
-      print 'Proccess %d. Listening...' % pid
-      flush()
+    except Exception, e:
+      print e
+      _change_status(
+        args,
+        'Error {%s}, continue listening' % e,
+        state='Listening'
+      )
       return True
-    def on_error(self, status):
-      print 'Proccess %d. Error %d' % (pid, status)
-      flush()
+    _change_status(
+      args,
+      'Listening',
+      state='Listening'
+    )
+    print 'Listening...'
+    flush()
+    return True
 
+  def on_error(self, status):
+    raise Exception(status)
 
+  def on_connect(self):
+    print 'on_connect'
+
+      
 def _save_data(data):
-  print(data)
+  flush()
   if not 'extended_entities' in data or not 'media' in data['extended_entities']:
-    'Proccess %d. Media not found...' % pid
+    print 'Media not found...'
     return
   try:
     try:
@@ -42,39 +70,58 @@ def _save_data(data):
       print e
       spatial = None
     resource = {
-                'text': data['text'],
-                'name': '{0}'.format(data['user']['screen_name']),
-                'time': data['timestamp_ms'][:-3]
-              }
+      'text': data['text'],
+      'name': data['user']['screen_name'],
+      'time': data['timestamp_ms'][:-3]
+    }
   except Exception, e:
     print e
-    print 'Proccess %d. Data not saved' % pid
-    flush()
+    print 'Data not saved'
     return
+  tags = ','.join( [ tag['text'] for tag in data['extended_entities'].get('hashtags', []) ] )
   for asset in data['extended_entities']['media']:
+    forbidden_id = ckan.call_action(
+      'resource_show',
+      {'id': args.resource}
+    ).get('forbidden_id', '')
+    if asset['id_str'] in forbidden_id: continue
+    
     try:
-      resource.update(thumb=asset['media_url'], mimetype='image/jpeg', id=asset['id_str'])
+      resource['text'].replace(asset['media_url'], '')
+      meta = copy.deepcopy(data)
+      meta.update(
+        thumb=asset['media_url']+':small',
+        mimetype='image/jpeg',
+        id=asset['id_str'],
+        tags=tags
+      )
+      tweet = {
+        'assetID': meta['id'],
+        'lastModified': datetime\
+          .fromtimestamp( int(resource['time']) )\
+          .strftime('%Y-%m-%d %H:%M:%S'),
+        'name':resource['name'],
+        'url':asset['media_url'],
+        'metadata':meta,
+        'spatial': spatial,
+      }
+      ckan.call_action('datastore_upsert',  {
+        'resource_id':args.resource,
+        'force':True,
+        'records':[tweet],
+        'method': 'insert'
+      })
 
-      ckan.call_action('datastore_upsert', {'resource_id':args.resource,
-                                            'force':True,
-                                            'records':[{
-                                              'assetID': resource['id'],
-                                              'lastModified': datetime.fromtimestamp( int(resource['time']) ).isoformat(' '),
-                                              'name':resource['name'],
-                                              'url':resource['thumb'],
-                                              'metadata':resource,
-                                              'spatial': spatial,
-                                            }],
-                                            'method': 'insert'})
-      print 'Proccess %d. Item saved...' % pid
-      flush()
+      tweet.update(id=args.resource)
+      ckan.call_action(
+        'solr_add_assets',
+        {'items':[tweet]}
+      )
+      print 'Item saved...'
     except Exception, e:
       print e
-      print 'Proccess %d. Problem with saving. Skipped..' % pid
-      flush()
+      print 'Problem with saving. Skipped..'
       continue
-
-
 
 def get_args():
   parser = argparse.ArgumentParser(description='This script allows to parse Tweets using Twitter\'s StreamAPI', epilog="Default values of Consumer keys and Access tokens should be used only in development and testing ")
@@ -95,45 +142,38 @@ def get_args():
                       help='Tag or word for streaming',
                       required=True)
   parser.add_argument('--ck',
-                      default='VmNHkKuFcza5ouvkNiimpoU8E',
+                      default=CK,
                       nargs=1,
                       help='Consumer Key (API Key)')
   parser.add_argument('--cs',
-                      default='E9CcaBikENNmbNC2LaG9aWhpiNuvpBBhUElPtZNGwulpvzIVu1',
+                      default=CS,
                       nargs=1,
                       help='Consumer Secret (API Secret)')
   parser.add_argument('--at',
-                      default='23904345-4PBhPAYyUn4XvniAFCDOv5HaVEIJt2ik2j7KhEWdx',
+                      default=AT,
                       nargs=1,
                       help='Access Token')
   parser.add_argument('--ats',
-                      default='a7Qtt296u2FnSia9fGGpbejJ3Jg420OC0LBPbCmYIIKVs',
+                      default=ATS,
                       nargs=1,
                       help='Access Token Secret')
   return parser.parse_args()
 
-def init_package(args, ckan):
-  # try:
-  #   return ckan.call_action('package_show',{'id': args.dataset})
-  # except NotFound:
-  #   return ckan.call_action('package_create',{'name': args.dataset})
-
-  # ckan.call_action('datastore_delete', {'resource_id':args.resource,
-  #                                                   'force': True})
-  ckan.call_action('datastore_create', {'resource_id':args.resource,
-                                                    'force': True,
-                                                    'fields':[
-                                                      {'id':'assetID', 'type':'text'},
-                                                      {'id':'lastModified', 'type':'text'},
-                                                      {'id':'name', 'type':'text'},
-                                                      {'id':'url', 'type':'text'},
-                                                      {'id':'spatial', 'type':'json'},
-                                                      {'id':'metadata', 'type':'json'},
-
-                                                    ],
-                                                    'primary_key':['assetID'],
-                                                    'indexes':['name', 'assetID']
-                                                    })
+def init_datastore(args, ckan):
+  ckan.call_action('datastore_create', {
+    'resource_id':args.resource,
+    'force': True,
+    'fields':[
+      {'id':'assetID', 'type':'text'},
+      {'id':'lastModified', 'type':'text'},
+      {'id':'name', 'type':'text'},
+      {'id':'url', 'type':'text'},
+      {'id':'spatial', 'type':'json'},
+      {'id':'metadata', 'type':'json'},
+    ],
+    'primary_key':['assetID'],
+    'indexes':['name', 'assetID']
+  })
 
 
 def init_stream(args):
@@ -141,26 +181,55 @@ def init_stream(args):
   auth.set_access_token(args.at, args.ats)
   return Stream(auth, TwitterListener())
 
-def start_parsing(args, twitterStream):
+def start_parsing(args):
   print 'Proccess %d. Starting...' % pid
   while True:
     try:
-      twitterStream.filter(track=[args.search])
+      init_stream(args).filter(track=[args.search])
     except Exception, e:
+      _change_status(
+        args,
+        'Exception %s, restart in %s seconds' % (e, waiting),
+        state='Restarting'
+      )
       print e
       print 'Restart in %d seconds' % waiting
       flush()
       sleep(waiting)
+      _change_status(
+        args,
+        'Restarting',
+        state='Restarting'
+      )
       print 'Proccess %d. Restarting...' % pid
       flush()
-    except KeyboardInterrupt:
-      print 'Terminated'
-      exit(0)
 
+
+def _change_status(args, status, state=''):
+  task_status = {
+      'entity_id': args.resource,
+      'task_type': 'twitter_streaming',
+      'key': 'celery_task_id',
+      'value': status,
+      'state':state,
+      'error': pid,
+      'last_updated': datetime.now().isoformat(),
+      'entity_type': 'resource'
+    }
+  print task_status
+  ckan.call_action(
+    'task_status_update',
+    task_status
+  )
 
 args = get_args()
 ckan = ckanapi.RemoteCKAN(args.host, args.apikey)
-package = init_package(args, ckan)
 
-start_parsing(args, init_stream(args))
+init_datastore(args, ckan)
 
+_change_status(
+  args,
+  'Started, process %s' % pid,
+  state='Listening'
+)
+start_parsing(args)

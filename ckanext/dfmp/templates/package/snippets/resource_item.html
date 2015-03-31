@@ -11,14 +11,22 @@
     </li>
     {{ super() }}
 
-    {# if h.is_sysadmin() %}
+    {% if h.is_sysadmin() %}
       <li>
-        <a href="/data/api/3/action/celery_cleaning?resource={{ res.id }}" >
+        <a href="{{ g.site_url }}/api/3/action/celery_cleaning?resource={{ res.id }}" >
           <i class="icon-time"></i>
           {{ _('Check URLs') }} 
         </a>
       </li>
-    {% endif #}
+      <li>
+        <a href="{{ g.site_url }}/api/3/action/celery_solr_indexing?resource={{ res.id }}" >
+          <i class="icon-search"></i>
+          {{ _('Add to SOLR Index') }} 
+        </a>
+      </li>
+
+      
+    {% endif %}
 
   {% else %}
     {{ super() }}

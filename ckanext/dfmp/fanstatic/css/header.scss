@@ -1,0 +1,52 @@
+.account-masthead {
+    background-color: $top_bar;
+    border-bottom: $top_bar_border;
+    .account {
+        ul {
+            li {
+                border-right: $account_action_border;
+                a {
+                    color: #fff;
+                    &:hover {
+                        color: $register_text;
+                        background-color: $register_back;
+                    }
+                }
+            }
+        }
+        &.not-authed ul li a:hover {
+            color: $yellow;
+            background-color: $login_back;
+        }
+    }
+}
+
+.masthead {
+    @include masthead_gradient(left, right, $masthead_gradient_from, $masthead_gradient_to);
+    .header-image {
+        margin: 20px 0;
+        position: relative;
+    }
+    .header-image, .content {
+        display: inline-block;
+    }
+    .content {
+        position: absolute;
+        top: 40px;
+    }
+    .site-search input {
+        width: 170px;
+    }
+    .navigation .nav-pills {
+        li {
+            a {
+                font-weight: bold;
+                font-size: $nav_font_size;
+            }
+            &.active a, &:hover a {
+                color: $nav_active_text;
+                background-color: $nav_active_back;
+            }
+        }
+    }
+}

@@ -1,0 +1,34 @@
+{% extends "package/search.html" %}
+
+{% block subtitle %}{{ _("Assets") }}{% endblock %}
+
+{% block breadcrumb_content %}
+  <li class="active">{{ h.nav_link(_('Assets'), controller='ckanext.dfmp.controller:DFMPController', action='search_assets') }}</li>
+{% endblock %}
+
+{% block page_primary_action %}{% endblock %}
+{% block form %}
+  {% set facets = {
+    'fields': c.fields_grouped,
+    'search': c.search_facets,
+    'titles': c.facet_titles,
+    'translated_fields': c.translated_fields,
+    'remove_field': c.remove_field }
+  %}
+  {% set sorting = [
+    (_('Relevance'), 'score desc, metadata_modified desc'),
+    (_('Title Ascending'), 'name asc'),
+    (_('Title Descending'), 'name desc'),
+    (_('Oldest'), 'metadata_created asc'),
+    (_('Newest'), 'metadata_created desc'),
+    (_('Oldest updated'), 'metadata_modified asc'),
+    (_('Last updated'), 'metadata_modified desc'),
+    (_('Popular'), 'views_recent desc') if g.tracking_enabled else (false, false) ]
+  %}
+  {% snippet 'snippets/search_form_asset.html', type='asset', query=c.q, sorting=sorting, sorting_selected=c.sort_by_selected, count=c.page.item_count, facets=facets, show_empty=request.params, error=c.query_error, fields=c.fields, placeholder=_('Search assets...') %}
+{% endblock %}
+
+{% block package_search_results_list %}
+  {{ h.snippet('package/snippets/asset_list.html', assets=assets) }}
+{% endblock %}
+

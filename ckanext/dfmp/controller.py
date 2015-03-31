@@ -1,22 +1,213 @@
 import ckan.plugins.toolkit as toolkit
 import ckan.lib.base as base
 import ckan.lib.helpers as h
-import datetime, os, re
+import datetime, os, re, json
 from dateutil import parser
 import ckan.model as model
+from pylons import config
+from ckan.common import c, g, _, OrderedDict, request
+from urllib import urlencode
 
-from ckan.common import c
 session = model.Session
-
+from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
 import logging
 log = logging.getLogger(__name__)
+import ckanext.dfmp.scripts as scripts
+from ckanext.dfmp.actions.action import _asset_to_solr
+from ckanext.dfmp.bonus import _unique_list, _name_normalize
+ASSETS_PER_PAGE = 20
+log_path = '/var/log/dfmp/'
 
+def search_url(params):
+  url = h.url_for('search_assets')
+  return url_with_params(url, params)
 
+def url_with_params(url, params):
+  params = _encode_params(params)
+  return url + u'?' + urlencode(params)
+
+def _encode_params(params):
+  return [(k, v.encode('utf-8') if isinstance(v, basestring) else str(v))
+    for k, v in params]
 
 class DFMPController(base.BaseController):
 
   def get_flickr(self):
     return base.render('package/dataset_from_flickr.html')
+
+  def search_assets(self):
+
+    q = c.q = request.params.get('q', u'')
+    c.query_error = False
+    sort_by = request.params.get('sort', None)
+    c.sort_by_selected = sort_by
+    try:
+      page = int(request.params.get('page', 1))
+    except ValueError, e:
+      abort(400, ('"page" parameter must be an integer'))
+    params_nopage = [
+      (k, v) for k, v in request.params.items()
+      if k != 'page'
+    ]
+    params_nosort = [(k, v) for k, v in params_nopage if k != 'sort']
+    def _sort_by(fields):
+      """
+      Sort by the given list of fields.
+      Each entry in the list is a 2-tuple: (fieldname, sort_order)
+      eg - [('metadata_modified', 'desc'), ('name', 'asc')]
+      If fields is empty, then the default ordering is used.
+      """
+      params = params_nosort[:]
+
+      if fields:
+        sort_string = ', '.join('%s %s' % f for f in fields)
+        params.append(('sort', sort_string))
+      return search_url(params)
+    c.sort_by = _sort_by
+    if sort_by is None:
+      sort_by = 'metadata_modified desc'
+      c.sort_by_fields = []
+    else:
+      c.sort_by_fields = [field.split()[0]
+                            for field in sort_by.split(',')]
+
+
+    def remove_field(key, value=None, replace=None):
+      return h.remove_url_param(key, value=value, replace=replace,
+                            controller='ckanext.dfmp.controller:DFMPController', action='search_assets')
+    c.remove_field = remove_field
+
+    def pager_url(q=None, page=None):
+      params = list(params_nopage)
+      params.append(('page', page))
+      return search_url(params)
+    c.search_url_params = urlencode(_encode_params(params_nopage))
+
+    facet_fields = [
+      'organization',
+      # 'groups',
+      'tags',
+      # 'res_format',
+      'license_id']
+
+    fq = ''
+    c.fields = []
+    c.fields_grouped = {}
+    search_extras = {}
+    for (param, value) in request.params.items():
+      if param not in ['q', 'page', 'sort'] \
+          and len(value) and not param.startswith('_'):
+        if not param.startswith('ext_'):
+          c.fields.append((param, value))
+          fq += ' %s:"%s"' % (param, value)
+          if param not in c.fields_grouped:
+            c.fields_grouped[param] = [value]
+          else:
+            c.fields_grouped[param].append(value)
+        else:
+          search_extras[param] = value
+
+    for param in params_nosort:
+      if param[0] in facet_fields:
+        fq += u' +{0}:"{1}"'.format(*param)
+
+    result = DFMPSearchQuery()({
+      'q':q,
+      'fl':'data_dict',
+      'fq':fq,
+      'facet.field':facet_fields,
+      'sort':sort_by,
+      'rows':ASSETS_PER_PAGE,
+      'start':(page - 1) * ASSETS_PER_PAGE
+
+    })
+
+    default_facet_titles = {
+      'organization': _('Organizations'),
+      'groups': _('Groups'),
+      'tags': _('Tags'),
+      'res_format': _('Formats'),
+      'license_id': _('Licenses'),
+    }
+
+    facets = OrderedDict()
+    for facet in facet_fields:
+      if facet in default_facet_titles:
+        facets[facet] = default_facet_titles[facet]
+      else:
+        facets[facet] = facet
+    c.facet_titles = facets
+
+    restructured_facets = {}
+    for key, value in result['facets'].items():
+        restructured_facets[key] = {
+                'title': key,
+                'items': []
+                }
+        for key_, value_ in value.items():
+            new_facet_dict = {}
+            new_facet_dict['name'] = key_
+            if key in ('groups', 'organization'):
+                group = model.Group.get(key_)
+                if group:
+                    new_facet_dict['display_name'] = group.display_name
+                else:
+                    new_facet_dict['display_name'] = key_
+            elif key == 'license_id':
+                license = model.Package.get_license_register().get(key_)
+                if license:
+                    new_facet_dict['display_name'] = license.title
+                else:
+                    new_facet_dict['display_name'] = key_
+            else:
+                new_facet_dict['display_name'] = key_
+            new_facet_dict['count'] = value_
+            restructured_facets[key]['items'].append(new_facet_dict)
+    c.search_facets = restructured_facets
+
+    c.search_facets_limits = {}
+    for facet in c.search_facets.keys():
+      try:
+        limit = int(request.params.get('_%s_limit' % facet,
+                                       g.facets_default_number))
+      except ValueError:
+        abort(400, _('Parameter "{parameter_name}" is not '
+           'an integer').format(
+             parameter_name='_%s_limit' % facet
+           ))
+      c.search_facets_limits[facet] = limit
+
+    assets = [ json.loads(item['data_dict']) for item in result['results'] ]
+
+    c.page = h.Page(
+        collection=assets,#query['results'],
+        page=page,#page,
+        url=pager_url,#pager_url,
+        item_count=result['count'],
+        items_per_page=ASSETS_PER_PAGE,#limit
+    )
+    c.page.items = assets
+
+    extra_vars = {
+      'assets':assets,
+
+    }
+    return base.render('package/search_assets.html', extra_vars = extra_vars)
+
+  def flags(self):
+    if not c.userobj or not c.userobj.sysadmin:
+      base.abort(404)
+    flagged = DFMPSearchQuery()({
+      'q':'',
+      'rows':100,
+      'start':0,
+      'fq':'+extras_flag:[* TO *]',
+    })['results']
+    assets = []
+    if flagged:
+      for item in flagged:
+        assets.append(json.loads(item['data_dict']))
+    return base.render('admin/flags.html', extra_vars={'assets':assets})
 
   def terminate_listener(self, id, resource_id):
     self._listener_route('terminate', id, resource_id)
@@ -24,34 +215,258 @@ class DFMPController(base.BaseController):
   def start_listener(self, id, resource_id):
     self._listener_route('start', id, resource_id)
 
+  def solr_commit(self):
+    DFMPSolr().commit()
+    base.redirect(c.environ.get('HTTP_REFERER', config.get('ckan.site_url','/')))
+
+  def ckanadmin_org_relationship(self, org):
+    if not c.userobj or not c.userobj.sysadmin:
+      base.abort(404)
+    context = {
+      'model': model,
+      'user': c.user or c.author,
+      'auth_user_obj': c.userobj
+    }
+    
+    
+    
+
+    params = dict(request.params)
+    if 'route' in params and 'child' in params:
+      if params['route'] == 'add':
+        member_create = toolkit.get_action('member_create')
+        member_create(context,{
+          'id': org,
+          'object': params['child'],
+          'object_type': 'group',
+          'capacity': 'child_organization'
+          })
+        member_create(context,{
+          'id': params['child'],
+          'object': org,
+          'object_type': 'group',
+          'capacity': 'parent_organization'
+          })
+      elif params['route'] == 'remove':
+        log.warn('FFFFYYYUUUUUCK')
+        member_delete = toolkit.get_action('member_delete')
+        member_delete(context,{
+          'id': org,
+          'object': params['child'],
+          'object_type': 'group',
+          })
+        member_delete(context,{
+          'id': params['child'],
+          'object': org,
+          'object_type': 'group',
+          })
+
+    org_obj = session.query(model.Group).filter_by(id=org).first()
+    log.warn(org_obj.member_all)
+    children = [ item.table_id for item in filter(lambda x: x.capacity=='child_organization' and x.state == 'active', org_obj.member_all)]
+    log.warn(children)
+
+    all_organizations = toolkit.get_action('organization_list')(context, {'all_fields':True})
+    for o in all_organizations:
+      if o['id'] == org:
+        organization = o
+    c.group_dict = organization
+    return base.render('organization/relationship.html', extra_vars={
+      'all_organizations':all_organizations,
+      'children':children
+    })
+  
+
   def twitter_listeners(self):
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
-    tasks = session.query(model.TaskStatus).filter_by(task_type='streaming_tweets').all()
-    resources = session.query(model.Resource)\
+
+    tasks = []
+    for task, resource in session.query(model.TaskStatus, model.Resource)\
       .filter(
-        model.Resource.id.in_(
-          [ task.entity_id for task in tasks ])
-      ).all()
+        model.TaskStatus.entity_id == model.Resource.id,
+        model.TaskStatus.task_type == 'twitter_streaming',
+        model.Resource.state == 'active').all():
 
-    assets = {}
-    for res in resources:
-      assets[res.id] = (res.get_package_id(), res.name)
-
-    for task in tasks:
-      pid = _get_pid( task.value or '' )
+      pid = task.error or ''
       if pid:
         task.pid = pid
         if not os.system('ps %s' % pid):
             task.is_active = True
-      task.name = assets[task.entity_id][1]
-      task.pkg = assets[task.entity_id][0]
-
+      task.name = resource.name
+      task.pkg = resource.get_package_id()
+      tasks.append(task)
+   
     extra_vars = {
       'listeners':tasks,
+      'now':datetime.datetime.now()
     }
     return base.render('admin/twitter_listeners.html', extra_vars=extra_vars)
-  
+
+  def ajax_actions(self):
+    if not c.userobj or not c.userobj.sysadmin:
+      base.abort(404)
+    context = {
+      'model': model,
+      'user': c.user or c.author,
+      'auth_user_obj': c.userobj
+    }
+    action = request.params.get('action')
+    res_id = request.params.get('res_id')
+    assets = request.params.get('assets').split(' ')
+    parent = toolkit.get_action('resource_show')(context, {'id': res_id})
+    forbidden = json.loads(parent.get('forbidden_id', '[]'))
+    solr = DFMPSolr()
+
+    if action == 'delete':
+      toolkit.get_action('user_remove_asset')(context, {
+        'items':[{
+          'id': res_id,
+          'assetID':assetID
+        } for assetID in assets],
+      })
+      
+
+      forbidden.extend(assets)
+
+    elif action == 'hide':
+      for visible_asset in assets:
+        asset = toolkit.get_action('datastore_search')(context, {
+          'id': res_id,
+          'filters':{
+            'assetID':visible_asset
+          }
+        })['records'][0]
+
+        if type( asset['metadata'] ) == tuple:
+          asset['metadata'] = json.loads(asset['metadata'][0])
+        if type( asset['spatial'] ) == tuple:
+          asset['spatial'] = json.loads(asset['spatial'][0])
+
+        asset['metadata']['state'] = 'hidden'
+        asset['id'] = res_id
+
+        _asset_to_solr(asset, defer_commit=True)
+
+        toolkit.get_action('datastore_delete')(context,{
+          'resource_id': res_id,
+          'force': True,
+          'filters':{
+            'assetID':visible_asset,
+          }
+        })
+
+      forbidden.extend(assets)
+
+    elif action == 'solr-delete':
+      for assetID in assets:
+        solr.remove_dict({
+          'id' : res_id,
+          'assetID' : assetID
+        }, defer_commit=True)
+
+      forbidden.extend(assets)
+
+    elif action == 'unhide':
+      hidden_assets = DFMPSearchQuery()({
+        'q':'assetID:({assets})'.format(assets=' OR '.join(assets)),
+        'fl':'data_dict',
+        'fq':'+state:hidden',
+      })['results']
+      for asset in hidden_assets:
+        log.warn(asset)
+        asset = json.loads(asset['data_dict'])
+        asset['metadata']['state'] = 'active'
+
+        datastore_item = toolkit.get_action('datastore_upsert')(context, {
+          'resource_id':res_id,
+          'force': True,
+          'records':[{
+            'assetID':asset['assetID'],
+            'lastModified':asset['lastModified'],
+            'name':asset['name'],
+            'url':asset['url'],
+            'spatial':asset['spatial'],
+            'metadata':asset['metadata'],
+            }
+          ],
+          'method':'upsert'
+        })
+
+
+        _asset_to_solr(asset, defer_commit=True)
+      forbidden = filter(lambda x, assets=assets: not x in assets, forbidden)
+      
+    else:
+      return 'Unrecognized action'
+
+    forbidden = _unique_list(forbidden)
+    parent['forbidden_id'] = json.dumps(forbidden)
+    toolkit.get_action('resource_update')(context, parent)
+    solr.commit()
+    return 'Done'
+
+  def manage_assets(self, id, resource_id):
+    if not c.userobj or not c.userobj.sysadmin:
+      base.abort(404)
+    try:
+      toolkit.c.pkg_dict = toolkit.get_action('package_show')(None, {'id': id})
+      toolkit.c.resource = toolkit.get_action('resource_show')(None, {'id': resource_id})
+    except toolkit.ObjectNotFound:
+      base.abort(404, _('Resource not found'))
+    except toolkit.NotAuthorized:
+      base.abort(401, _('Unauthorized to edit this resource'))
+    context = {
+      'model': model,
+      'user': c.user or c.author,
+      'auth_user_obj': c.userobj
+    }
+    page = int(request.params.get('page',1))
+    assets = []
+    try:
+      result = toolkit.get_action('datastore_search')(context,{
+        'id':resource_id,
+        'limit':ASSETS_PER_PAGE,
+        'offset':(page-1)*ASSETS_PER_PAGE,
+        'sort':'_id asc'
+      })
+      assets.extend(result['records'])
+    except toolkit.ObjectNotFound:
+      return base.render('package/manage_assets.html')
+    hidden_assets = []
+    hidden = DFMPSearchQuery()({
+      'q':'id:{res_id}'.format(res_id=resource_id),
+      'rows':100,
+      'start':0,
+      'fq':'+state:hidden',
+    })['results']
+    if hidden:
+      for item in hidden:
+        hidden_assets.append(json.loads(item['data_dict']))
+
+    extra_vars = {
+      'assets':assets,
+      'hidden_assets':hidden_assets,
+      'action_url':h.url_for('ajax_actions'),
+    }
+
+
+
+    def pager_url(q=None, page=None):
+      params = [
+        ('page', page),
+      ]
+      url = h.url_for('manage_assets', id=id, resource_id=resource_id)
+      return url_with_params(url, params)
+    c.page = h.Page(
+        collection=assets,
+        page=page,
+        url=pager_url,#pager_url,
+        item_count=result.get('total',0),
+        items_per_page=ASSETS_PER_PAGE,
+    )
+
+    return base.render('package/manage_assets.html', extra_vars=extra_vars)
 
   def _listener_route(self, action, id, resource_id):
     if not c.userobj or not c.userobj.sysadmin:
@@ -64,43 +479,29 @@ class DFMPController(base.BaseController):
     if action == 'terminate':
       task = session.query(model.TaskStatus)\
         .filter(
-          model.TaskStatus.task_type=='streaming_tweets',
+          model.TaskStatus.task_type=='twitter_streaming',
           model.TaskStatus.entity_id==resource_id)\
         .first()
       if not task:
         h.flash_error("Can't find listener")
       if task:
-        pid = _get_pid( task.value or '' )
+        pid = task.error or '' 
         if not pid:
           h.flash_error("Can't get PID of process")
         else:
-          if os.system('kill %s' % pid):
-            h.flash_error("Can't terminate process")
-          else:
-            h.flash_success('Success')
-            toolkit.get_action('task_status_update')(None, {
-              'entity_id': resource_id,
-              'task_type': 'streaming_tweets',
-              'key': 'celery_task_id',
-              'state': 'Terminated',
-              'value': 'Ready for start',
-              'error': u'',
-              'last_updated': datetime.datetime.now().isoformat(),
-              'entity_type': 'resource'
-            })
-
-
-    base.redirect( c.environ['HTTP_REFERER'] )
-    os.system('kill %s' % pid)
-    toolkit.get_action('task_status_update')(None, {
-      'entity_id': resource_id,
-      'task_type': 'streaming_tweets',
-      'key': 'celery_task_id',
-      'value': 'Terminated',
-      'error': u'',
-      'last_updated': datetime.datetime.now().isoformat(),
-      'entity_type': 'resource'
-    })
+          h.flash_success('Success')
+          toolkit.get_action('task_status_update')(None, {
+            'entity_id': resource_id,
+            'task_type': 'twitter_streaming',
+            'key': 'celery_task_id',
+            'state': 'Terminated',
+            'value': 'Ready for start',
+            'error': pid,
+            'last_updated': datetime.datetime.now().isoformat(),
+            'entity_type': 'resource'
+          })
+          if os.system('kill -9 %s' % pid):
+            toolkit.get_action('celery_revoke')(context, {'id': pid, 'resource': resource_id})
     base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
     
 
@@ -113,7 +514,11 @@ class DFMPController(base.BaseController):
       'auth_user_obj': c.userobj
     }
 
-    log.warn(context)
+
+    log_access = os.access(log_path, os.W_OK)
+    if not log_access:
+      h.flash_error('Listener will be working without log file. Create or modify access to {log_path} if you want to see process log'.format(log_path=log_path))
+
     now = datetime.datetime.now() - datetime.timedelta(1)
     pid = None
     extra_vars = {
@@ -141,15 +546,14 @@ class DFMPController(base.BaseController):
 
     try:
       streaming_status = toolkit.get_action('task_status_show')(None, {
-        'task_type': 'streaming_tweets',
+        'task_type': 'twitter_streaming',
         'entity_id': resource_id,
         'key':'celery_task_id'
         })
       extra_vars.update(streaming_status=streaming_status)
-      if 'value' in streaming_status:
+      if 'error' in streaming_status:
         try:
-          pos = streaming_status['value'].rfind(' ')
-          pid = streaming_status['value'][pos:]
+          pid = streaming_status['error']
           pid = int(pid)
           if not os.system('ps %s' % pid):
             extra_vars.update(may_kill = True)
@@ -185,23 +589,32 @@ class DFMPController(base.BaseController):
           })
           base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
 
-      elif 'stream_word' in pst:
-        log.warn(pst)
-        word = pst.get('stream_word')
+      elif 'stream_word' in pst:       
+        word = pst['stream_word']
         if not word:
           stable = False
           extra_vars['stream_error_summary'].update( { 'Hashtag': 'Must be defined' } )
-        
+
         if stable:
-          streaminging = toolkit.get_action('celery_streaming_tweets')(context,{
-            'resource': resource_id,
-            'word': pst['stream_word'],
-          })
+          args = ' --host {host} --ckan-api {apikey} --resource {resource} --search \'{word}\''.\
+              format(
+                host=config.get('ckan.site_url', ''),
+                apikey=c.userobj.apikey,
+                resource=resource_id,
+                word=word
+              )
+          valid_word = _name_normalize(word)
+          log_file = ( '>' + log_path + 'dfmp_{word}.log'.format(word=valid_word) ) if log_access else ''
+          log.warn(log_file)
+          command = 'nohup ' + os.path.dirname(scripts.__file__) + os.path.sep + 'twitter.py ' + args  +  log_file + ' & 1'
+          log.warn(command)
+          status = os.system(command)
+
           base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
 
     try:
-      toolkit.c.pkg_dict = toolkit.get_action('package_show')(None, {'id': id})
-      toolkit.c.resource = toolkit.get_action('resource_show')(None, {'id': resource_id})
+      c.pkg_dict = toolkit.get_action('package_show')(None, {'id': id})
+      c.resource = toolkit.get_action('resource_show')(None, {'id': resource_id})
     except toolkit.ObjectNotFound:
       base.abort(404, _('Resource not found'))
     except toolkit.NotAuthorized:

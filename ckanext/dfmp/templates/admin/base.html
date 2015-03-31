@@ -2,5 +2,8 @@
 
 {% block content_primary_nav %}
   {{ super() }}
+  {% if c.userobj.sysadmin %}
   {{ h.build_nav_icon('ckanadmin_twitter_streamers', _('Twitter listeners')) }}
+  {{ h.build_nav_icon('ckanadmin_flags', _('Flagged assets'), id=pkg_id, resource=resource_id) }}
+  {% endif %}
 {% endblock %}

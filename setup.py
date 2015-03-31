@@ -30,9 +30,6 @@ setup(
     entry_points='''
         [ckan.plugins]
         dfmp=ckanext.dfmp.plugin:DFMPPlugin
-        
-        [paste.paster_command]
-        initdb = ckanext.dfmp.command:InitDB
 
         [ckan.celery_task]
         tasks = ckanext.dfmp.celery_import:task_imports

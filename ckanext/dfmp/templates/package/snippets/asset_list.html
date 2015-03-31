@@ -1,0 +1,7 @@
+{% if assets %}
+  <ul class="asset-list unstyled">
+    {% for asset in assets %}
+      {% snippet 'package/snippets/asset_item.html', asset=asset, item_class=item_class, hide_resources=hide_resources, banner=banner, truncate=truncate, truncate_title=truncate_title %}
+    {% endfor %}
+  </ul>
+{% endif %}

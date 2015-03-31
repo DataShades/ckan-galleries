@@ -39,6 +39,8 @@ def search_tweets(api, word, deepness=None, with_media=True, **kargs):
     result = api.search(word, **args)
     if not result:
       break
+    if result[0].created_at < deepness:
+      break
     last = result[-1]
 
     args.update(max_id = str(last.id))

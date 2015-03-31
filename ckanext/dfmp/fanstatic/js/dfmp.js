@@ -64,6 +64,9 @@
                 // updates status message
                 $('.flash-messages .status-update').html('Starting import...');
 
+                // current status
+                var current_status = 0;
+
                 // udates stutus and notify user how many images have alreade been imported
                 var update = setInterval(function () {
                   $.ajax({
@@ -77,13 +80,20 @@
                     }
                   })
                   .done(function(response) {
-                    // updates status message
-                    $('.flash-messages .status-update').fadeOut().html(response.result.value).fadeIn();
+                    if (response.result.state == current_status) {
+                        return;
+                    }
+
+                    // updates current status
+                    current_status = response.result.state;
+
                     // clears interval when import is done
                     if (response.result.state == 'done') {
                       clearInterval(update);
                       $('#flickr_import_button').attr('disabled', false);
                     }
+                    // updates status message
+                    $('.flash-messages .status-update').fadeOut().html(response.result.value).fadeIn();
                   });
                 }, 5000)
               })

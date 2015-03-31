@@ -3,7 +3,7 @@ import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
 from datetime import datetime
 from ckanext.dfmp.celery import twitter
-import ckanapi
+import ckanapi, os
 import ckan.model as model
 import logging, urlparse, json, requests, urllib2
 log = logging.getLogger(__name__)
@@ -68,6 +68,19 @@ def _celery_api_request(action, context, post_data):
   result = ckan.call_action(action, post_data)
   return result
 
+def revoke(data, context):
+  print data['id']
+  result = os.system('kill -9 %s' % data['id'])
+  if result:
+    print 'ERROR'
+    _change_status(
+      context,
+      data,
+      status='Error %s (256 means that user has not permissions to terminate process. Try to do it manually by "kill %s"' % (result, data['id']),
+      task_type='twitter_streaming'
+    )
+  else:
+    print 'done'
 def clearing(data, context, post_data, offlim):
   try:
     datastore = _celery_api_request(
@@ -81,24 +94,36 @@ def clearing(data, context, post_data, offlim):
 
   items = []
   for record in datastore['records']:
-    if not record['url'].startswith('http'):
-      log.warn(
-        'URL without schema {url}'.format(url=record['url'])
+    if data.get('solr_index'):
+      record.update(id=data['resource'])
+      items.append(record)
+    else:
+      if not record['url'].startswith('http'):
+        log.warn(
+          'URL without schema {url}'.format(url=record['url'])
+        )
+        continue
+
+      resp = requests.head( record['url'] )
+      if resp.status_code > 310:
+        items.append({
+          'id':data['resource'],
+          'assetID':record['assetID']
+        })
+
+  if data.get('solr_index'):
+    response = _celery_api_request(
+        'solr_add_assets',
+        context,
+        {'items':items}
       )
-      continue
+  else:
+    response = _celery_api_request(
+      'user_remove_asset',
+      context,
+      { 'items' : items }
+    )
 
-    resp = requests.head( record['url'] )
-    if resp.status_code > 310:
-      items.append({
-        'id':data['resource'],
-        'assetID':record['assetID']
-      })
-
-  response = _celery_api_request(
-    'user_remove_asset',
-    context,
-    { 'items' : items }
-  )
   print response
   # print items
   # print 'removed'
@@ -121,16 +146,29 @@ def getting_tweets(data, context, post_data, offlim):
 
   searcher = twitter.search_tweets(twitter_api, word, **data)
   total = 0
+
+  forbidden_id = _celery_api_request(
+    'resource_show',
+    context,
+    {'id': data['resource']}
+  ).get('forbidden_id', '')
+
   _create_datastore(data['resource'], context)
   for piece in searcher:
     if not piece:
       continue
     records = []
     for item in piece:
+      assetID = item.entities['media'][0]['id_str']
+      if assetID in forbidden_id: continue
       item_json = item._json
-      item_json.update(mimetype = 'image/jpeg', type = 'image/jpeg')
+      item_json.update(
+        thumb = item.entities['media'][0]['media_url'] + ':small',
+        mimetype = 'image/jpeg',
+        type = 'image/jpeg',
+        tags = ','.join( [ tag['text'] for tag in item.entities.get('hashtags', []) ] ) )
       records.append({
-        'assetID': item.entities['media'][0]['id_str'],
+        'assetID': assetID,
         'lastModified': item.created_at.isoformat(' '),
         'name': item.user.screen_name,
         'url': item.entities['media'][0]['media_url'],
@@ -152,8 +190,18 @@ def getting_tweets(data, context, post_data, offlim):
       context,
       post_data
     )
+    for record in records:
+      record.update(id=resource)
+    _celery_api_request(
+      'solr_add_assets',
+      context,
+      {'items':records}
+    )
+
     total += len(records)
-    status = 'Added {0} tweets, from {1} to {2}'.format(total, records[0]['lastModified'], records[-1]['lastModified'])
+    if len(records) < 1: break
+    from_time , to_time = records[0]['lastModified'], records[-1]['lastModified']
+    status = 'Added {0} tweets, from {1} to {2}'.format(total, from_time , to_time)
     _change_status(
       context,
       data,
@@ -161,6 +209,8 @@ def getting_tweets(data, context, post_data, offlim):
       task_type='getting_tweets'
     )
     print status
+    if from_time == to_time:
+      break
   return {'done':True}
 
 def streaming_tweets(data, context, post_data, offlim):
@@ -178,15 +228,8 @@ def streaming_tweets(data, context, post_data, offlim):
       init_twitter_stream( TwitterListener(context, data) ).filter(track=[data['word']])
     except Exception, e:
       print e
-      print 'Restart in 1000 seconds'
-      sleep(60)
+      sleep(1800)
       print 'Restarting...'
-
-def revoke(context, data):
-  from ckan.lib.celery_app import celery
-  print dir(celery)
-  # .control.revoke(task_id='86c0992a-1f8a-4c4d-a74a-b7a3df9ed490', terminate=True, signal='SIGKILL')
-  print 'done'
 
 def _change_status(context, data, status, task_type, state=''):
   task_status = {
@@ -195,7 +238,7 @@ def _change_status(context, data, status, task_type, state=''):
       'key': u'celery_task_id',
       'value': status,
       'state':state,
-      'error': u'',
+      # 'error': u'',
       'last_updated': datetime.now().isoformat(),
       'entity_type': 'resource'
     }
@@ -222,8 +265,6 @@ def _get_status(context, data, task_type):
     return
 
   return status.get('value')
-
-
 
 class TwitterListener(StreamListener):
     def __init__(self, context, data):
@@ -267,34 +308,14 @@ class TwitterListener(StreamListener):
       print car
       _change_status(self.context,
         self.data,
-        'Error %s, process %s' % (status, getpid()),
+        'Error %s, process %s will be restarted in 30 minutes' % (status, getpid()),
         'streaming_tweets',
-        state='Listening'
+        state='Restarting'
       )
       print 'Error %d' % status
+      raise Exception('Restart in 30 minutes')
     def on_connect(self):
       print 'on_connect'
-    def on_delete(self, status_id, user_id):
-      print 'on_delete'
-      print status_id
-      print user_id
-    def on_disconnect(self, notice):
-      print 'on_disconnect'
-      print notice
-    def on_event(self, status):
-      print 'on_event'
-      print status
-    def on_exception(self, exception):
-      print 'on_exception'
-      print exception
-    def on_limit(self, track):
-      print 'on_limit'
-      print track
-    def on_timeout(self):
-      print 'on_timeout'
-    def on_warning(self, notice):
-      print 'on_warning'
-      print notice
 
 
 def init_twitter_stream(listener):
@@ -319,30 +340,38 @@ def _twitter_save_data(data, context, data_dict):
     print e
     print 'Data not saved'
     return
+  tags = ','.join( [ tag['text'] for tag in data['extended_entities'].get('hashtags', []) ] )
   for asset in data['extended_entities']['media']:
     try:
       resource.update(
         thumb=asset['media_url'],
         mimetype='image/jpeg',
-        id=asset['id_str']
+        id=asset['id_str'],
+        tags=tags
       )
-
+      tweet = {
+        'assetID': resource['id'],
+        'lastModified': datetime\
+          .fromtimestamp( int(resource['time']) )\
+          .strftime('%Y-%m-%d %H:%M:%S'),
+        'name':resource['name'],
+        'url':resource['thumb'],
+        'metadata':resource,
+        'spatial': spatial,
+      }
       _celery_api_request('datastore_upsert', context, {
         'resource_id':data_dict['resource'],
         'force':True,
-        'records':[{
-          'assetID': resource['id'],
-          'lastModified': datetime\
-            .fromtimestamp( int(resource['time']) )\
-            .strftime('%Y-%m-%d %H:%M:%S'),
-          'name':resource['name'],
-          'url':resource['thumb'],
-          'metadata':resource,
-          'spatial': spatial,
-        }],
+        'records':[tweet],
         'method': 'insert'
       })
 
+      tweet.update(id=data_dict['resource'])
+      _celery_api_request(
+        'solr_add_assets',
+        context,
+        {'items':[tweet]}
+      )
       print 'Proccess %d. Item saved...' % getpid()
     except Exception, e:
       print e
@@ -368,3 +397,5 @@ def _create_datastore(id, context):
 def flickr_add_image_to_dataset(context, data_dict):
     from ckanext.dfmp.scripts.flickr_import import flickr_group_pool_add_images_to_dataset
     flickr_group_pool_add_images_to_dataset(context, data_dict)
+    _celery_api_request('celery_solr_indexing', json.loads(context), {'resource':data_dict['datastore']['id']})
+
