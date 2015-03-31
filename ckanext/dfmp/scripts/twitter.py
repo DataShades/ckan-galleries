@@ -2,14 +2,12 @@
 # encoding='utf-8'
 from tweepy import Stream, OAuthHandler
 from tweepy.streaming import StreamListener
-import argparse
-import json
+import argparse, copy, json,ckanapi
 from time import sleep
 from os import getpid
 from datetime import datetime
 
 from  ckan.logic import NotFound
-import ckanapi
 
 
 from sys import stdout
@@ -89,20 +87,22 @@ def _save_data(data):
     if asset['id_str'] in forbidden_id: continue
     
     try:
-      resource.update(
+      resource['text'].replace(asset['media_url'], '')
+      meta = copy.deepcopy(data)
+      meta.update(
         thumb=asset['media_url']+':small',
         mimetype='image/jpeg',
         id=asset['id_str'],
         tags=tags
       )
       tweet = {
-        'assetID': resource['id'],
+        'assetID': meta['id'],
         'lastModified': datetime\
           .fromtimestamp( int(resource['time']) )\
           .strftime('%Y-%m-%d %H:%M:%S'),
         'name':resource['name'],
         'url':asset['media_url'],
-        'metadata':resource,
+        'metadata':meta,
         'spatial': spatial,
       }
       ckan.call_action('datastore_upsert',  {

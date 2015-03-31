@@ -1,6 +1,7 @@
 from ckan.common import c
 from ckanext.dfmp.dfmp_solr import DFMPSearchQuery
 import ckan.plugins.toolkit as toolkit 
+from ckanext.dfmp.bonus import _count_literal
 
 def dfmp_with_gallery(id):
   res = toolkit.get_action('resource_show')(None, {'id':id})
@@ -12,17 +13,13 @@ def is_sysadmin():
     return c.userobj.sysadmin
   return False
 
-def total_ammount_of_assets():
+def dfmp_total_ammount_of_assets():
   ammount = DFMPSearchQuery()({
     'rows':0,
     'q':'*:*'
     })['count']
-  if ammount < 1e3:
-    value = ammount
-  elif ammount < 1e6:
-    value = '%sK' % int(ammount/1e3)
-  elif ammount < 1e9:
-    value = '%sM' % int(ammount/1e6)
-  elif ammount >= 1e9:
-    value = '%sB' % int(ammount/1e9)
-  return value
+  return _count_literal(ammount)
+
+def dfmp_total_ammount_of_datasets():
+  ammount = toolkit.get_action('package_search')(None,{'q':'entity_type:package'})['count']
+  return _count_literal(ammount)

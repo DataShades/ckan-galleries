@@ -322,7 +322,7 @@ def user_create_with_dataset(context, data_dict):
       log.warn('Error during adding user to organization ')
     try:
       toolkit.get_action('organization_member_create')(context, {
-        'id':'brand-cbr',
+        'id':data_dict.get('organization_id','brand-cbr'),
         'username': data_dict['name'],
         'role':'editor'
       })
@@ -363,12 +363,13 @@ def create_organization(context, data_dict):
   })
   return org
 
+@side_effect_free
 def organization_add_user(context, data_dict):
   _validate(data_dict, 'user', 'organization')
   user = _user_by_apikey(context, data_dict['user']).first()
   username = user.id
   user_current_org = _organization_from_list(_user_get_groups(user))[0]
-  if user_current_org:
+  if user_current_org and not data_dict.get('only_update', False):
     toolkit.get_action('organization_member_delete')(context, {
       'id':user_current_org,
       'username':username
@@ -377,7 +378,7 @@ def organization_add_user(context, data_dict):
     res = toolkit.get_action('organization_member_create')(context, {
       'id':data_dict['organization'],
       'username': username,
-      'role':'editor'
+      'role':data_dict.get('role','editor')
     })
   except Exception, e:
     log.warn(e)

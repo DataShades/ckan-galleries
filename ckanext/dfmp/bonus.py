@@ -52,3 +52,14 @@ def _name_normalize(name):
       in name
       if c in KEY_CHARS
     ])
+
+def _count_literal(ammount):
+  if ammount < 1e3:
+    value = ammount
+  elif ammount < 1e6:
+    value = '%sK' % int(ammount/1e3)
+  elif ammount < 1e9:
+    value = '%sM' % int(ammount/1e6)
+  elif ammount >= 1e9:
+    value = '%sB' % int(ammount/1e9)
+  return value
