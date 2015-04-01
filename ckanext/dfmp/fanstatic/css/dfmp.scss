@@ -3,6 +3,7 @@
 @import "custom";
 @import "header";
 @import "homepage";
+@import "asset";
 @import "recline";
 @import "footer";
 
@@ -255,6 +256,9 @@ input[type=text], input[type=password], select {
         border: $bw $rbtn_b;
         &:hover {
             background: $rbtn_h;
+        }
+        &.btn{
+            color: white;
         }
     }
     .secondary & {

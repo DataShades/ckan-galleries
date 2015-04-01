@@ -21,7 +21,7 @@ CS  = 'cciB0ZCwQnBASvRp9HPN1vbBdZSCEzyu118igFhQFxOwDVFmVD'
 AT  = '23904345-OmiSA5CLpceClmy46IRJ98ddEKoFJAPura2j53ryN'
 ATS = 'QYJwGyYODIFB5BJM8F5IXNUDn9coJnKzY6scJOErKRcAE'
 
-USED_KEY = 1
+USED_KEY = 0
 twitter_api_keys = [
   dict(
     CK  = 'vKAo073zpwfmuiTkyR83qyZEe',
@@ -93,7 +93,6 @@ def _save_data(data):
       print e
       spatial = None
     resource = {
-      'text': data['text'],
       'name': data['user']['screen_name'],
       'time': data['timestamp_ms'][:-3]
     }
@@ -101,7 +100,7 @@ def _save_data(data):
     print e
     print 'Data not saved'
     return
-  tags = ','.join( [ tag['text'] for tag in data['extended_entities'].get('hashtags', []) ] )
+  tags = ','.join( [ tag['text'] for tag in data['entities'].get('hashtags', []) ] )
   for asset in data['extended_entities']['media']:
     forbidden_id = ckan.call_action(
       'resource_show',
@@ -110,13 +109,15 @@ def _save_data(data):
     if asset['id_str'] in forbidden_id: continue
     
     try:
-      resource['text'].replace(asset['media_url'], '')
+      if len(data['text']) > 139:
+        data['text'] = data['text'][:data['text'].rfind('http')]
       meta = copy.deepcopy(data)
       meta.update(
         thumb=asset['media_url']+':small',
         mimetype='image/jpeg',
         id=asset['id_str'],
-        tags=tags
+        tags=tags,
+        source='twitter',
       )
       tweet = {
         'assetID': meta['id'],
