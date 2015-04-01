@@ -168,6 +168,7 @@ def flickr_group_pool_add_images_to_dataset(context, data):
           u"machine_tags": photo.get(u"machine_tags"),
           u"license": photo.get(u"license"),
           u"flickr_id": photo.get(u"license"),
+          u"source": u"flickr",
         }
       })
 

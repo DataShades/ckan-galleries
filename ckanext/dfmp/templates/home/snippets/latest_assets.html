@@ -1,0 +1,12 @@
+{% set assets = h.dfmp_last_added_assets_with_spatial_data() %}
+
+<div class="box">
+    <span>{% trans %}Тут будет карта очень скоро{% endtrans %}</span>
+    {{ assets.last_added }}
+    <div class="recent_numbers">
+        <div class="row row2">
+          <div class="span6 col1">{{ assets.twitter }} tweets tagged #CBR today</div>
+          <div class="span6 col2">{{ assets.flickr }} photos taken in Canberra today</div>
+        </div>
+    </div>
+</div>
