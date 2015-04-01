@@ -302,7 +302,10 @@ class TwitterListener(StreamListener):
       )
       print 'Listening...'
       return True
-    def on_error(self, status):
+    def on_error(self, status, *car):
+      print self
+      print dir(self)
+      print car
       _change_status(self.context,
         self.data,
         'Error %s, process %s will be restarted in 30 minutes' % (status, getpid()),

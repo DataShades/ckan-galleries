@@ -21,7 +21,30 @@ CS  = 'cciB0ZCwQnBASvRp9HPN1vbBdZSCEzyu118igFhQFxOwDVFmVD'
 AT  = '23904345-OmiSA5CLpceClmy46IRJ98ddEKoFJAPura2j53ryN'
 ATS = 'QYJwGyYODIFB5BJM8F5IXNUDn9coJnKzY6scJOErKRcAE'
 
+USED_KEY = 1
+twitter_api_keys = [
+  dict(
+    CK  = 'vKAo073zpwfmuiTkyR83qyZEe',
+    CS  = 'cciB0ZCwQnBASvRp9HPN1vbBdZSCEzyu118igFhQFxOwDVFmVD',
+    AT  = '23904345-OmiSA5CLpceClmy46IRJ98ddEKoFJAPura2j53ryN',
+    ATS = 'QYJwGyYODIFB5BJM8F5IXNUDn9coJnKzY6scJOErKRcAE'
+  ),
+  dict(
+    CK  = 'VmNHkKuFcza5ouvkNiimpoU8E',
+    CS  = 'E9CcaBikENNmbNC2LaG9aWhpiNuvpBBhUElPtZNGwulpvzIVu1',
+    AT  = '23904345-4PBhPAYyUn4XvniAFCDOv5HaVEIJt2ik2j7KhEWdx',
+    ATS = 'a7Qtt296u2FnSia9fGGpbejJ3Jg420OC0LBPbCmYIIKVs',
+  ),
+  dict(
+    CK  = 'A0aIjONlJLGHQxN9KR15OnQQp',
+    CS  = 'khhb58i3Qi2BTD0QhxsfNPurOfZZ7YBQbtMheSoNWldWNyR2oe',
+    AT  = '23904345-2MpF4FY06gvwGV1rNuJQ5oEdpvVMlMpWmWoEFXzMi',
+    ATS = '8YExrwTKpPVDb3pEGTAGokDyuCzKvKUTLprzcxHlVQ5rG',
+  ),
+]
 
+print twitter_api_keys[USED_KEY]['CK']
+flush()
 class TwitterListener(StreamListener):
   def on_data(self, data):
     print data
@@ -142,19 +165,19 @@ def get_args():
                       help='Tag or word for streaming',
                       required=True)
   parser.add_argument('--ck',
-                      default=CK,
+                      default=twitter_api_keys[USED_KEY]['CK'],
                       nargs=1,
                       help='Consumer Key (API Key)')
   parser.add_argument('--cs',
-                      default=CS,
+                      default=twitter_api_keys[USED_KEY]['CS'],
                       nargs=1,
                       help='Consumer Secret (API Secret)')
   parser.add_argument('--at',
-                      default=AT,
+                      default=twitter_api_keys[USED_KEY]['AT'],
                       nargs=1,
                       help='Access Token')
   parser.add_argument('--ats',
-                      default=ATS,
+                      default=twitter_api_keys[USED_KEY]['ATS'],
                       nargs=1,
                       help='Access Token Secret')
   return parser.parse_args()
