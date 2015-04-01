@@ -146,6 +146,21 @@
     .homepage.layout-2 .home-top-row .col-right .box .inner {
       padding: 20px 10px; }
 
+.asset-content .asset-info-holder {
+  margin-left: 161px;
+  min-height: 100px; }
+  .asset-content .asset-info-holder h3 {
+    margin-bottom: 0;
+    text-transform: capitalize; }
+  .asset-content .asset-info-holder .meta-date-lic {
+    color: #056c7f; }
+  .asset-content .asset-info-holder .well {
+    background: none;
+    padding: 20px 0 0;
+    box-shadow: none; }
+.asset-content .thumb-holder {
+  float: left; }
+
 .recline-data-explorer {
   background: #fff; }
   .recline-data-explorer .well, .recline-data-explorer .well a {
@@ -408,6 +423,8 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
     border: 1px solid #870000; }
     .btn-danger:hover {
       background: #740000; }
+    .btn-danger.btn {
+      color: white; }
   .secondary .btn {
     width: 100%;
     box-sizing: border-box; }

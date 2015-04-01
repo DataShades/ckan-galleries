@@ -1,32 +1,43 @@
-{% set truncate = truncate or 180 %}
-{% set truncate_title = truncate_title or 80 %}
+{% set truncate = 70 %}
+{% set truncate_title = 60 %}
 {% set title = asset.title or asset.name or _('Unnamed') %}
+{% set default_thumb = g.site_url + '/dfmp/images/default_thumb.png' %}
 {% if asset.notes %}
 {% set notes = h.truncate(asset.notes, truncate) %}
 {% endif %}
 
 <li class="{{ item_class or 'asset-item' }}">
   {% block asset_item_content %}
-    <div class="asset-content">
-      <h3 class="asset-heading">
-        {{ h.link_to(h.truncate(title, truncate_title), '/gallery/item/%s/%s' % (asset.id,asset.assetID)) }}
-      </h3>
-      {% if 'thumb' in asset.metadata %}
-        <img src="{{ asset.metadata.thumb }}" alt="">
-      {% endif %}
-      {% if asset.tags %}
-        <ul class="tag-list well">
-          {% for tag in asset.tags %}
-            <li>
-              <a class="tag" href="{{ h.url_for('search_assets', tags=tag) }}">{{ tag }}</a>
-            </li>
-          {% endfor %}
-        </ul>
-      {% endif %}
+    <div class="asset-content" >
+      <div class="thumb-holder">
+        <img src="{{ asset.metadata.thumb or default_thumb }}" alt="" width="136px" height="95px">
+      </div>
+      <div class="asset-info-holder">
+        <h3 class="asset-heading">
+          {{ h.link_to(h.truncate(title, truncate_title), '/gallery/item/%s/%s' % (asset.id,asset.assetID)) }}
+        </h3>
+        <div class="meta-date-lic">
+          <b>Posted:</b> <em>{{ h.dfmp_nice_date(asset.lastModified)  }}</em>
+          {% if asset.metadata.license_id %}
+            &middot;
+            <b>License:</b> <em>{{ asset.metadata.license_name }}</em>
+          {% endif %}
+        </div>
+        {% if notes %}
+          <div>{{ notes|urlize }}</div>
+        {% endif %}
 
-      {% if notes %}
-        <div>{{ notes|urlize }}</div>
-      {% endif %}
+        {% if asset.tags %}
+          <ul class="tag-list well">
+            {% for tag in asset.tags %}
+              <li>
+                <a class="tag" href="{{ h.url_for('search_assets', tags=tag) }}">{{ tag }}</a>
+              </li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+      </div>
     </div>
   {% endblock %}
 </li>

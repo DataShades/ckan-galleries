@@ -2,6 +2,7 @@ from ckan.common import c
 from ckanext.dfmp.dfmp_solr import DFMPSearchQuery
 import ckan.plugins.toolkit as toolkit 
 from ckanext.dfmp.bonus import _count_literal
+from dateutil.parser import parse
 
 def dfmp_with_gallery(id):
   res = toolkit.get_action('resource_show')(None, {'id':id})
@@ -23,3 +24,7 @@ def dfmp_total_ammount_of_assets():
 def dfmp_total_ammount_of_datasets():
   ammount = toolkit.get_action('package_search')(None,{'q':'entity_type:package'})['count']
   return _count_literal(ammount)
+
+def dfmp_nice_date(date):
+  result = parse(date).strftime('%d %b %Y')
+  return result
