@@ -3,6 +3,7 @@ from ckanext.dfmp.dfmp_solr import DFMPSearchQuery
 import ckan.plugins.toolkit as toolkit 
 from ckanext.dfmp.bonus import _count_literal
 from ckanext.dfmp.dfmp_solr import DFMPSearchQuery
+import datetime
 
 
 def dfmp_with_gallery(id):
@@ -28,23 +29,16 @@ def dfmp_total_ammount_of_datasets():
 
 def dfmp_last_added_assets_with_spatial_data():
   twitter_items = DFMPSearchQuery()({
-    'q': '+entity_type:asset +type:image* +extras_retweeted:[* TO *]',
-    'rows': 0
+    'q': '+entity_type:asset +type:image* +extras_retweeted:[* TO *] +metadata_created[' + datetime.datetime.now().replace(hour=0, minute=0, second=0).isoformat()[0:19] + 'Z' + ' TO *]',
+    'rows': 0,
   })['count']
 
   flickr_items = DFMPSearchQuery()({
-    'q': '+entity_type:asset +type:image* +extras_source:flickr',
+    'q': '+entity_type:asset +type:image* +extras_source:flickr +metadata_created[' + datetime.datetime.now().replace(hour=0, minute=0, second=0).isoformat()[0:19] + 'Z' + ' TO *]',
     'rows': 0
   })['count']
-
-  last_added = DFMPSearchQuery()({
-    'q': '+entity_type:asset +type:image* +spatial:[* TO *]',
-    'sort': 'metadata_created desc',
-    'rows': 1
-  })
 
   return {
     'twitter': twitter_items,
     'flickr': flickr_items,
-    'last_added': last_added,
   }

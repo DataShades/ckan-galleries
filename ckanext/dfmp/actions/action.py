@@ -461,3 +461,12 @@ def _asset_to_solr(data_dict, defer_commit=True):
 
 def make_uuid():
   return unicode(uuid.uuid4())
+
+@side_effect_free
+def get_last_geo_asset(context, data_dict):
+  last_added = DFMPSearchQuery()({
+    'q': '+entity_type:asset +type:image* +spatial:[* TO *]',
+    'sort': 'metadata_created desc',
+    'rows': 1
+  })
+  return last_added['results'][0]

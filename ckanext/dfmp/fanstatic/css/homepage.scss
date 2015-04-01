@@ -20,6 +20,24 @@
         }
     }
     &.layout-2 {
+        #latest_asset_infowindow p {
+          margin: 0;
+          text-align: center;
+        }
+        #asset_spatial {overflow: hidden;}
+        .recent_numbers .col1,
+        .recent_numbers .col2 {
+          width: 50%;
+          float: left;
+          margin: 0;
+          text-align: center;
+          .number_value {
+            color: #005d7a;
+            font-size: 40px;
+            line-height: 45px;
+            font-family: "Times New Roman", Georgia, Serif;
+          }
+        }
         .span12{
             header{
                 width:43%;

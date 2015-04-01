@@ -3,6 +3,14 @@
 {% block styles %}
   {{ super() }}
   {% resource 'dfmp/css/dfmp.css' %}
+     <style>
+      html, body, #map-canvas {
+        height: 400px;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+    </style>
 {% endblock %}
 
 {% block scripts %}
@@ -13,6 +21,10 @@
   {% resource 'dfmp/js/aspin_min.js' %}
   {% resource 'dfmp/js/jquery_spin.js' %}
   {% resource 'dfmp/js/asset_actions.js' %}
+  {% resource 'dfmp/js/twitter_relative_time_min.js' %}
+{#  {% resource 'dfmp/js/jquery_truncate_min.js' %}#}
+  <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
+  {% resource 'dfmp/js/assets_geo.js' %}
   <script>
   (window.onload = function(){
     $ = window.$ || window.jQuery;
