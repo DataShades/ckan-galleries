@@ -162,11 +162,15 @@ def getting_tweets(data, context, post_data, offlim):
       assetID = item.entities['media'][0]['id_str']
       if assetID in forbidden_id: continue
       item_json = item._json
+      if len(item_json['text']) > 139:
+        item_json['text'] = item_json['text'][:item_json['text'].rfind('http')]
       item_json.update(
         thumb = item.entities['media'][0]['media_url'] + ':small',
         mimetype = 'image/jpeg',
         type = 'image/jpeg',
-        tags = ','.join( [ tag['text'] for tag in item.entities.get('hashtags', []) ] ) )
+        tags = ','.join( [ tag['text'] for tag in item.entities.get('hashtags', []) ] ),
+        source = 'twitter'
+      )
       records.append({
         'assetID': assetID,
         'lastModified': item.created_at.isoformat(' '),
