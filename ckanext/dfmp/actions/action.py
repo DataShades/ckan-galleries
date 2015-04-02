@@ -484,7 +484,7 @@ def get_last_geo_asset(context, data_dict):
   while True:
     # requests the latest image
     last_added = DFMPSearchQuery()({
-      'q': '+entity_type:asset +type:image* +spatial:[* TO *]',
+      'q': '+entity_type:asset +type:image* +spatial:["" TO *]',
       'sort': 'metadata_created desc',
       'start': start,
       'rows': 1
@@ -492,8 +492,11 @@ def get_last_geo_asset(context, data_dict):
     start += 1
 
     # gets dict
+    log.warn (last_added)
     last_added = json.loads(last_added['results'][0]['data_dict'])
-
+    log.warn(last_added)
+    log.warn('spatial')
+    log.warn(last_added['spatial'])
     # Validates coordinates
     valid = True
     if last_added['spatial']['type'] == 'Polygon':

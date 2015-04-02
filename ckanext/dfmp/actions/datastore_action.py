@@ -125,7 +125,6 @@ def dfmp_all_assets(context, data_dict):
     'facet.field':'id',
     'rows':0,
   })
-  log.warn(result)
   ids = result['facets']['id'].keys()[offset:offset+limit]
   response = []
   for item in ids:
@@ -139,7 +138,6 @@ def dfmp_all_assets(context, data_dict):
       context,
       {'id':package_id}
     )
-    log.warn(package)
     package['asset'] = filter(lambda x: x['id'] == item, package['resources'])[0]
     del package['resources']
     dfmp_img = searcher({
