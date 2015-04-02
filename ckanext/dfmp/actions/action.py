@@ -1,9 +1,8 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
-import json
 from ckan.logic import side_effect_free
 from datetime import datetime
-import logging, copy, uuid, json
+import logging, copy, uuid, json, Polygon
 from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
 import ckan.model as model
 from pylons import config
@@ -466,8 +465,22 @@ def make_uuid():
 @side_effect_free
 def get_last_geo_asset(context, data_dict):
   last_added = {}
+
+  # search iteration start
   start = 0
 
+  # define possible polygon coords
+  min_lat = -35.47779
+  max_lat = -35.12090
+  min_lng = 148.76224
+  max_lng = 149.42004
+
+  # polygon validation
+  def __not_in_polygon(lat, lng):
+    return (lat > max_lat and (lng < min_lng or lng > max_lng)) or\
+          (lat < min_lat and (lng < min_lng or lng > max_lng))
+
+  # gets latest valid image
   while True:
     # requests the latest image
     last_added = DFMPSearchQuery()({
@@ -484,13 +497,22 @@ def get_last_geo_asset(context, data_dict):
     # Validates coordinates
     valid = True
     if last_added['spatial']['type'] == 'Polygon':
-      for point in last_added['spatial']['coordinates'][0]:
-        if (point[1] > -35.12090 and (point[0] < 148.76224 or point[0] > 149.42004)) or\
-          (point[1] < -35.47779 and (point[0] < 148.76224 or point[0] > 149.42004)):
-          valid = False
+      # finds center of polygon
+      polygon = Polygon.Polygon(last_added['spatial']['coordinates'][0])
+      center = polygon.center()
+      # center's lat and lng
+      lat = center[1]
+      lng = center[0]
+      last_added['spatial']['coordinates'] = [lng, lat]
+      last_added['spatial']['type'] = 'Point'
+      if __not_in_polygon(lat, lng):
+        valid = False
+
     else:
-      if (last_added['spatial']['coordinates'][1] > -35.12090 and (last_added['spatial']['coordinates'][0] < 148.76224 or last_added['spatial']['coordinates'][0] > 149.42004)) or\
-          (last_added['spatial']['coordinates'][1] < -35.47779 and (last_added['spatial']['coordinates'][0] < 148.76224 or last_added['spatial']['coordinates'][0] > 149.42004)):
+      # point's lat and lng
+      lat = last_added['spatial']['coordinates'][1]
+      lng = last_added['spatial']['coordinates'][0]
+      if __not_in_polygon(lat, lng):
           valid = False
     # stops loop once valid asset is found
     if valid:
