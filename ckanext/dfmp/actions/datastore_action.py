@@ -125,13 +125,15 @@ def dfmp_all_assets(context, data_dict):
     'facet.field':'id',
     'rows':0,
   })
+  log.warn(result)
   ids = result['facets']['id'].keys()[offset:]
-  log.warn(ids)
   response = []
   for item in ids:
     try:
       package_id = _get_package_id_by_res(item)
-    except AttributeError:
+    except AttributeError, e:
+      log.warn(e)
+      log.warn('Package not exists')
       continue
     package = toolkit.get_action('package_show')( 
       context,
@@ -151,6 +153,8 @@ def dfmp_all_assets(context, data_dict):
 
     package['dfmp_total']=dfmp_img['count']
     package['tags'] = [tag['display_name'] for tag in package['tags']]
+    package['dfmp_site_assets_ammount']=result['count']
+    package['dfmp_site_resources_ammount']=len(result['facets']['id'])
 
     package['dataset_link']=url_for(controller='package', action='read', id=package_id)
     package['asset_link'] = package['dataset_link'] + '/resource/{res}'.format(res=item)

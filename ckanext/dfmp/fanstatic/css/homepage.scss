@@ -20,6 +20,9 @@
         }
     }
     &.layout-2 {
+        .with-top-margin{
+            margin-top: 20px;
+        }
         #latest_asset_infowindow {
           p {
             margin: 0;
@@ -69,7 +72,7 @@
             td {
                 float: none;
                 text-align: center;
-                // -width: 23%;
+                position: relative;
                 // width: auto;
                 &:nth-child(1) a b{
                     background: $yellow;
@@ -94,6 +97,9 @@
                     font-size: 13px;
                     &:hover{text-decoration:none;}
                     b{  
+                        position: absolute;
+                        top: 0;
+                        width: 100%;
                         font-size: 35px;
                         display:block;
                         padding: 2px;
@@ -103,6 +109,11 @@
                     }
                     span{
                         color: $black;
+                    }
+                    .stat-type-name{
+                        color: $yellow;
+                        position: relative;
+                        top: 65px;
                     }
                 }
             }

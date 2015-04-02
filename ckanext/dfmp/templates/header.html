@@ -7,6 +7,11 @@
       <i class="icon-spinner"></i>
     </a>
   </li>
+  <li>
+    <a href="{{ h.url_for('solr_clean_index' )}}" title="{{ _('Clean SOLR index') }}">
+      <i class="icon-tint"></i>
+    </a>
+  </li>
 {% endif %}
 {{ super() }}
 {% endblock %}

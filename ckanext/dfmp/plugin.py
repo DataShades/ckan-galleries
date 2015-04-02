@@ -96,7 +96,13 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
     map.connect(
       'solr_commit', '/ckan-admin/solr_commit',
       controller='ckanext.dfmp.controller:DFMPController',
-      action='solr_commit', ckan_icon='twitter-sign')
+      action='solr_commit', ckan_icon='spinner')
+    map.connect(
+      'solr_clean_index', '/ckan-admin/solr_clean_index',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='solr_clean_index', ckan_icon='tint')
+
+    
     map.connect(
       'search_assets', '/asset',
       controller='ckanext.dfmp.controller:DFMPController',
