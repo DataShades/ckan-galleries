@@ -25,7 +25,8 @@ setup(
         'celery',
         'tweepy',
         'ckanapi',
-        'requests'
+        'requests',
+        'Polygon2'
     ],
     entry_points='''
         [ckan.plugins]
