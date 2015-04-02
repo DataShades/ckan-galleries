@@ -14,9 +14,16 @@
                 }
             }
         }
-        &.not-authed ul li a:hover {
-            color: $yellow;
-            background-color: $login_back;
+        &.not-authed ul li {
+            a:hover {
+                color: $yellow;
+                background-color: $login_back;
+            }
+            a.sub:hover{
+                color: $register_text;
+                background-color: $register_back;
+            
+            }
         }
     }
 }

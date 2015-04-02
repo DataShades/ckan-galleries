@@ -1,4 +1,10 @@
 .homepage {
+    .box{
+        background: none;
+        border: 1px solid $promote_border;
+        border-radius: 2px;
+        box-shadow: none;
+    }
     &, & [role=main]{
         background: $gray $gray_back{
             repeat: no-repeat;
