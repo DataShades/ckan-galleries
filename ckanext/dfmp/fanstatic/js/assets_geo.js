@@ -14,38 +14,10 @@ ckan.module('asset-map', function ($, _) {
                 // fetch asset from response
                 var asset = response.result;
 
-                // DEFAULT COORDINATES
-                var center = {
-                    lat: -35.31397979,
-                    lng: 149.12978252799996
-                };
-
-                // calculates the center if Polygon is provided.
-                if (asset.spatial.type == 'Polygon') {
-                    var bounds = new google.maps.LatLngBounds(),
-                        polygonCoords = [];
-
-                    // collects all polygon coordinates
-                    $.each(asset.spatial.coordinates[0], function (key, val) {
-                        bounds.extend(new google.maps.LatLng(val[1], val[0]));
-                    });
-
-                    // sets center coordinate
-                    center = {
-                        lat: bounds.getCenter().lat(),
-                        lng: bounds.getCenter().lng()
-                    };
-                }
-                // or gets point coordinates from asset object
-                else {
-                    center = {
-                        lat: asset.spatial.coordinates[1],
-                        lng: asset.spatial.coordinates[0]
-                    };
-                }
+                // gets center coordinates
+                var myLatLng = self.asset_map_center(asset);
 
                 // sets initial map options
-                var myLatLng = new google.maps.LatLng(center.lat, center.lng);
                 var mapOptions = {
                     center: myLatLng,
                     zoom: 10,
@@ -88,7 +60,7 @@ ckan.module('asset-map', function ($, _) {
                             //sets new asset as current
                             asset = new_asset;
                             // updates infoWindow
-                            image = self.asset_map_render(map, myLatLng, asset, image)
+                            image = self.asset_map_render(map, self.asset_map_center(asset), asset, image);
                         }
                     });
                 }, 30000);
@@ -116,24 +88,68 @@ ckan.module('asset-map', function ($, _) {
 
             // renders image on the map if it is not rendered yet
             if (!image) {
-                image = new google.maps.InfoWindow({
-                    position: myLatLng,
-                    map: map,
-                    content: this.asset_infowindow_content(asset),
-                    // image width
-                    maxWidth: 160,
-                    disableAutoPan: false
-                });
-
-                google.maps.event.addListener(image, 'domready', description_truncate);
-                google.maps.event.addListener(image, 'content_changed', description_truncate);
+                image = this.asset_infowindow_add_dom (map, myLatLng, asset);
             }
             // changes the content and position of asset
             else {
-                image.setContent(this.asset_infowindow_content(asset));
-                image.setPosition(myLatLng);
+                map.panTo(myLatLng);
+                image.close();
+                image = this.asset_infowindow_add_dom (map, myLatLng, asset);
             }
+
+            // truncates description
+            google.maps.event.addListener(image, 'domready', description_truncate);
+
             return image;
+        },
+
+        // adds infoWindow to the DOM
+        asset_infowindow_add_dom: function (map, myLatLng, asset) {
+             var image = new google.maps.InfoWindow({
+                 position: myLatLng,
+                 map: map,
+                 content: this.asset_infowindow_content(asset),
+                 // image width
+                 maxWidth: 160,
+                 disableAutoPan: false
+             });
+
+            return image;
+        },
+
+        // returns center of map
+        asset_map_center: function (asset) {
+            // DEFAULT COORDINATES
+            var center = {
+                lat: -35.31397979,
+                lng: 149.12978252799996
+            };
+
+            // calculates the center if Polygon is provided.
+            if (asset.spatial.type == 'Polygon') {
+                var bounds = new google.maps.LatLngBounds(),
+                    polygonCoords = [];
+
+                // collects all polygon coordinates
+                $.each(asset.spatial.coordinates[0], function (key, val) {
+                    bounds.extend(new google.maps.LatLng(val[1], val[0]));
+                });
+
+                // sets center coordinate
+                center = {
+                    lat: bounds.getCenter().lat(),
+                    lng: bounds.getCenter().lng()
+                };
+            }
+            // or gets point coordinates from asset object
+            else {
+                center = {
+                    lat: asset.spatial.coordinates[1],
+                    lng: asset.spatial.coordinates[0]
+                };
+            }
+
+            return new google.maps.LatLng(center.lat, center.lng);
         },
 
         // return content for infoWindow

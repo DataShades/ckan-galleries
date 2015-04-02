@@ -492,11 +492,8 @@ def get_last_geo_asset(context, data_dict):
     start += 1
 
     # gets dict
-    log.warn (last_added)
     last_added = json.loads(last_added['results'][0]['data_dict'])
-    log.warn(last_added)
-    log.warn('spatial')
-    log.warn(last_added['spatial'])
+
     # Validates coordinates
     valid = True
     if last_added['spatial']['type'] == 'Polygon':
