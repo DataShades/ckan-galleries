@@ -160,7 +160,8 @@ def user_add_asset_inner(context, data_dict, package_id, resources):
 
   if not parent.get('datastore_active'):
     _default_datastore_create(context, parent['id'])
-
+  metadata = {'source':'user'}
+  metadata.update(data_dict)
   datastore_item = toolkit.get_action('datastore_upsert')(context, {
     'resource_id':parent['id'],
     'force': True,
@@ -170,7 +171,7 @@ def user_add_asset_inner(context, data_dict, package_id, resources):
       'name':data_dict['name'],
       'url':data_dict['url'],
       'spatial':location,
-      'metadata':data_dict,
+      'metadata':metadata,
       }
     ],
     'method':'upsert'
