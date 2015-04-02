@@ -8,7 +8,7 @@ ckan.module('asset-map', function ($, _) {
             // we need to get the latest image first
             $.ajax({
                 dataType: 'json',
-                url: '/api/3/action/get_last_geo_asset'
+                url: self.options.host + '/api/3/action/get_last_geo_asset'
             }).done(function (response) {
 
                 // fetch asset from response
@@ -19,7 +19,6 @@ ckan.module('asset-map', function ($, _) {
                     lat: -35.31397979,
                     lng: 149.12978252799996
                 };
-
 
                 // calculates the center if Polygon is provided.
                 if (asset.spatial.type == 'Polygon') {
@@ -80,7 +79,7 @@ ckan.module('asset-map', function ($, _) {
                     // requests latest asset
                     $.ajax({
                         dataType: 'json',
-                        url: '/api/3/action/get_last_geo_asset'
+                        url: self.options.host + '/api/3/action/get_last_geo_asset'
                     }).done(function (update) {
                         // fetch asset data to JSON format
                         var new_asset = update.result;
