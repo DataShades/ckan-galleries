@@ -79,7 +79,9 @@
   margin-bottom: 3px; }
 .homepage.layout-2 #latest_asset_infowindow p {
   margin: 0;
-  text-align: center; }
+  text-align: justify; }
+.homepage.layout-2 #latest_asset_infowindow h4 {
+  margin: 0; }
 .homepage.layout-2 #asset_spatial {
   overflow: hidden; }
 .homepage.layout-2 .recent_numbers .col1,

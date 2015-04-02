@@ -1,5 +1,6 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
+import json
 from ckan.logic import side_effect_free
 from datetime import datetime
 import logging, copy, uuid, json
@@ -464,9 +465,35 @@ def make_uuid():
 
 @side_effect_free
 def get_last_geo_asset(context, data_dict):
-  last_added = DFMPSearchQuery()({
-    'q': '+entity_type:asset +type:image* +spatial:[* TO *]',
-    'sort': 'metadata_created desc',
-    'rows': 1
-  })
-  return last_added['results'][0]
+  last_added = {}
+  start = 0
+
+  while True:
+    # requests the latest image
+    last_added = DFMPSearchQuery()({
+      'q': '+entity_type:asset +type:image* +spatial:[* TO *]',
+      'sort': 'metadata_created desc',
+      'start': start,
+      'rows': 1
+    })
+    start += 1
+
+    # gets dict
+    last_added = json.loads(last_added['results'][0]['data_dict'])
+
+    # Validates coordinates
+    valid = True
+    if last_added['spatial']['type'] == 'Polygon':
+      for point in last_added['spatial']['coordinates'][0]:
+        if (point[1] > -35.12090 and (point[0] < 148.76224 or point[0] > 149.42004)) or\
+          (point[1] < -35.47779 and (point[0] < 148.76224 or point[0] > 149.42004)):
+          valid = False
+    else:
+      if (last_added['spatial']['coordinates'][1] > -35.12090 and (last_added['spatial']['coordinates'][0] < 148.76224 or last_added['spatial']['coordinates'][0] > 149.42004)) or\
+          (last_added['spatial']['coordinates'][1] < -35.47779 and (last_added['spatial']['coordinates'][0] < 148.76224 or last_added['spatial']['coordinates'][0] > 149.42004)):
+          valid = False
+    # stops loop once valid asset is found
+    if valid:
+      break
+
+  return last_added

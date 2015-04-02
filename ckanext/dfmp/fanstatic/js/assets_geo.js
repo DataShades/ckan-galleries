@@ -1,61 +1,144 @@
-var map;
-    function initialize() {
-        jQuery.ajax({
-            dataType: 'json',
-            url: '/api/3/action/get_last_geo_asset'
-        }).done(function (response) {
-            var asset = JSON.parse(response.result.data_dict);
-            console.log(asset);
+// map init
+function initialize() {
+    // we need to get the latest image first
+    $.ajax({
+        dataType: 'json',
+        url: '/api/3/action/get_last_geo_asset'
+    }).done(function (response) {
 
-            var center = {
-                    lat: -35.31397979,
-                    lng: 149.12978252799996
-            };
+        // fetch asset from response
+        var asset = response.result;
 
-            if (asset.spatial.type == 'Polygon') {
-                var bounds = new google.maps.LatLngBounds();
+        // DEFAULT COORDINATES
+        var center = {
+            lat: -35.31397979,
+            lng: 149.12978252799996
+        };
 
-                // The Bermuda Triangle
-                var polygonCoords = [];
+        // calculates the center if Polygon is provided.
+        if (asset.spatial.type == 'Polygon') {
+            var bounds = new google.maps.LatLngBounds(),
+                polygonCoords = [];
 
-                jQuery.each(asset.spatial.coordinates[0], function (key, val) {
-                    polygonCoords.push(new google.maps.LatLng(val[1], val[0]));
-                });
-
-                for (var i = 0; i < polygonCoords.length; i++) {
-                    bounds.extend(polygonCoords[i]);
-                }
-
-                center = {
-                    lat: bounds.getCenter().lat(),
-                    lng: bounds.getCenter().lng()
-                };
-            }
-            else {
-                center = {
-                    lat: asset.spatial.coordinates[1],
-                    lng: asset.spatial.coordinates[0]
-                };
-            }
-
-            var mapOptions = {
-                zoom: 10,
-                center: new google.maps.LatLng(center.lat, center.lng)
-            };
-
-            map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
-
-            var image = new google.maps.InfoWindow({
-                position: new google.maps.LatLng(center.lat, center.lng),
-                map: map,
-                content: '<div id="latest_asset_infowindow">' +
-                            '<p>' + asset.name + '</p>' +
-                            '<img src="' + asset.url + '"/>' +
-                            '<p>Posted ' + new Date(asset.metadata_created).toTwitterRelativeTime() +  ' ago.</p>' +
-                        '</div>',
-                maxWidth: 180,
-                disableAutoPan: false
+            // collects all polygon coordinates
+            $.each(asset.spatial.coordinates[0], function (key, val) {
+                bounds.extend(new google.maps.LatLng(val[1], val[0]));
             });
+
+            // sets center coordinate
+            center = {
+                lat: bounds.getCenter().lat(),
+                lng: bounds.getCenter().lng()
+            };
+        }
+        // or gets point coordinates from asset object
+        else {
+            center = {
+                lat: asset.spatial.coordinates[1],
+                lng: asset.spatial.coordinates[0]
+            };
+        }
+
+        // sets initial map options
+        var myLatLng = new google.maps.LatLng(center.lat, center.lng);
+        var mapOptions = {
+            center: myLatLng,
+            zoom: 10,
+            disableDefaultUI: true,
+            draggable: false,
+            zoomControl: false,
+            panControl: false,
+            scaleControl: false,
+            scrollwheel: false
+        };
+
+        // inits map
+        map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+
+        // Creates circle with provided settings
+        var circleOptions = {
+            center: myLatLng,
+            fillOpacity: 0,
+            strokeOpacity:0,
+            map: map,
+            radius: 2000
+        };
+        var myCircle = new google.maps.Circle(circleOptions);
+
+        // makes map to fit the circle
+        map.fitBounds(myCircle.getBounds());
+
+        // renders image on the map
+        var image = asset_map_render (map, myLatLng, asset, null);
+        setInterval(function () {
+            // requests latest asset
+            $.ajax({
+                dataType: 'json',
+                url: '/api/3/action/get_last_geo_asset'
+            }).done(function (update) {
+                 // fetch asset data to JSON format
+                var new_asset = update.result;
+                // updates latest image if it has changed
+                if (new_asset.assetID != asset.assetID) {
+                    //sets new asset as current
+                    asset = new_asset;
+                    // updates infoWindow
+                    image = asset_map_render(map, myLatLng, asset, image)
+                }
+            });
+        }, 30000);
+    });
+}
+
+// renders infowindow with image
+function asset_map_render (map, myLatLng, asset, image) {
+
+    var description_truncate = function () {
+        var content = document.querySelector('.gm-style-iw');
+        try {
+            content.parentNode.removeChild(content.nextElementSibling);
+        }
+        catch (TypeError) {}
+        content.style.setProperty('width', 'auto', 'important');
+        content.style.setProperty('right', content.style.left, 'important');
+        content.style.setProperty('text-align', 'center', 'important');
+        // truncates long descriptions
+        $('.infowindow_desc').trunk8({
+            lines: 2
         });
+    };
+
+    // renders image on the map if it is not rendered yet
+    if (!image) {
+        image = new google.maps.InfoWindow({
+            position: myLatLng,
+            map: map,
+            content: asset_infowindow_content(asset),
+            // image width
+            maxWidth: 160,
+            disableAutoPan: false
+        });
+
+        google.maps.event.addListener(image, 'domready', description_truncate);
+        google.maps.event.addListener(image, 'content_changed', description_truncate);
     }
-    google.maps.event.addDomListener(window, 'load', initialize);
+    // changes the content and position of asset
+    else {
+        image.setContent(asset_infowindow_content(asset));
+        image.setPosition(myLatLng);
+    }
+    return image;
+}
+
+// return content for infoWindow
+function asset_infowindow_content (asset) {
+    return '<div id="latest_asset_infowindow">' +
+            '<h4>' + asset.name + '</h4>' +
+            '<p class="infowindow_desc">' + asset.notes + '</p>' +
+            '<img src="' + asset.url + '"/>' +
+            '<p>' + new Date(asset.metadata_created).toTwitterRelativeTime() + '</p>' +
+        '</div>';
+}
+
+// adds map to the page
+google.maps.event.addDomListener(window, 'load', initialize);

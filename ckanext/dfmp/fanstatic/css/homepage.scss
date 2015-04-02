@@ -20,9 +20,14 @@
         }
     }
     &.layout-2 {
-        #latest_asset_infowindow p {
-          margin: 0;
-          text-align: center;
+        #latest_asset_infowindow {
+          p {
+            margin: 0;
+            text-align: justify;
+          }
+          h4 {
+            margin: 0;
+          }
         }
         #asset_spatial {overflow: hidden;}
         .recent_numbers .col1,
