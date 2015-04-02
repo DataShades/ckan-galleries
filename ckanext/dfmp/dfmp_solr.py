@@ -182,12 +182,18 @@ class DFMPSolr(SearchIndex):
 
   def delete_asset(self, ast_dict, defer_commit=False):
     conn = make_connection()
+    if ast_dict.get('remove_all_assets'):
+      index = ''
+    elif ast_dict.get('whole_resource'):
+      index = ' +id:{id} '.format(id=ast_dict['whole_resource'])
+    else:
+      index = ' +index_id:\"{index}\"'.format(
+        index=_get_index_id(ast_dict['id'], ast_dict['assetID'])
+      )
     query = "+{type}:{asset} {index} +site_id:\"{site}\"".format(
       type=TYPE_FIELD,
       asset=ASSET_TYPE,
-      index='' if ast_dict.get('remove_all_assets') else '+index_id:\"{index}\"'.format(
-        index=_get_index_id(ast_dict['id'], ast_dict['assetID'])
-      ),
+      index=index,
       site=config.get('ckan.site_id'))
     try:
       conn.delete_query(query)

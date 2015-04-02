@@ -219,6 +219,27 @@ class DFMPController(base.BaseController):
     DFMPSolr().commit()
     base.redirect(c.environ.get('HTTP_REFERER', config.get('ckan.site_url','/')))
 
+  def solr_clean_index(self):
+    result = DFMPSearchQuery()({
+      'q':'',
+      'facet.field':'id',
+      'rows':0,
+    })['facets']['id'].keys()
+
+    resources = [
+      item[0] for item
+      in session.query(model.Resource.id)\
+        .filter(model.Resource.state == 'active')\
+        .all()
+    ]
+
+    remover = DFMPSolr()
+    removed = filter(lambda x: x not in resources, result)
+    for item in removed:
+      remover.delete_asset({'whole_resource':item})
+
+    self.solr_commit()
+
   def ckanadmin_org_relationship(self, org):
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
