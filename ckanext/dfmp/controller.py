@@ -232,7 +232,7 @@ class DFMPController(base.BaseController):
         .filter(model.Resource.state == 'active')\
         .all()
     ]
-
+    
     remover = DFMPSolr()
     removed = filter(lambda x: x not in resources, result)
     for item in removed:
