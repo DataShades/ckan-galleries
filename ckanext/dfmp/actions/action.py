@@ -34,6 +34,7 @@ def solr(context, data_dict):
 def solr_add_assets(context, data_dict):
   for item in data_dict['items']:
     _asset_to_solr(item)
+  indexer.commit()
   
 @side_effect_free
 def all_user_list(context, data_dict):
@@ -189,24 +190,24 @@ def user_add_asset_inner(context, data_dict, package_id, resources):
   _asset_to_solr(ind)
 
   result['parent_id'] = parent['id']
+  indexer.commit()
   return result
 
 def user_update_asset_inner(context, data_dict):
   """Update assets"""
-  if not 'items' in data_dict:
-    data_dict['items'] = [data_dict.copy()]
-
-  updater = _update_generator(context, data_dict['items'])
-  resources = [resource for resource in updater]
-  return resources
+  return _changes_route(context, data_dict, _update_generator):
 
 def user_remove_asset_inner(context, data_dict):
   """Remove assets"""
+  return _changes_route(context, data_dict, _delete_generator):
+
+def _changes_route(context, data_dict, generator):
   if not 'items' in data_dict:
     data_dict['items'] = [data_dict.copy()]
 
-  deleter = _delete_generator(context, data_dict['items'])
-  resources = [resource for resource in deleter]
+  changer = generator(context, data_dict['items'])
+  resources = [resource for resource in changer]
+  indexer.commit()
   return resources
 
 def _update_generator(context, data_dict):
@@ -227,16 +228,17 @@ def _update_generator(context, data_dict):
         res['metadata']['license_id']   = res['metadata']['license'] = item['license']
         res['metadata']['license_name'] = _get_license_name(item['license'])
 
-        ind_res = copy.deepcopy(res)
-        result = toolkit.get_action('datastore_upsert')(context,{
-          'resource_id' : item['id'],
-          'force':True,
-          'method': 'update',
-          'records':[res]}
-        )['records'][0]
-        ind = {'id': item['id']}
-        ind.update(ind_res)
-        _asset_to_solr(ind)
+      ind_res = copy.deepcopy(res)
+      result = toolkit.get_action('datastore_upsert')(context,{
+        'resource_id' : item['id'],
+        'force':True,
+        'method': 'update',
+        'records':[res]}
+      )['records'][0]
+      ind = {'id': item['id']}
+      
+      ind.update(ind_res)
+      _asset_to_solr(ind)
       yield res
 
     except toolkit.ObjectNotFound:
