@@ -26,6 +26,18 @@ RESERVED_FIELDS = SOLR_FIELDS + ["tags", "groups", "res_description",
 # Regular expression used to strip invalid XML characters
 _illegal_xml_chars_re = re.compile(u'[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
 
+
+def _asset_search(q = '*:*', fl = 'data_dict', fq = '', facet_fields = '', sort='score desc, metadata_created desc', limit=20, offset=1):
+  return DFMPSearchQuery()({
+    'q':q,
+    'fl':fl,
+    'fq':fq,
+    'facet.field':facet_fields,
+    'sort':sort,
+    'rows':limit,
+    'start':offset * limit
+  })
+
 def escape_xml_illegal_chars(val, replacement=''):
   '''
     Replaces any character not supported by XML with

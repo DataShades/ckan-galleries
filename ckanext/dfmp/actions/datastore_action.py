@@ -10,6 +10,7 @@ from dateutil.parser import parse
 from pylons import config
 
 from ckanext.dfmp.actions.action import indexer, searcher
+from ckanext.dfmp.dfmp_solr import _asset_search
 
 log = logging.getLogger(__name__)
 session = model.Session
@@ -99,12 +100,11 @@ def dfmp_static_gallery(context, data_dict):
 
   offset = randint (0, ammount - limit - 1)
 
-  result = searcher({
+  result = _asset_search(**{
     'q':'',
-    'fl':'data_dict',
-    'fq':'-state:hidden',
-    'rows':limit,
-    'start':offset,
+    'fq':'-state:hidden', 
+    'limit':limit,
+    'offset':offset,
   })
   records = []
   for item in result['results']:
@@ -169,56 +169,60 @@ def search_item(context, data_dict):
   '''
   Search by name, tags, type, from date
   '''
-  log.warn(data_dict)
-  # {'query_string': {'date': u'2015-03-11', 'name': u'f', 'tags': u'awesome'}, 'limit': 12}
   _validate(data_dict, 'query_string')
+  user_query = data_dict['query_string']
+  search_query = { 
+    'facet_fields': [
+      'organization',
+      'tags',
+      'license_id'
+    ]
+  }
+  fq = query = ''
 
-  # data_dict['queryery_string'] = json.loads(data_dict['query_string'])
-  try: limit = int(data_dict.get('limit', 21))
+  try: limit = int(data_dict['limit'])
   except: limit = 21
-  try: offset = int(data_dict.get('offset', 0))
+  try: offset = int(data_dict['offset'])
   except: offset = 0
+  search_query.update(limit=limit, offset=offset)
 
-  atype = data_dict['query_string'].get('type') or ''
+  atype = user_query.get('type') or ''
   if atype:
     if atype == 'cc':
-      atype = '+license_id:{type}*'.format(type=atype)
+      atype = ' +license_id:{type}*'.format(type=atype)
     else:
-      atype = '+(extras_mimetype:{type}* OR extras_type:{type}*)'.format(type=atype)
+      atype = ' +(extras_mimetype:{type}* OR extras_type:{type}*)'.format(type=atype)
 
-  tags = data_dict['query_string'].get('tags') or ''
+  tags = user_query.get('tags') or ''
   if type(tags) in (str, unicode):
     tags = [tag.strip() for tag in tags.split(',') if tag]
-  tags = '+tags:({tags})'.format(tags = ' OR '.join(tags)) if tags else ''
+  tags = ' +tags:({tags})'.format(tags = ' OR '.join(tags)) if tags else ''
 
-  name = data_dict['query_string'].get('name') or ''
+  name = user_query.get('name') or ''
   if name:
     name = '{name}'.format(name = name)
   
-  date = data_dict['query_string'].get('date')
+  date = user_query.get('date')
   try:
     date = '+metadata_modified:[{start} TO *]'.format(
       start= parse(date).isoformat() + 'Z'
     )
-  except ValueError:
-    date = ''
-  except AttributeError:
-    date = ''
-  query = '{name} {tags} {date} {type}'.format(
+  except ValueError: date = ''
+  except AttributeError: date = ''
+
+  query = '{name} {date} {tags} {type}'.format(
     name = name,
-    tags = tags,
     date = date,
+    tags = tags,
     type = atype
   )
-  if not query.strip():
-    query = '*:*'
-  result = searcher({
-    'q':query,
-    'fl':'data_dict',
-    'rows':limit,
-    'start':offset,
-    'sort':'score desc, metadata_modified desc'
-  })
+
+  if query.strip():
+    search_query.update(q=query)
+  result = _asset_search(**search_query)
+  if fq.strip():
+    search_query.update(fq=fq)
+
   records = []
   for item in result['results']:
     try:
@@ -228,8 +232,8 @@ def search_item(context, data_dict):
     except:
       pass
   del result['results']
+
   result.update(records=records, limit=limit, offset=offset)
-  log.warn(result)
   return result
 
 

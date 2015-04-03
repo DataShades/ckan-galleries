@@ -19,5 +19,7 @@
   }
   .thumb-holder{
     float: left;
+    max-height: 120px;
+    overflow: hidden;
   }
 }

@@ -10,7 +10,6 @@
     {% if facets %}
       <p class="filter-list">
         {% for field in facets.fields %}
-        {{ field }}
           {% set search_facets_items = facets.search.get(field)['items'] %}
           <span class="facet">{{ facets.titles.get(field) }}:</span>
           {% for value in facets.fields[field] %}

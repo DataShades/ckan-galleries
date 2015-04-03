@@ -9,7 +9,7 @@ from ckan.common import c, g, _, OrderedDict, request
 from urllib import urlencode
 
 session = model.Session
-from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
+from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery, _asset_search
 import logging
 log = logging.getLogger(__name__)
 import ckanext.dfmp.scripts as scripts
@@ -111,15 +111,13 @@ class DFMPController(base.BaseController):
       if param[0] in facet_fields:
         fq += u' +{0}:"{1}"'.format(*param)
 
-    result = DFMPSearchQuery()({
+    result = _asset_search(**{
       'q':q,
-      'fl':'data_dict',
       'fq':fq,
-      'facet.field':facet_fields,
+      'facet_fields':facet_fields,
+      'limit':ASSETS_PER_PAGE,
+      'offset':page-1,
       'sort':sort_by,
-      'rows':ASSETS_PER_PAGE,
-      'start':(page - 1) * ASSETS_PER_PAGE
-
     })
 
     default_facet_titles = {
@@ -225,17 +223,25 @@ class DFMPController(base.BaseController):
       'facet.field':'id',
       'rows':0,
     })['facets']['id'].keys()
+    offset = 0
+    limit = 2
+    while True:
+      resources = [
+        item[0] for item
+        in session.query(model.Resource.id)\
+          .filter(model.Resource.state == 'active')\
+          .limit(limit)\
+          .offset(offset)\
+          .all()
+      ]
+      result = filter(lambda x: x not in resources, result)
 
-    resources = [
-      item[0] for item
-      in session.query(model.Resource.id)\
-        .filter(model.Resource.state == 'active')\
-        .all()
-    ]
-    
+      offset += limit
+      if not resources:
+        break
+
     remover = DFMPSolr()
-    removed = filter(lambda x: x not in resources, result)
-    for item in removed:
+    for item in result:
       remover.delete_asset({'whole_resource':item})
 
     self.solr_commit()
