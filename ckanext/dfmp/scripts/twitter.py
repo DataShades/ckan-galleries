@@ -118,6 +118,7 @@ def _save_data(data):
         id=asset['id_str'],
         tags=tags,
         source='twitter',
+        post_url=asset['url']
       )
       tweet = {
         'assetID': meta['id'],
