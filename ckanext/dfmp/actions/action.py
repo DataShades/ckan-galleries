@@ -195,11 +195,11 @@ def user_add_asset_inner(context, data_dict, package_id, resources):
 
 def user_update_asset_inner(context, data_dict):
   """Update assets"""
-  return _changes_route(context, data_dict, _update_generator):
+  return _changes_route(context, data_dict, _update_generator)
 
 def user_remove_asset_inner(context, data_dict):
   """Remove assets"""
-  return _changes_route(context, data_dict, _delete_generator):
+  return _changes_route(context, data_dict, _delete_generator)
 
 def _changes_route(context, data_dict, generator):
   if not 'items' in data_dict:
