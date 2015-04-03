@@ -140,7 +140,7 @@ def flickr_group_pool_add_images_to_dataset(context, data):
 
   for iteration in range(1, int(number_of_iterations) + 1):
     batch = flickr.groups.pools.getPhotos(group_id=group['group']['id'], per_page=photos_per_iteration, page=iteration,
-                                          extras=u"description, license, original_format, geo,tags, machine_tags, url_sq, url_t, url_s, url_q, url_m, url_n, url_z, url_c, url_l, url_o")
+                                          extras=u"description, license, original_format, geo,tags, machine_tags, url_sq, url_t, url_s, url_q, url_m, url_n, url_z, url_c, url_l, url_o, owner_name")
 
     # collects resources
     resources = []
@@ -158,6 +158,7 @@ def flickr_group_pool_add_images_to_dataset(context, data):
           u"longitude": photo.get(u"longitude"),
         },
         u"metadata": {
+          u"post_url": 'https://www.flickr.com/photos/' + photo[u"owner"] + '/' + photo[u"id"] if photo.get(u"owner") and photo.get(u"id") else None,
           u"mimetype": u"image/" + photo.get(u"originalformat", ''),
           # gets first available url
           u"thumb": flickr_group_pull_get_existing_correct_url(photo, reversed=True),
@@ -167,8 +168,10 @@ def flickr_group_pool_add_images_to_dataset(context, data):
           u"tags": ','.join(photo[u"tags"].split(' ')) if photo.get(u"tags") else "",
           u"machine_tags": photo.get(u"machine_tags"),
           u"license": photo.get(u"license"),
-          u"flickr_id": photo.get(u"license"),
+          u"flickr_id": photo.get(u"id"),
           u"source": u"flickr",
+          u"owner": photo.get(u"owner"),
+          u"owner_name": photo.get(u"ownername")
         }
       })
 
@@ -210,6 +213,7 @@ def flickr_group_pool_add_images_to_dataset(context, data):
     task_status
   )
 
+
 def flickr_group_pool_import(context, url):
   # Harvesting options
   photos_per_iteration = 100.
@@ -243,9 +247,11 @@ def flickr_group_pool_import(context, url):
 
     # creates resource if it is not created yet
     if not package.resources:
+      datastore_id = str(unicode(uuid.uuid4()))
       datastore = toolkit.get_action('resource_create')(context, {
         'package_id': package_id,
-        'url': 'http://web.actgdfmp.links.com.au',
+        'id': datastore_id,
+        'url': config.get('ckan.site_url') + '/datastore/dump/' + datastore_id,
         'name': dataset['name'].replace('flickr_', ''),
         'resource_type': 'asset'
       })
