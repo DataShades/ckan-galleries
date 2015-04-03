@@ -196,7 +196,7 @@ def search_item(context, data_dict):
   tags = user_query.get('tags') or ''
   if type(tags) in (str, unicode):
     tags = [tag.strip() for tag in tags.split(',') if tag]
-  tags = ' +tags:({tags})'.format(tags = ' OR '.join(tags)) if tags else ''
+  tags = ' +tags:({tags})'.format(tags = ' AND '.join(tags)) if tags else ''
 
   include_description = user_query.get('include_description')
   name = user_query.get('name') or ''

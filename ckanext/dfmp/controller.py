@@ -137,7 +137,7 @@ class DFMPController(base.BaseController):
       'fq':fq,
       'facet_fields':facet_fields,
       'limit':ASSETS_PER_PAGE,
-      'offset':page-1,
+      'offset':(page-1)*ASSETS_PER_PAGE,
       'sort':sort_by,
     })
 

@@ -13,7 +13,7 @@
         <img src="{{ asset.metadata.thumb or default_thumb }}" alt="" width="136px" height="95px">
       </div>
       <div class="asset-info-holder">
-        <h3 class="asset-heading">
+        <h3 class="asset-heading" data-module="dfmp-removable-asset" data-module-asset="{{ asset.assetID }}" data-module-resource="{{ asset.id }}">
           {{ h.link_to(h.truncate(title, truncate_title), '/gallery/item/%s/%s' % (asset.id,asset.assetID)) }}
         </h3>
         <div class="meta-date-lic">

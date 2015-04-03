@@ -487,15 +487,18 @@ def get_last_geo_asset(context, data_dict):
   while True:
     # requests the latest image
     last_added = DFMPSearchQuery()({
-      'q': '+entity_type:asset +type:image* +spatial:["" TO *]',
+      'q': ' +entity_type:asset +type:image* +spatial:["" TO *] ',
       'sort': 'metadata_created desc',
       'start': start,
       'rows': 1
-    })
+    })['results']
     start += 1
 
+    # if there is no any assets with coordinates
+    if not last_added: break
+    
     # gets dict
-    last_added = json.loads(last_added['results'][0]['data_dict'])
+    last_added = json.loads(last_added[0]['data_dict'])
 
     # Validates coordinates
     valid = True

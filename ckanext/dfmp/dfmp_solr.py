@@ -35,7 +35,7 @@ def _asset_search(q = '*:*', fl = 'data_dict', fq = '', facet_fields = '', sort=
     'facet.field':facet_fields,
     'sort':sort,
     'rows':limit,
-    'start':offset * limit
+    'start':offset
   })
 
 def escape_xml_illegal_chars(val, replacement=''):

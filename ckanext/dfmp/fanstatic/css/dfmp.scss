@@ -300,6 +300,7 @@ input[type=text], input[type=password], select {
 }
 
 .btn {
+    &.btn-danger{color: white;}
     @include masthead_gradient(bottom, top, $ybtn_gf, $ybtn_gt);
     border: $bw $ybtn_b;
     text-shadow: none;
