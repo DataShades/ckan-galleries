@@ -519,4 +519,4 @@ def get_last_geo_asset(context, data_dict):
     if valid:
       break
 
-  return last_added
+  return json.dumps(last_added)

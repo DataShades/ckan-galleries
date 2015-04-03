@@ -5,70 +5,83 @@ ckan.module('asset-map', function ($, _) {
             // we will need to point to the instance
             var self = this;
 
-            // we need to get the latest image first
-            $.ajax({
-                dataType: 'json',
-                url: self.options.host + '/api/3/action/get_last_geo_asset'
-            }).done(function (response) {
+            // fetch asset from response
+            var asset = self.options.asset;
 
-                // fetch asset from response
-                var asset = response.result;
+            // if no asset provided render Canberra map
+            if ($.isEmptyObject(asset)) {
+                var myLatLng = self.asset_map_center();
+                self.assetgeo_empty_map_render(myLatLng);
+                return;
+            }
 
-                // gets center coordinates
-                var myLatLng = self.asset_map_center(asset);
+            // gets center coordinates
+            var myLatLng = self.asset_map_center(asset);
 
-                // sets initial map options
-                var mapOptions = {
-                    center: myLatLng,
-                    zoom: 10,
-                    disableDefaultUI: true,
-                    draggable: false,
-                    zoomControl: false,
-                    panControl: false,
-                    scaleControl: false,
-                    scrollwheel: false
-                };
+            // Renders map without image
+            var map = self.assetgeo_empty_map_render(myLatLng);
 
-                // inits map
-                var map = new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+            // fits map to circle
+            self.assetgeo_fit_to_circle (map, myLatLng);
 
-                // Creates circle with provided settings
-                var circleOptions = {
-                    center: myLatLng,
-                    fillOpacity: 0,
-                    strokeOpacity: 0,
-                    map: map,
-                    radius: 2000
-                };
-                var myCircle = new google.maps.Circle(circleOptions);
+            // renders image on the map
+            var image = self.assetgeo_imagemap_render(map, myLatLng, asset, null);
+            setInterval(function () {
+                // requests latest asset
+                $.ajax({
+                    dataType: 'json',
+                    url: self.options.host + '/api/3/action/get_last_geo_asset'
+                }).done(function (update) {
+                    // fetch asset data to JSON format
+                    var new_asset = JSON.parse(update.result);
+                    // updates latest image if it has changed
+                    if (!$.isEmptyObject(new_asset) && new_asset.assetID != asset.assetID) {
+                        //sets new asset as current
+                        asset = new_asset;
+                        // updates infoWindow
+                        image = self.assetgeo_imagemap_render(map, self.asset_map_center(asset), asset, image);
+                    }
+                });
+            }, 30000);
+        },
 
-                // makes map to fit the circle
-                map.fitBounds(myCircle.getBounds());
+        // renders map without any images
+        assetgeo_empty_map_render: function (myLatLng) {
+            // sets initial map options
+            var mapOptions = {
+                center: myLatLng,
+                zoom: 10,
+                disableDefaultUI: true,
+                disableDoubleClickZoom: true,
+                draggable: false,
+                zoomControl: false,
+                panControl: false,
+                scaleControl: false,
+                scrollwheel: false
+            };
 
-                // renders image on the map
-                var image = self.asset_map_render(map, myLatLng, asset, null);
-                setInterval(function () {
-                    // requests latest asset
-                    $.ajax({
-                        dataType: 'json',
-                        url: self.options.host + '/api/3/action/get_last_geo_asset'
-                    }).done(function (update) {
-                        // fetch asset data to JSON format
-                        var new_asset = update.result;
-                        // updates latest image if it has changed
-                        if (new_asset.assetID != asset.assetID) {
-                            //sets new asset as current
-                            asset = new_asset;
-                            // updates infoWindow
-                            image = self.asset_map_render(map, self.asset_map_center(asset), asset, image);
-                        }
-                    });
-                }, 30000);
-            })
+            // inits map
+            return new google.maps.Map(document.getElementById('map-canvas'), mapOptions);
+        },
+
+        // fits map to circle
+        assetgeo_fit_to_circle: function (map, myLatLng) {
+            // Creates circle with provided settings
+            var circleOptions = {
+                center: myLatLng,
+                fillOpacity: 0,
+                strokeOpacity: 0,
+                map: map,
+                radius: 2000
+            };
+            var myCircle = new google.maps.Circle(circleOptions);
+
+            // makes map to fit the circle
+            map.fitBounds(myCircle.getBounds());
         },
 
         // renders infowindow with image
-        asset_map_render: function (map, myLatLng, asset, image) {
+        assetgeo_imagemap_render: function (map, myLatLng, asset, image) {
 
             var description_truncate = function () {
                 var content = document.querySelector('.gm-style-iw');
@@ -92,8 +105,10 @@ ckan.module('asset-map', function ($, _) {
             }
             // changes the content and position of asset
             else {
-                map.panTo(myLatLng);
                 image.close();
+                map.panTo(myLatLng);
+                // fits map to circle
+                this.assetgeo_fit_to_circle (map, myLatLng);
                 image = this.asset_infowindow_add_dom (map, myLatLng, asset);
             }
 
@@ -124,6 +139,11 @@ ckan.module('asset-map', function ($, _) {
                 lat: -35.31397979,
                 lng: 149.12978252799996
             };
+
+            // returns default center if no asset provided
+            if (!asset) {
+                return center;
+            }
 
             // calculates the center if Polygon is provided.
             if (asset.spatial.type == 'Polygon') {

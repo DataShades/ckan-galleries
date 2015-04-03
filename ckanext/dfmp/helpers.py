@@ -29,20 +29,16 @@ def dfmp_total_ammount_of_datasets():
 
 
 def dfmp_last_added_assets_with_spatial_data():
-  twitter_items = DFMPSearchQuery()({
-    'q': '+entity_type:asset +type:image* +extras_retweeted:[* TO *] +metadata_created[' + datetime.datetime.now().replace(hour=0, minute=0, second=0).isoformat()[0:19] + 'Z' + ' TO *]',
-    'rows': 0,
-  })['count']
-
-  flickr_items = DFMPSearchQuery()({
-    'q': '+entity_type:asset +type:image* +extras_source:flickr +metadata_created[' + datetime.datetime.now().replace(hour=0, minute=0, second=0).isoformat()[0:19] + 'Z' + ' TO *]',
-    'rows': 0
-  })['count']
-
-  return {
-    'twitter': twitter_items,
-    'flickr': flickr_items,
-  }
+  # twitter_items = DFMPSearchQuery()({
+  #   'q': '+entity_type:asset +type:image* +extras_retweeted:[* TO *] +metadata_created[' + datetime.datetime.now().replace(hour=0, minute=0, second=0).isoformat()[0:19] + 'Z' + ' TO *]',
+  #   'rows': 0,
+  # })['count']
+  #
+  # flickr_items = DFMPSearchQuery()({
+  #   'q': '+entity_type:asset +type:image* +extras_source:flickr +metadata_created[' + datetime.datetime.now().replace(hour=0, minute=0, second=0).isoformat()[0:19] + 'Z' + ' TO *]',
+  #   'rows': 0
+  # })['count']
+  return toolkit.get_action('get_last_geo_asset')()
 
 def dfmp_nice_date(date):
   result = parse(date).strftime('%d %b %Y')
