@@ -169,7 +169,8 @@ def getting_tweets(data, context, post_data, offlim):
         mimetype = 'image/jpeg',
         type = 'image/jpeg',
         tags = ','.join( [ tag['text'] for tag in item.entities.get('hashtags', []) ] ),
-        source = 'twitter'
+        source = 'twitter',
+        post_url = item.entities['media'][0]['url']
       )
       records.append({
         'assetID': assetID,
