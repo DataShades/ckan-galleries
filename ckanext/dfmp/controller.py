@@ -18,6 +18,27 @@ from ckanext.dfmp.bonus import _unique_list, _name_normalize
 ASSETS_PER_PAGE = 20
 log_path = '/var/log/dfmp/'
 
+twitter_api_keys = [
+  dict(
+    CK  = u'vKAo073zpwfmuiTkyR83qyZEe',
+    CS  = u'cciB0ZCwQnBASvRp9HPN1vbBdZSCEzyu118igFhQFxOwDVFmVD',
+    AT  = u'23904345-OmiSA5CLpceClmy46IRJ98ddEKoFJAPura2j53ryN',
+    ATS = u'QYJwGyYODIFB5BJM8F5IXNUDn9coJnKzY6scJOErKRcAE'
+  ),
+  dict(
+    CK  = u'VmNHkKuFcza5ouvkNiimpoU8E',
+    CS  = u'E9CcaBikENNmbNC2LaG9aWhpiNuvpBBhUElPtZNGwulpvzIVu1',
+    AT  = u'23904345-4PBhPAYyUn4XvniAFCDOv5HaVEIJt2ik2j7KhEWdx',
+    ATS = u'a7Qtt296u2FnSia9fGGpbejJ3Jg420OC0LBPbCmYIIKVs',
+  ),
+  dict(
+    CK  = u'A0aIjONlJLGHQxN9KR15OnQQp',
+    CS  = u'khhb58i3Qi2BTD0QhxsfNPurOfZZ7YBQbtMheSoNWldWNyR2oe',
+    AT  = u'23904345-2MpF4FY06gvwGV1rNuJQ5oEdpvVMlMpWmWoEFXzMi',
+    ATS = u'8YExrwTKpPVDb3pEGTAGokDyuCzKvKUTLprzcxHlVQ5rG',
+  ),
+]
+
 def search_url(params):
   url = h.url_for('search_assets')
   return url_with_params(url, params)
@@ -275,7 +296,6 @@ class DFMPController(base.BaseController):
           'capacity': 'parent_organization'
           })
       elif params['route'] == 'remove':
-        log.warn('FFFFYYYUUUUUCK')
         member_delete = toolkit.get_action('member_delete')
         member_delete(context,{
           'id': org,
@@ -289,9 +309,7 @@ class DFMPController(base.BaseController):
           })
 
     org_obj = session.query(model.Group).filter_by(id=org).first()
-    log.warn(org_obj.member_all)
     children = [ item.table_id for item in filter(lambda x: x.capacity=='child_organization' and x.state == 'active', org_obj.member_all)]
-    log.warn(children)
 
     all_organizations = toolkit.get_action('organization_list')(context, {'all_fields':True})
     for o in all_organizations:
@@ -559,6 +577,7 @@ class DFMPController(base.BaseController):
       },
       'pull_error_summary':{},
       'stream_error_summary':{},
+      'key_list':[x for x in  range(len(twitter_api_keys))],
     }
     
     try:
@@ -618,17 +637,22 @@ class DFMPController(base.BaseController):
 
       elif 'stream_word' in pst:       
         word = pst['stream_word']
+        key_list = int(pst['key_list'])
         if not word:
           stable = False
           extra_vars['stream_error_summary'].update( { 'Hashtag': 'Must be defined' } )
 
         if stable:
-          args = ' --host {host} --ckan-api {apikey} --resource {resource} --search \'{word}\''.\
+          args = ' --host {host} --ckan-api {apikey} --resource {resource} --ck {ck} --cs {cs} --at {at} --ats {ats} --search \'{word}\''.\
               format(
                 host=config.get('ckan.site_url', ''),
                 apikey=c.userobj.apikey,
                 resource=resource_id,
-                word=word
+                word=word,
+                ck=twitter_api_keys[key_list]['CK'],
+                cs=twitter_api_keys[key_list]['CS'],
+                at=twitter_api_keys[key_list]['AT'],
+                ats=twitter_api_keys[key_list]['ATS']
               )
           valid_word = _name_normalize(word)
           log_file = ( '>' + log_path + 'dfmp_{word}.log'.format(word=valid_word) ) if log_access else ''

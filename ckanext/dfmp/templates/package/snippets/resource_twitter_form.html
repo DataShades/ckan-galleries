@@ -15,6 +15,16 @@
       {{ form.input('pull_from_time', id='field-pull-from-time', label=_('Pull tweets(time)'), type='time', value=data.pull_from_time, error=errors.pull_from_time, classes=[]) }}
     
   {% elif type == 'streaming' %}
+      <div class="control-group control-select">
+        <label class="control-label" for="key_list">Key</label>
+        <div class="controls ">      
+          <select name="key_list" id="key_list">
+            {% for key in key_list %}
+            <option value="{{key}}">{{key}}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
       {{ form.input('stream_word', id='field-stream-word', label=_('Hashtag'), placeholder="#CBR", type='text', value=data.stream_word, error=errors.stream_word, classes=[], is_required=True) }}
   {% endif %}
 {% endblock %}

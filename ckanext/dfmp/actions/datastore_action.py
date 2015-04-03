@@ -198,9 +198,17 @@ def search_item(context, data_dict):
     tags = [tag.strip() for tag in tags.split(',') if tag]
   tags = ' +tags:({tags})'.format(tags = ' OR '.join(tags)) if tags else ''
 
+  include_description = user_query.get('include_description')
   name = user_query.get('name') or ''
   if name:
-    name = '{name}'.format(name = name)
+    if include_description:
+      name = '{name}'.format(name = name)
+    else:
+      name = 'name:{name}'.format(name = name)
+  
+  license = user_query.get('licence') or ''
+  if license:
+    license = ' +license_id:{license}*'.format(license=license)
   
   date = user_query.get('date')
   try:
@@ -210,11 +218,12 @@ def search_item(context, data_dict):
   except ValueError: date = ''
   except AttributeError: date = ''
 
-  query = '{name} {date} {tags} {type}'.format(
+  query = '{name} {date} {tags} {type} {license}'.format(
     name = name,
     date = date,
     tags = tags,
-    type = atype
+    type = atype,
+    license = license
   )
 
   if query.strip():

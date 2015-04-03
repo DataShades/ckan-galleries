@@ -43,8 +43,6 @@ twitter_api_keys = [
   ),
 ]
 
-print twitter_api_keys[USED_KEY]['CK']
-flush()
 class TwitterListener(StreamListener):
   def on_data(self, data):
     print data
@@ -167,20 +165,16 @@ def get_args():
                       help='Tag or word for streaming',
                       required=True)
   parser.add_argument('--ck',
-                      default=twitter_api_keys[USED_KEY]['CK'],
-                      nargs=1,
+                      required=True,
                       help='Consumer Key (API Key)')
   parser.add_argument('--cs',
-                      default=twitter_api_keys[USED_KEY]['CS'],
-                      nargs=1,
+                      required=True,
                       help='Consumer Secret (API Secret)')
   parser.add_argument('--at',
-                      default=twitter_api_keys[USED_KEY]['AT'],
-                      nargs=1,
+                      required=True,
                       help='Access Token')
   parser.add_argument('--ats',
-                      default=twitter_api_keys[USED_KEY]['ATS'],
-                      nargs=1,
+                      required=True,
                       help='Access Token Secret')
   return parser.parse_args()
 
