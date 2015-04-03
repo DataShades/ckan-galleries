@@ -25,20 +25,20 @@
 .bold {
   font-weight: bold; }
 
-.account-masthead {
+body .account-masthead {
   background-color: #014f5e;
   border-bottom: 1px solid #00424d; }
-  .account-masthead .account ul li {
+  body .account-masthead .account ul li {
     border-right: 1px solid #004049; }
-    .account-masthead .account ul li a {
+    body .account-masthead .account ul li a {
       color: #fff; }
-      .account-masthead .account ul li a:hover {
+      body .account-masthead .account ul li a:hover {
         color: #24211a;
         background-color: #ede112; }
-  .account-masthead .account.not-authed ul li a:hover {
+  body .account-masthead .account.not-authed ul li a:hover {
     color: #ede112;
     background-color: #003942; }
-  .account-masthead .account.not-authed ul li a.sub:hover {
+  body .account-masthead .account.not-authed ul li a.sub:hover {
     color: #24211a;
     background-color: #ede112; }
 
