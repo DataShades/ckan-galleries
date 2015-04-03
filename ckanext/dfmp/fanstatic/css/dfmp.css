@@ -89,6 +89,9 @@
   background-color: #ffffff; }
 .homepage.layout-2 .with-top-margin {
   margin-top: 20px; }
+.homepage.layout-2 #latest_asset_infowindow .infowindow_image {
+  max-height: 145px;
+  overflow: hidden; }
 .homepage.layout-2 #latest_asset_infowindow p {
   margin: 0;
   text-align: justify; }

@@ -117,6 +117,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       'dfmp_total_ammount_of_assets':dfmp_total_ammount_of_assets,
       'dfmp_total_ammount_of_datasets':dfmp_total_ammount_of_datasets,
       'dfmp_last_added_assets_with_spatial_data':dfmp_last_added_assets_with_spatial_data,
+      'dfmp_current_server_time':dfmp_current_server_time,
 
       'dfmp_nice_date':dfmp_nice_date,
       }

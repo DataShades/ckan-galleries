@@ -40,6 +40,9 @@ def dfmp_last_added_assets_with_spatial_data():
   # })['count']
   return toolkit.get_action('get_last_geo_asset')()
 
+def dfmp_current_server_time():
+  return datetime.datetime.now()
+
 def dfmp_nice_date(date):
   result = parse(date).strftime('%d %b %Y')
   return result
