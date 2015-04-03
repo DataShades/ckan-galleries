@@ -177,8 +177,8 @@ ckan.module('asset-map', function ($, _) {
             return '<div id="latest_asset_infowindow">' +
                 '<h4>' + asset.name + '</h4>' +
                 '<p class="infowindow_desc">' + asset.notes + '</p>' +
-                '<img src="' + asset.url + '"/>' +
-                '<p>' + new Date(asset.metadata_created).toTwitterRelativeTime() + '</p>' +
+                '<div class="infowindow_image"><img src="' + asset.url + '"/></div>' +
+                '<p>' + moment(asset.metadata_created, "YYYY-MM-DD hh:mm:ss").from(this.options.stime) + '</p>' +
                 '</div>';
         },
         // adds map to the page

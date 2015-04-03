@@ -1,7 +1,7 @@
 {% set asset = h.dfmp_last_added_assets_with_spatial_data() %}
 
 <div class="box" id="asset_spatial">
-    <div data-module-asset="{{ asset }}" data-module-host="{{ g.site_url }}" data-module="asset-map" id="map-canvas"></div>
+    <div data-module-stime="{{ h.dfmp_current_server_time() }}" data-module-asset="{{ asset }}" data-module-host="{{ g.site_url }}" data-module="asset-map" id="map-canvas"></div>
 {#    <div class="recent_numbers">#}
 {#        <div class="row2">#}
 {#          <div class="span6 col1">#}
