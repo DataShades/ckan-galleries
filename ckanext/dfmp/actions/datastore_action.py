@@ -202,9 +202,10 @@ def search_item(context, data_dict):
   name = user_query.get('name') or ''
   if name:
     if include_description:
-      name = '{name}'.format(name = name)
+      name += '(name:{name} OR text:{name})'.format(name = name)
     else:
       name = 'name:{name}'.format(name = name)
+    
   
   license = user_query.get('licence') or ''
   if license:
@@ -228,10 +229,10 @@ def search_item(context, data_dict):
 
   if query.strip():
     search_query.update(q=query)
-  result = _asset_search(**search_query)
+
   if fq.strip():
     search_query.update(fq=fq)
-
+  result = _asset_search(**search_query)
   records = []
   for item in result['results']:
     try:

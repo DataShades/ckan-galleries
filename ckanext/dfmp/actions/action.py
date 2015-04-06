@@ -14,22 +14,15 @@ searcher = DFMPSearchQuery()
 #GET functions
 @side_effect_free
 def solr(context, data_dict):
-  if 'commit' in data_dict: indexer.commit()
-  elif 'search' in data_dict: 
-    result = searcher({
-      'q':data_dict['q'],
-      'fl':'data_dict',
-      'fq':'-state:hidden'
-    })
-    for item in result.get('results', []):
-      try:
-        json_str = item['data_dict']
-        json_dict = json.loads(json_str)
-        item['data_dict'] = json_dict
-      except:
-        pass
-    return result
-  else:indexer.delete_asset(data_dict)
+  result = searcher(data_dict)
+  for item in result.get('results', []):
+    try:
+      json_str = item['data_dict']
+      json_dict = json.loads(json_str)
+      item['data_dict'] = json_dict
+    except:
+      pass
+  return result
 
 def solr_add_assets(context, data_dict):
   for item in data_dict['items']:
