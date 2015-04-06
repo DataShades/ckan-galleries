@@ -71,7 +71,7 @@ class DFMPController(base.BaseController):
       'user': c.user or c.author,
       'auth_user_obj': c.userobj
     }
-    log.warn(flickr_resources['facets']['id'])
+
     # process resources one by one
     for resource_id, number in flickr_resources['facets']['id'].items():
       flickr_import.flickr_group_pool_resource_update (context, resource_id)

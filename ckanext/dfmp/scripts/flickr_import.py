@@ -74,8 +74,6 @@ def flickr_group_pool_get_datastore(context, dataset, group_id):
       'indexes': ['name', 'assetID']
       })
 
-  log.warn(datastore)
-
   return datastore
 
 # creates dataset
