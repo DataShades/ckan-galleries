@@ -331,7 +331,7 @@ input[type=text], input[type=password], select {
         &:hover {
             background: $rbtn_h;
         }
-        i, i:hover{
+        i, i:hover, &{
             color: white;
         }
     }

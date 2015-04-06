@@ -23,7 +23,9 @@
   {% resource 'dfmp/js/asset_actions.js' %}
   {% resource 'dfmp/js/twitter_relative_time_min.js' %}
   {% resource 'dfmp/js/trunk8.js' %}
-  {# resource 'dfmp/js/dfmp_removable_asset.js' #}
+  {% if c.userobj and c.userobj.sysadmin %}
+    {% resource 'dfmp/js/dfmp_removable_asset.js' %}
+  {% endif %}
 
   <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
   {% resource 'dfmp/js/assets_geo.js' %}

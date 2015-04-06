@@ -235,6 +235,7 @@ class DFMPController(base.BaseController):
 
     extra_vars = {
       'assets':assets,
+      'action_url':h.url_for('ajax_actions'),
 
     }
     return base.render('package/search_assets.html', extra_vars = extra_vars)
@@ -473,7 +474,8 @@ class DFMPController(base.BaseController):
 
     forbidden = _unique_list(forbidden)
     parent['forbidden_id'] = json.dumps(forbidden)
-    toolkit.get_action('resource_update')(context, parent)
+    if not request.params.get('without_forbidding'):
+      toolkit.get_action('resource_update')(context, parent)
     solr.commit()
     return 'Done'
 

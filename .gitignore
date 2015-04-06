@@ -5,3 +5,6 @@
 
 */*/*/*.log
 ckanext/dfmp/fanstatic/css/.sass-cache
+ckanext/dfmp/fanstatic/css/*.map
+x
+

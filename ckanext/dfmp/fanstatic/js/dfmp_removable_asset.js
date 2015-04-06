@@ -27,11 +27,13 @@ ckan.module('dfmp-removable-asset', function ($, _) {
     _onContext: function(event) {
       event.preventDefault();
       this.el.popover('destroy');
-      html = $('<button class="btn btn-danger">');
-      html.on('click', _onRemove);
-      html.text('Remove');
+      html = $('<div>');
+      removeButton = $('<button class="btn btn-danger">');
+      removeButton.text('Remove');
+      removeButton.on('click', this._onRemove);
+      html.append(removeButton)
       this.el.popover({title: 'Actions', html: true,
-                       content: html, placement: 'left'});
+                       content: html, placement: 'left', width:'100px'});
       this.el.popover('show');
 
 
@@ -45,24 +47,38 @@ ckan.module('dfmp-removable-asset', function ($, _) {
     },
 
     _onRemove: function (event) {
+      this._onAction({
+        data:{action:'delete', message:'Removed'}
+      })
 
-      var self = this
-        $.ajax({
-          url:  'URL FOR ACTION',
-          method:'POST',
-          data:{
-            action:'ACTION',
-            assets:'ASSET ID',
-            res_id:'RES ID'
-          },
-          success: function (data) {
-            window.location.reload();
-          },
-          error: function (error, data) {
-            'SELF POPUP ERROR TEXT'
-          }
-        });
-    }
+
+    },
+
+    _onAction: function(e){
+      var self = this;
+      console.log(this);
+      var values = this.options.asset.slice(1)
+      console.log(values);
+
+      $('.asset-actions', self.el).html('In progress...');
+      
+      $.ajax({
+        url:this.options.url,
+        method:'POST',
+        data:{
+          action:e.data.action,
+          assets:values,
+          res_id:this.options.resource,
+          without_forbidding:true,
+        },
+        success: function (data) {
+          window.location.reload();
+        },
+        error: function (error, data) {
+          $('.asset-actions', self.el).html(error.status + ' ' + error.statusText);
+        }
+      });
+    },
 
 
 
