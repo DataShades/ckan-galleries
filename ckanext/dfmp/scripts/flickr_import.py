@@ -19,31 +19,87 @@ def group_not_found(type, message):
 
   raise getattr(toolkit, type)(message)
 
+# generates package name
+def _flickr_dataset_name_generate(dataset):
+  return u"flickr_pool_" + (dataset[u"path_alias"] or _name_normalize(dataset[u"group_id"]))
+
+def flickr_group_pool_update(dataset):
+  pass
+
+# return appropriate datastore
+def flickr_group_pool_get_datastore(context, dataset):
+  # Checks resources for dataset
+  package_id = dataset['name']
+  package = context['session'] \
+    .query(context['model'].Package) \
+    .filter_by(name=package_id) \
+    .first()
+
+  # creates resource if it is not created yet
+  if not package.resources:
+    datastore_id = str(unicode(uuid.uuid4()))
+    datastore = toolkit.get_action('resource_create')(context, {
+      'package_id': package_id,
+      'id': datastore_id,
+      'url': config.get('ckan.site_url') + '/datastore/dump/' + datastore_id,
+      'name': dataset['name'].replace('flickr_', ''),
+      'resource_type': 'asset'
+    })
+  else:
+    datastore = toolkit.get_action('resource_show')(context, {'id': package.resources[0].id})
+
+  # creates datastore if not exists
+  if datastore.get('datastore_active'):
+    pass
+  else:
+    toolkit.get_action('datastore_create')(context, {
+      'resource_id': datastore['id'],
+      'force': True,
+      'fields': [
+        {'id': 'assetID', 'type': 'text'},
+        {'id': 'lastModified', 'type': 'text'},
+        {'id': 'name', 'type': 'text'},
+        {'id': 'url', 'type': 'text'},
+        {'id': 'spatial', 'type': 'json'},
+        {'id': 'metadata', 'type': 'json'},
+      ],
+      'primary_key': ['assetID'],
+      'indexes': ['name', 'assetID']
+      })
+
+  log.warn(datastore)
+
+  return datastore
 
 # creates dataset
 def flickr_group_pool_create_dataset(context, dataset):
   try:
     package = toolkit.get_action('package_create')(context, {
-      'name': u"flickr_pool_" + (dataset[u"path_alias"] or _name_normalize(dataset[u"group_id"])),
+      'name': _flickr_dataset_name_generate(dataset),
       'title': u"Flickr - " + dataset[u"name"],
       'notes': dataset[u"description"],
       'tags': []
     })
-    try:
-      toolkit.get_action('package_owner_org_update')(context, {
-        'id': package['id'],
-        'organization_id': 'brand-cbr'
-      })
-    except Exception:
-      log.warn('Error during adding user to organization ')
-
   except toolkit.ValidationError, e:
-    site_url = config.get('ckan.site_url')
-    group_not_found('ValidationError',
-                    "This group pool has been allready imported: <a href='" + site_url + "/dataset/" + u"flickr_pool_" +
-                    (dataset[u"path_alias"] or _name_normalize(dataset[u"group_id"])) + "'>Please visit</a> it.")
+    package = toolkit.get_action('package_show')(context, {'id': _flickr_dataset_name_generate(dataset)})
+    datastore = flickr_group_pool_get_datastore(context, package)
+    flickr_group_pool_update (dataset)
 
-  return package
+    return package, True, datastore
+
+  try:
+    toolkit.get_action('package_owner_org_update')(context, {
+      'id': package['id'],
+      'organization_id': 'brand-cbr'
+    })
+  except Exception:
+    log.warn('Error during adding user to organization ')
+
+  datastore = flickr_group_pool_get_datastore(context, package)
+
+  return package, False, datastore
+
+
 
 
 # adds resource to dataset
@@ -79,7 +135,7 @@ def flickr_group_pool_add_resource(context, resources, datastore):
       resource['license_name'] = resource[u"metadata"][u"license"]
 
     records.append({
-      'assetID': str(unicode(uuid.uuid4())),
+      'assetID': resource[u"metadata"][u"flickr_id"],
       'lastModified': datetime.fromtimestamp(int(resource[u"dateadded"])).isoformat(' '),
       'name': resource[u"name"],
       'url': resource[u"url"],
@@ -92,7 +148,7 @@ def flickr_group_pool_add_resource(context, resources, datastore):
     'resource_id': datastore['id'],
     'force': True,
     'records': records,
-    'method': 'insert'
+    'method': 'upsert'
   })
 
   return datastore_items
@@ -123,6 +179,9 @@ def flickr_group_pool_add_images_to_dataset(context, data):
   photos_per_iteration = data['photos_per_iteration']
   datastore = data['datastore']
 
+  # gets the list of marked/forbidden items
+  forbidden_items = datastore.get('forbidden_id', [])
+
   # We get the total number of photos in the pool here
   photos = flickr.groups.pools.getPhotos(group_id=group[u"group"][u"id"], per_page=1, page=1)
   rough_total = int(photos[u"photos"][u"total"])
@@ -147,6 +206,11 @@ def flickr_group_pool_add_images_to_dataset(context, data):
 
     # process each photo
     for photo in batch[u"photos"][u"photo"]:
+
+      # don't update forbidden assets
+      if photo[u"id"] in forbidden_items:
+        continue
+
       # fetches resource data
       resources.append({
         u"name": photo.get(u"title", photo[u"title"]),
@@ -236,45 +300,20 @@ def flickr_group_pool_import(context, url):
       u"path_alias": group_info[u"group"][u"path_alias"] if group_info[u"group"][u"path_alias"] else None,
       u"description": group_info[u"group"][u"description"][u"_content"]
     }
-    dataset = flickr_group_pool_create_dataset(context, dataset)
 
-    # Checks resources for dataset
-    package_id = dataset['name']
-    package = context['session'] \
-      .query(context['model'].Package) \
-      .filter_by(name=package_id) \
-      .first()
+    # exits if datsset exists and iamges should be updated
+    site_url = config.get('ckan.site_url')
+    dataset, update, datastore = flickr_group_pool_create_dataset(context, dataset)
 
-    # creates resource if it is not created yet
-    if not package.resources:
-      datastore_id = str(unicode(uuid.uuid4()))
-      datastore = toolkit.get_action('resource_create')(context, {
-        'package_id': package_id,
-        'id': datastore_id,
-        'url': config.get('ckan.site_url') + '/datastore/dump/' + datastore_id,
-        'name': dataset['name'].replace('flickr_', ''),
-        'resource_type': 'asset'
-      })
+    # we need to set update parameter dataset already exists
+    if update:
+      text = "Dataset already exists. <a target='_blank' href='" + site_url + "/dataset/" + dataset[
+      u"name"] + "'>Please visit</a> it."
+      update = True
     else:
-      datastore = toolkit.get_action('resource_show')(context, {'id': package.resources[0].id})
-
-    if datastore.get('datastore_active'):
-      pass
-    else:
-      toolkit.get_action('datastore_create')(context, {
-        'resource_id': datastore['id'],
-        'force': True,
-        'fields': [
-          {'id': 'assetID', 'type': 'text'},
-          {'id': 'lastModified', 'type': 'text'},
-          {'id': 'name', 'type': 'text'},
-          {'id': 'url', 'type': 'text'},
-          {'id': 'spatial', 'type': 'json'},
-          {'id': 'metadata', 'type': 'json'},
-        ],
-        'primary_key': ['assetID'],
-        'indexes': ['name', 'assetID']
-      })
+      text = "Dataset has been created. <a target='_blank' href='" + site_url + "/dataset/" + dataset[
+      u"name"] + "'>Please visit</a> the dataset."
+      update = False
 
     data = {
       'dataset': dataset,
@@ -282,13 +321,12 @@ def flickr_group_pool_import(context, url):
       'photos_per_iteration': photos_per_iteration,
       'datastore': datastore,
     }
-
     toolkit.get_action('celery_flickr_import')(context, data)
 
-    site_url = config.get('ckan.site_url')
+    log.warn(text)
 
     return {
-      'text': "Dataset has been created. <a target='_blank' href='" + site_url + "/dataset/" + dataset[
-      u"name"] + "'>Please visit</a> the dataset.",
-      'datasrore': datastore['id'],
+      'text': text,
+      'update': update,
+      'datastore': datastore['id'],
     }
