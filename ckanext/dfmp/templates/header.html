@@ -12,6 +12,11 @@
       <i class="icon-tint"></i>
     </a>
   </li>
+  <li>
+    <a href="{{ h.url_for('flickr_update' )}}" title="{{ _('Update all flickr pools') }}">
+      <i class="icon-camera-retro"></i>
+    </a>
+  </li>
 {% endif %}
 {{ super() }}
 {% endblock %}

@@ -53,6 +53,12 @@ def _encode_params(params):
 
 class DFMPController(base.BaseController):
 
+  def flickr_update(self):
+
+    log.warn('FLICKR UPDATE')
+
+    base.redirect(c.environ.get('HTTP_REFERER', config.get('ckan.site_url','/')))
+
   def get_flickr(self):
     return base.render('package/dataset_from_flickr.html')
 
