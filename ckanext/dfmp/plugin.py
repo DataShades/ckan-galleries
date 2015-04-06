@@ -101,6 +101,10 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       'solr_clean_index', '/ckan-admin/solr_clean_index',
       controller='ckanext.dfmp.controller:DFMPController',
       action='solr_clean_index', ckan_icon='tint')
+    map.connect(
+      'flickr_update', '/ckan-admin/flickr_update',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='flickr_update', ckan_icon='camera-retro')
 
     
     map.connect(
