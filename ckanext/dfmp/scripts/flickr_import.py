@@ -12,6 +12,16 @@ api_key = u'1903a21d2f1e99652164ad8c681e4b22'
 api_secret = u'34ed321a99cb93f6'
 flickr = flickrapi.FlickrAPI(api_key, api_secret, format='parsed-json')
 
+# Harvesting options
+photos_per_iteration = 100.
+
+# updates single resource
+def flickr_group_pool_resource_update (context, resource_id):
+  datastore = toolkit.get_action('resource_show')(context, {'id': resource_id})
+  data = {'datastore': datastore}
+  toolkit.get_action('celery_flickr_import')(context, data)
+
+
 # group not found action
 def group_not_found(type, message):
   # CODE THAT SAYS USER THAT URL IS INCORRECT AND GROUP NOT FOUND
@@ -23,11 +33,8 @@ def group_not_found(type, message):
 def _flickr_dataset_name_generate(dataset):
   return u"flickr_pool_" + (dataset[u"path_alias"] or _name_normalize(dataset[u"group_id"]))
 
-def flickr_group_pool_update(dataset):
-  pass
-
 # return appropriate datastore
-def flickr_group_pool_get_datastore(context, dataset):
+def flickr_group_pool_get_datastore(context, dataset, group_id):
   # Checks resources for dataset
   package_id = dataset['name']
   package = context['session'] \
@@ -37,7 +44,7 @@ def flickr_group_pool_get_datastore(context, dataset):
 
   # creates resource if it is not created yet
   if not package.resources:
-    datastore_id = str(unicode(uuid.uuid4()))
+    datastore_id = group_id
     datastore = toolkit.get_action('resource_create')(context, {
       'package_id': package_id,
       'id': datastore_id,
@@ -73,6 +80,8 @@ def flickr_group_pool_get_datastore(context, dataset):
 
 # creates dataset
 def flickr_group_pool_create_dataset(context, dataset):
+  group_id = dataset[u"group_id"]
+
   try:
     package = toolkit.get_action('package_create')(context, {
       'name': _flickr_dataset_name_generate(dataset),
@@ -82,8 +91,7 @@ def flickr_group_pool_create_dataset(context, dataset):
     })
   except toolkit.ValidationError, e:
     package = toolkit.get_action('package_show')(context, {'id': _flickr_dataset_name_generate(dataset)})
-    datastore = flickr_group_pool_get_datastore(context, package)
-    flickr_group_pool_update (dataset)
+    datastore = flickr_group_pool_get_datastore(context, package, group_id)
 
     return package, True, datastore
 
@@ -95,7 +103,7 @@ def flickr_group_pool_create_dataset(context, dataset):
   except Exception:
     log.warn('Error during adding user to organization ')
 
-  datastore = flickr_group_pool_get_datastore(context, package)
+  datastore = flickr_group_pool_get_datastore(context, package, group_id)
 
   return package, False, datastore
 
@@ -175,15 +183,13 @@ def flickr_group_pull_get_existing_correct_url(resource, reversed=False):
 
 def flickr_group_pool_add_images_to_dataset(context, data):
   context = json.loads(context)
-  group = data['group']
-  photos_per_iteration = data['photos_per_iteration']
   datastore = data['datastore']
 
   # gets the list of marked/forbidden items
   forbidden_items = datastore.get('forbidden_id', [])
 
   # We get the total number of photos in the pool here
-  photos = flickr.groups.pools.getPhotos(group_id=group[u"group"][u"id"], per_page=1, page=1)
+  photos = flickr.groups.pools.getPhotos(group_id=datastore['id'], per_page=1, page=1)
   rough_total = int(photos[u"photos"][u"total"])
 
   # counting the number of iterations
@@ -198,7 +204,7 @@ def flickr_group_pool_add_images_to_dataset(context, data):
   )
 
   for iteration in range(1, int(number_of_iterations) + 1):
-    batch = flickr.groups.pools.getPhotos(group_id=group['group']['id'], per_page=photos_per_iteration, page=iteration,
+    batch = flickr.groups.pools.getPhotos(group_id=datastore['id'], per_page=photos_per_iteration, page=iteration,
                                           extras=u"description, license, original_format, geo,tags, machine_tags, url_sq, url_t, url_s, url_q, url_m, url_n, url_z, url_c, url_l, url_o, owner_name")
 
     # collects resources
@@ -279,8 +285,6 @@ def flickr_group_pool_add_images_to_dataset(context, data):
 
 
 def flickr_group_pool_import(context, url):
-  # Harvesting options
-  photos_per_iteration = 100.
   group_url = url  # u"https://www.flickr.com/groups/abccanberra/pool/55001756@N05/" ### SHOULD BE PROVIDED BY USER  ###
 
   # Group lookup
@@ -315,15 +319,9 @@ def flickr_group_pool_import(context, url):
       u"name"] + "'>Please visit</a> the dataset."
       update = False
 
-    data = {
-      'dataset': dataset,
-      'group': group,
-      'photos_per_iteration': photos_per_iteration,
-      'datastore': datastore,
-    }
+    # sends tasks to background
+    data = {'datastore': datastore}
     toolkit.get_action('celery_flickr_import')(context, data)
-
-    log.warn(text)
 
     return {
       'text': text,

@@ -10,6 +10,7 @@ from urllib import urlencode
 
 session = model.Session
 from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery, _asset_search
+import ckanext.dfmp.scripts.flickr_import as flickr_import
 import logging
 log = logging.getLogger(__name__)
 import ckanext.dfmp.scripts as scripts
@@ -56,7 +57,26 @@ class DFMPController(base.BaseController):
   def flickr_update(self):
 
     log.warn('FLICKR UPDATE')
+    # gets all resource IDs
+    flickr_resources = DFMPSearchQuery()({
+      'q': ' +entity_type:asset +extras_source:flickr',
+      'fl': 'data_dict, id',
+      'facet.field': 'id',
+      'facet.limit': -1
+    })
 
+    # gets context
+    context = {
+      'model': model,
+      'user': c.user or c.author,
+      'auth_user_obj': c.userobj
+    }
+    log.warn(flickr_resources['facets']['id'])
+    # process resources one by one
+    for resource_id, number in flickr_resources['facets']['id'].items():
+      flickr_import.flickr_group_pool_resource_update (context, resource_id)
+
+    # redirect to DFMP homepage
     base.redirect(c.environ.get('HTTP_REFERER', config.get('ckan.site_url','/')))
 
   def get_flickr(self):
