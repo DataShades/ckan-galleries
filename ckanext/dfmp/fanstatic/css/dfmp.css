@@ -35,11 +35,15 @@
 }
 
 body .account-masthead {
-  background-color: #014f5e;
-  border-bottom: 1px solid #00424d;
+  background-color: #01515e;
+  border-bottom: 1px solid #014d5a;
 }
 body .account-masthead .account ul li {
+  border-left: none;
   border-right: 1px solid #004049;
+}
+body .account-masthead .account ul li:first-child {
+  border-left: 1px solid #004049;
 }
 body .account-masthead .account ul li a {
   color: #fff;
@@ -87,7 +91,7 @@ body .account-masthead .account.not-authed ul li a.sub:hover {
 }
 .masthead .navigation .nav-pills li.active a, .masthead .navigation .nav-pills li:hover a {
   color: #ede112;
-  background-color: #027072;
+  background-color: #014d5e;
 }
 
 .homepage .box {
@@ -102,7 +106,7 @@ body .account-masthead .account.not-authed ul li a.sub:hover {
   background-size: 100% 100%;
 }
 .homepage .hero {
-  background: url("../../../../dfmp/images/home-background.png");
+  background: #011b12 url("../../../../dfmp/images/home-background.png");
   background-repeat: no-repeat;
   background-size: 100% auto;
 }
@@ -146,6 +150,9 @@ body .account-masthead .account.not-authed ul li a.sub:hover {
   line-height: 45px;
   font-family: "Times New Roman", Georgia, Serif;
 }
+.homepage.layout-2 .span12 {
+  padding-bottom: 40px;
+}
 .homepage.layout-2 .span12 header {
   width: 43%;
   float: left;
@@ -176,18 +183,18 @@ body .account-masthead .account.not-authed ul li a.sub:hover {
   text-align: center;
   position: relative;
 }
-.homepage.layout-2 .stats td:nth-child(1) a b {
+.homepage.layout-2 .stats td:nth-child(1) a .number {
   background: #ede112;
   border-top-left-radius: 3px;
   border-bottom-left-radius: 3px;
 }
-.homepage.layout-2 .stats td:nth-child(2) a b {
+.homepage.layout-2 .stats td:nth-child(2) a .number {
   background: #edc112;
 }
-.homepage.layout-2 .stats td:nth-child(3) a b {
+.homepage.layout-2 .stats td:nth-child(3) a .number {
   background: #eda712;
 }
-.homepage.layout-2 .stats td:nth-child(4) a b {
+.homepage.layout-2 .stats td:nth-child(4) a .number {
   background: #ed8e12;
   border-top-right-radius: 3px;
   border-bottom-right-radius: 3px;
@@ -201,7 +208,7 @@ body .account-masthead .account.not-authed ul li a.sub:hover {
 .homepage.layout-2 .stats td a:hover {
   text-decoration: none;
 }
-.homepage.layout-2 .stats td a b {
+.homepage.layout-2 .stats td a .number {
   position: absolute;
   top: 0;
   width: 100%;
@@ -222,13 +229,19 @@ body .account-masthead .account.not-authed ul li a.sub:hover {
 }
 .homepage.layout-2 .home-top-row {
   background: rgba(23, 58, 69, 0.9);
-  margin: 60px 0 40px 20px;
+  margin: 40px 0 40px 20px;
   position: relative;
   border-radius: 3px;
 }
 .homepage.layout-2 .home-top-row .col-left, .homepage.layout-2 .home-top-row .col-right {
   width: 50%;
   display: inline-block;
+}
+.homepage.layout-2 .home-top-row .col-left .search-form, .homepage.layout-2 .home-top-row .col-right .search-form {
+  padding-bottom: 0;
+}
+.homepage.layout-2 .home-top-row .col-left .tags, .homepage.layout-2 .home-top-row .col-right .tags {
+  margin-top: -12px;
 }
 .homepage.layout-2 .home-top-row .col-left .box, .homepage.layout-2 .home-top-row .col-left .tags, .homepage.layout-2 .home-top-row .col-left .module-search .module-content, .homepage.layout-2 .home-top-row .col-right .box, .homepage.layout-2 .home-top-row .col-right .tags, .homepage.layout-2 .home-top-row .col-right .module-search .module-content {
   background: none;
@@ -313,6 +326,10 @@ body .account-masthead .account.not-authed ul li a.sub:hover {
 .site-footer a, .site-footer label, .site-footer small {
   color: #fff;
 }
+.site-footer a:hover {
+  color: #19b2d8;
+  text-decoration: none;
+}
 .site-footer .footer-links {
   float: left;
   width: auto;
@@ -336,9 +353,6 @@ body .account-masthead .account.not-authed ul li a.sub:hover {
   height: 47px;
   width: 195px;
 }
-.site-footer .footer-logo:hover {
-  background-image: url("../../../../dfmp/images/full_logo.png");
-}
 .site-footer .attribution {
   float: right;
   width: auto;
@@ -350,9 +364,6 @@ body .account-masthead .account.not-authed ul li a.sub:hover {
   width: 70px;
   margin-left: 7px;
   top: -7px;
-}
-.site-footer .footer-ckan-link:hover {
-  background-image: url("../../../../dfmp/images/ckan_logo.png");
 }
 .site-footer label {
   font-weight: normal;
@@ -372,8 +383,8 @@ body {
 }
 
 .account-masthead {
-  background-color: #014f5e;
-  border-bottom: 1px solid #00424d;
+  background-color: #01515e;
+  border-bottom: 1px solid #014d5a;
 }
 .account-masthead .account ul li {
   border-right: 1px solid #004049;
@@ -424,7 +435,7 @@ body {
 }
 .masthead .navigation .nav-pills li.active a, .masthead .navigation .nav-pills li:hover a {
   color: #ede112;
-  background-color: #027072;
+  background-color: #014d5e;
 }
 
 [role=main], .main, .homepage {
@@ -472,14 +483,16 @@ a:hover, a:focus {
 .context-info .nums dl {
   text-align: center;
   margin: 5px 0px;
+  padding: 8px 0 0;
+  color: #1a1c17;
 }
 .context-info .nums dl:nth-child(odd) {
-  background-color: #ed8e12;
+  background-color: #ecc112;
   border-top-left-radius: 3px;
   border-bottom-left-radius: 3px;
 }
 .context-info .nums dl:nth-child(even) {
-  background-color: #ede112;
+  background-color: #ede113;
   border-top-right-radius: 3px;
   border-bottom-right-radius: 3px;
 }
@@ -496,7 +509,7 @@ a:hover, a:focus {
 
 .nav li a:hover, .nav li a:focus {
   background-color: #ede112;
-  color: #1e1f21;
+  color: #056c7f;
 }
 
 .icon-google-plus-sign, .icon-twitter-sign, .icon-facebook-sign {
@@ -717,7 +730,11 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
 .secondary .nav-facet .nav-item a:hover:after, .secondary .nav-facet .nav-item.active a:after, .tertiary .nav-facet .nav-item a:hover:after, .tertiary .nav-facet .nav-item.active a:after {
   background-image: url("../../../../dfmp/images/sprite-ckan-icons.png");
 }
-.secondary .nav-facet .nav-item.active a, .secondary .nav-facet .nav-item a:hover, .secondary .nav-facet .nav-item a:focus, .tertiary .nav-facet .nav-item.active a, .tertiary .nav-facet .nav-item a:hover, .tertiary .nav-facet .nav-item a:focus {
+.secondary .nav-facet .nav-item.active a, .secondary .nav-facet .nav-item.active a:hover, .secondary .nav-facet .nav-item.active a:focus, .tertiary .nav-facet .nav-item.active a, .tertiary .nav-facet .nav-item.active a:hover, .tertiary .nav-facet .nav-item.active a:focus {
+  color: #fff;
+  background-color: #037f99;
+}
+.secondary .nav-facet .nav-item a:hover, .secondary .nav-facet .nav-item a:focus, .tertiary .nav-facet .nav-item a:hover, .tertiary .nav-facet .nav-item a:focus {
   background-color: #ede112;
   color: #1e1f21;
 }

@@ -7,25 +7,25 @@
       <tr>
         <td>
           <a href="{{ h.url_for(controller='ckanext.dfmp.controller:DFMPController', action='search_assets') }}">
-            <b><span>{{ h.dfmp_total_ammount_of_assets() }}</span></b>
+            <span class="number"><span>{{ h.dfmp_total_ammount_of_assets() }}</span></span>
             <span class="stat-type-name">{{ _('assets') }}</span>
           </a>
         </td>
         <td>
           <a href="{{ h.url_for(controller='package', action='search') }}">
-            <b><span>{{ h.dfmp_total_ammount_of_datasets() }}</span></b>
+            <span class="number"><span>{{ h.dfmp_total_ammount_of_datasets() }}</span></span>
             <span class="stat-type-name">{{ _('dataset') if stats.dataset_count == 1 else _('datasets') }}</span>
           </a>
         </td>
         <td>
           <a href="{{ h.url_for(controller='organization', action='index') }}">
-            <b>{{ h.SI_number_span(stats.organization_count) }}</b>
+            <span class="number">{{ h.SI_number_span(stats.organization_count) }}</span>
             <span class="stat-type-name">{{ _('organization') if stats.organization_count == 1 else _('organizations') }}</span>
           </a>
         </td>
         <td>
           <a href="{{ h.url_for(controller='related', action='dashboard') }}">
-            <b>{{ h.SI_number_span(stats.related_count) }}</b>
+            <span class="number">{{ h.SI_number_span(stats.related_count) }}</span>
             <span class="stat-type-name">{{ _('related item') if stats.related_count == 1 else _('related items') }}</span>
           </a>
         </td>

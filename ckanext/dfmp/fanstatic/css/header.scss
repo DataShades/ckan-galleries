@@ -4,6 +4,11 @@ body .account-masthead {
     .account {
         ul {
             li {
+
+                &:first-child{
+                    border-left:$account_action_border
+                }
+                border-left: none;
                 border-right: $account_action_border;
                 a {
                     color: #fff;

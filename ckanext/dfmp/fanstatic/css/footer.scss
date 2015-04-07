@@ -5,6 +5,10 @@
     a, label, small {
         color: #fff;
     }
+    a:hover{
+        color:$footer_link_hover;
+        text-decoration: none;
+    }
     .footer-links {
         float: left;
         width: auto;
@@ -29,12 +33,8 @@
         background-image: $flf_image;
         height: 47px;
         width: 195px;
-        &:hover {
-            background-image: $fl_image;
-        }
     }
-    // .footer-logo{position: absolute; left: 0; bottom: 10px; background: url("../../../../dfmp/images/cbr_logo.png") no-repeat;background-size: contain; height: 45px; width: 79px;}
-    // .footer-dfmp{position: absolute; left: 89px; background: url("../../../../dfmp/images/dfmp.png") no-repeat;background-size: contain; height: 34px; width: 107px;}
+
     .attribution {
         float: right;
         width: auto;
@@ -46,9 +46,6 @@
         width: 70px;
         margin-left: 7px;
         top: -7px;
-        &:hover {
-            background-image: $cl_image;
-        }
     }
     label {
         font-weight: normal;
@@ -62,3 +59,16 @@
         }
     }
 }
+// .site-footer:after{
+//    content: "xcv";
+//     position: absolute;
+//     top: -5px;
+//     bottom: 1px;
+//     left: 1px;
+//     width: 5px;
+//     background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ff0000), to(transparent));
+//     background-image: -webkit-linear-gradient(#ff0000, transparent);
+//     background-image: -moz-linear-gradient(#ff0000, transparent);
+//     background-image: -o-linear-gradient(#ff0000, transparent);
+//     background-image: linear-gradient(#ff0000, transparent);
+// }

@@ -143,13 +143,15 @@ a:hover, a:focus {
     dl {
         text-align: center;
         margin: 5px 0px;
+        padding: 8px 0 0;
+        color:$stat_color;
         &:nth-child(odd) {
-            background-color: $orange;
+            background-color: $folowers_stat;
             border-top-left-radius: 3px;
             border-bottom-left-radius: 3px;
         }
         &:nth-child(even) {
-            background-color: $yellow;
+            background-color: $datasets_stat;
             border-top-right-radius: 3px;
             border-bottom-right-radius: 3px;
         }
@@ -173,7 +175,7 @@ a:hover, a:focus {
 .nav li a {
     &:hover, &:focus {
         background-color: $yellow;
-        color: $black;
+        color: $action_tab_hover;
     }
 }
 
@@ -406,7 +408,13 @@ input[type=text], input[type=password], select {
         a:hover:after, &.active a:after {
             background-image: $sprite_icons;
         }
-        &.active a, a:hover, a:focus {
+        &.active a{
+            &, &:hover, &:focus{
+                color: #fff;
+                background-color: $menu_selected;
+            }
+        }
+        a:hover, a:focus {
             background-color: $yellow;
             color: $black;
         }
