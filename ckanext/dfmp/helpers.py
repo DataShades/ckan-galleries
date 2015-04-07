@@ -1,11 +1,12 @@
 from ckan.common import c
 from ckanext.dfmp.dfmp_solr import DFMPSearchQuery
 import ckan.plugins.toolkit as toolkit 
-from ckanext.dfmp.bonus import _count_literal
+from ckanext.dfmp.bonus import _count_literal, _get_rel_members
 from ckanext.dfmp.dfmp_solr import DFMPSearchQuery
 import datetime
 from dateutil.parser import parse
-
+import ckan.model as model
+session = model.Session
 def dfmp_with_gallery(id):
   res = toolkit.get_action('resource_show')(None, {'id':id})
   result = res.get('datastore_active', False)
@@ -47,3 +48,20 @@ def dfmp_nice_date(date):
   result = parse(date).strftime('%d %b %Y')
   return result
 
+def dfmp_relationship(org):
+  from logging import warn
+  org = session.query(model.Group).get(org)
+  children = _get_rel_members(org, 'child_organization')
+
+  parents = _get_rel_members(org, 'parent_organization')
+
+  friends = []
+  parent_orgs = model.Session.query(model.Group)\
+            .filter(model.Group.id.in_(parents)).all()
+  for parent in parent_orgs:
+            friends.extend(_get_rel_members(parent, 'child_organization'))
+  org_ids =friends + children + parents
+  orgs = dict(model.Session.query(model.Group.id, model.Group)\
+            .filter(model.Group.id.in_(org_ids))\
+            .all())
+  return parents, children, friends, orgs

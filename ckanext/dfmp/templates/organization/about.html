@@ -1,0 +1,33 @@
+{% set parents, children, friends, orgs = h.dfmp_relationship(c.group_dict.id) %}
+
+{% ckan_extends %}
+
+{% block organization_description %}
+  {% if parents|count %}
+    <h3>Parent organizations:</h3>
+      </ul>
+        {% for parent in parents %}
+          <li>{% link_for orgs[parent].title|truncate(35), controller='organization', action='read', id=orgs[parent].id %}</li>
+        {% endfor %}
+      </ul>
+  {% endif %}
+
+  {% if children|count %}
+    <h3>Child organizations:</h3>
+      </ul>
+        {% for child in children %}
+          <li>{% link_for orgs[child].title|truncate(35), controller='organization', action='read', id=orgs[child].id %}</li>
+        {% endfor %}
+      </ul>
+  {% endif %}
+  {% if friends|count %}
+    <h3>Friendly organizations(with the same parent):</h3>
+      </ul>
+        {% for friend in friends %}
+          <li>{% link_for orgs[friend].title|truncate(35), controller='organization', action='read', id=orgs[friend].id %}</li>
+        {% endfor %}
+      </ul>
+  {% endif %}
+  <hr>
+  {{ super() }}
+{% endblock %}

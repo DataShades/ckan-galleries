@@ -63,3 +63,9 @@ def _count_literal(ammount):
   elif ammount >= 1e9:
     value = '%sB' % int(ammount/1e9)
   return value
+
+def _get_rel_members(collection, capacity):
+  return [item.table_id for item in filter(
+      lambda x: x.capacity==capacity and x.state == 'active',
+      collection.member_all
+    )]
