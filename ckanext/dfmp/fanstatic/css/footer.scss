@@ -2,6 +2,7 @@
     background: $footer_back;
     border-top: $footer_border;
     color: #fff;
+    position: relative;
     a, label, small {
         color: #fff;
     }
@@ -58,17 +59,15 @@
             display: inline;
         }
     }
+    &:after{
+       content: "";
+        position: absolute;
+        display: block;
+        width: 100%;
+        top: -3px;
+        height: 3px;
+        bottom: 1px;
+        left: 1px;
+        @include masthead_gradient(left, right, $footer_gradient_from, $footer_gradient_to, none);
+    }
 }
-// .site-footer:after{
-//    content: "xcv";
-//     position: absolute;
-//     top: -5px;
-//     bottom: 1px;
-//     left: 1px;
-//     width: 5px;
-//     background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#ff0000), to(transparent));
-//     background-image: -webkit-linear-gradient(#ff0000, transparent);
-//     background-image: -moz-linear-gradient(#ff0000, transparent);
-//     background-image: -o-linear-gradient(#ff0000, transparent);
-//     background-image: linear-gradient(#ff0000, transparent);
-// }

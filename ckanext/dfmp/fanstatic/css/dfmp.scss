@@ -7,77 +7,13 @@
 @import "recline";
 @import "footer";
 
-@mixin masthead_gradient($gf, $gt, $a, $b) {
-    background: $b $masthead_back;
-    background-image: $masthead_back, -moz-linear-gradient($gf, $a 0%, $b 100%);
-    background-image: $masthead_back, -webkit-gradient(linear, $gf top, $gt top, color-stop(0%, $a), color-stop(100%, $b));
-    background-image: $masthead_back, -webkit-linear-gradient($gf, $a 0%, $b 100%);
-    background-image: $masthead_back, -o-linear-gradient($gf, $a 0%, $b 100%);
-    background-image: $masthead_back, -ms-linear-gradient($gf, $a 0%, $b 100%);
-    background-image: $masthead_back, linear-gradient(to $gt, $a 0%, $b 100%);
-    filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='$a', endColorstr='$b',GradientType=1 );
-}
-
 body {
     background: $footer_back;
     font-family: Arial;
 }
 
-.account-masthead {
-    background-color: $top_bar;
-    border-bottom: $top_bar_border;
-    .account {
-        ul {
-            li {
-                border-right: $account_action_border;
-                a {
-                    color: #fff;
-                    &:hover {
-                        color: $register_text;
-                        background-color: $register_back;
-                    }
-                }
-            }
-        }
-        &.not-authed ul li a:hover {
-            color: $yellow;
-            background-color: $login_back;
-        }
-    }
-}
-
 .homepage .module-search .module-content {
     background-color: #fff;
-}
-
-.masthead {
-    @include masthead_gradient(left, right, $masthead_gradient_from, $masthead_gradient_to);
-    .header-image {
-        margin: 20px 0;
-        position: relative;
-    }
-    .header-image, .content {
-        display: inline-block;
-    }
-    .content {
-        position: absolute;
-        top: 40px;
-    }
-    .site-search input {
-        width: 170px;
-    }
-    .navigation .nav-pills {
-        li {
-            a {
-                font-weight: bold;
-                font-size: $nav_font_size;
-            }
-            &.active a, &:hover a {
-                color: $nav_active_text;
-                background-color: $nav_active_back;
-            }
-        }
-    }
 }
 
 [role=main], .main, .homepage {
@@ -425,6 +361,9 @@ input[type=text], input[type=password], select {
             &:hover {
                 color: #fff;
             }
+            &:before{
+                background-image: $nav_active_after;
+            }
         }
     }
 }
@@ -447,103 +386,6 @@ thead th, .table-header thead th {
     color: #fff;
     background: $tb_row;
     text-shadow: none;
-}
-
-.recline-data-explorer {
-    background: #fff;
-    .well {
-        &, & a {
-            background: #fff;
-        }
-    }
-    .recline-slickgrid .slick-header-columns .slick-header-column {
-        color: #fff;
-        background: $tb_row;
-        text-shadow: none;
-    }
-    .ui-widget-content.slick-row.odd {
-        background-color: $ta_row;
-    }
-    .slick-cell a {
-        color: $t_a;
-    }
-    .btn, .recline-pager a {
-        border: $bw $rec_b;
-        color: #fff;
-        @include masthead_gradient(bottom, top, $rec_bf, $blue);
-        &.active, &:hover {
-            background: $dark_green;
-            color: $yellow;
-        }
-    }
-    .add-on {
-        background-color: #fff;
-    }
-}
-
-.site-footer {
-    background: $footer_back;
-    border-top: $footer_border;
-    color: #fff;
-    a, label, small {
-        color: #fff;
-    }
-    .footer-links {
-        float: left;
-        width: auto;
-    }
-    .lang {
-        &-select {
-            float: right;
-        }
-        &-container {
-            margin-left: 20px;
-        }
-    }
-    .footer-ckan-link, .footer-logo {
-        background-repeat: no-repeat;
-        background-size: contain;
-        position: absolute;
-        transition: background-image 0.5s;
-    }
-    .footer-logo {
-        left: 0;
-        bottom: 10px;
-        background-image: $flf_image;
-        height: 47px;
-        width: 195px;
-        &:hover {
-            background-image: $fl_image;
-        }
-    }
-    // .footer-logo{position: absolute; left: 0; bottom: 10px; background: url("../../../../dfmp/images/cbr_logo.png") no-repeat;background-size: contain; height: 45px; width: 79px;}
-    // .footer-dfmp{position: absolute; left: 89px; background: url("../../../../dfmp/images/dfmp.png") no-repeat;background-size: contain; height: 34px; width: 107px;}
-    .attribution {
-        float: right;
-        width: auto;
-    }
-    .footer-ckan-link {
-        background-image: $clf_image;
-        display: inline-block;
-        height: 24px;
-        width: 70px;
-        margin-left: 7px;
-        top: -7px;
-        &:hover {
-            background-image: $cl_image;
-        }
-    }
-    label {
-        font-weight: normal;
-    }
-    ul {
-        margin: 0 0 30px;
-        width: auto;
-        li {
-            margin-right: 15px;
-            display: inline;
-        }
-    }
 }
 
 .group-list .module-heading h3 {
