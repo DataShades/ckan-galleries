@@ -117,6 +117,10 @@ body .account-masthead .account.not-authed ul li a.sub:hover {
   margin-bottom: 3px;
 }
 .homepage.layout-2 #map-canvas {
+  height: 350px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
   background-color: #ffffff;
 }
 .homepage.layout-2 .with-top-margin {
