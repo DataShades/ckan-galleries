@@ -26,7 +26,11 @@
         }
     }
     &.layout-2 {
-        #map-canvas{
+        #map-canvas {
+          height: 350px;
+          width: 100%;
+          margin: 0;
+          padding: 0;
           background-color: #ffffff;
         }
         .with-top-margin{
