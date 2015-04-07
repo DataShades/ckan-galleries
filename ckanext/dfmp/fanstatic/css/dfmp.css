@@ -487,7 +487,7 @@ a:hover, a:focus {
 .context-info .nums dl {
   text-align: center;
   margin: 5px 0px;
-  padding: 8px 0 0;
+  padding: 5px 0 2px;
   color: #1a1c17;
 }
 .context-info .nums dl:nth-child(odd) {
@@ -859,4 +859,8 @@ thead th, .table-header thead th {
 .site-footer ul li {
   margin-right: 15px;
   display: inline;
+}
+
+.group-list .module-heading h3 a {
+  color: #056c7f;
 }

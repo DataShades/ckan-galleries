@@ -143,7 +143,7 @@ a:hover, a:focus {
     dl {
         text-align: center;
         margin: 5px 0px;
-        padding: 8px 0 0;
+        padding: 5px 0 2px;
         color:$stat_color;
         &:nth-child(odd) {
             background-color: $folowers_stat;
@@ -543,5 +543,11 @@ thead th, .table-header thead th {
             margin-right: 15px;
             display: inline;
         }
+    }
+}
+
+.group-list .module-heading h3 {
+    a{
+        color: #056c7f;
     }
 }
