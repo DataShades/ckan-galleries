@@ -293,7 +293,7 @@ def user_create_with_dataset(context, data_dict):
       in data_dict.get('tags', '').split(',')
       if name
     ]
-
+  data_dict['fullname'] = data_dict['name']
   data_dict['name'] = _name_normalize(data_dict['name']).lower()
 
   try:

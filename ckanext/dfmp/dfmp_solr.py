@@ -305,7 +305,6 @@ class DFMPSearchQuery(SearchQuery):
           ~model.Package.owner_org.in_(user_groups)
         ).all()
       for id in private:
-        log.warn(id[1])
         fq += " -package_id:{id}".format(id=id[0])
     query['fq'] = [fq]
 
