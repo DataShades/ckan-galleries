@@ -18,7 +18,7 @@ from os import getpid
 
 def datastore_mass(context, data, workflow):
   context = json.loads(context)
-  offlim = [0, 1000]
+  offlim = [0, 500]
   try:
     while True:
       current_status = _get_status(context, data, task_type=workflow)
