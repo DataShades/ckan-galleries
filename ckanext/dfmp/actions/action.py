@@ -1,12 +1,15 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
+from ckan.common import g
 from datetime import datetime
 import logging, copy, uuid, json, Polygon
 from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
 import ckan.model as model
 from pylons import config
+from sqlalchemy.orm.exc import NoResultFound
 from ckanext.dfmp.bonus import _validate, _get_index_id, _name_normalize
+import ckan.lib.helpers as h
 log = logging.getLogger(__name__)
 session = model.Session
 indexer = DFMPSolr()
@@ -89,7 +92,7 @@ def user_get_assets(context, data_dict):
   except Exception, e:
     log.warn(_get_assets_container_name(context['auth_user_obj'].name))
     log.warn(e)
-    return {}
+    raise e
 
 @side_effect_free
 def dfmp_tags(context, data_dict):
@@ -301,31 +304,9 @@ def user_create_with_dataset(context, data_dict):
   except toolkit.ValidationError, e:
     raise e
 
-  try:
-    package = toolkit.get_action('package_create')(context, {
-      'name' : _get_assets_container_name(data_dict['name']),
-      'title':title,
-      'notes':notes,
-      'tags':tags
-    })
+  _user_create_base_dataset(context, data_dict, title=title, notes=notes, tags=tags)
 
-    try:
-      toolkit.get_action('package_owner_org_update')(context,{
-        'id':package['id'],
-        'organization_id':'brand-cbr'
-      })
-    except Exception:
-      log.warn('Error during adding user to organization ')
-    try:
-      toolkit.get_action('organization_member_create')(context, {
-        'id':data_dict.get('organization_id','brand-cbr'),
-        'username': data_dict['name'],
-        'role':'editor'
-      })
-    except Exception:
-      log.warn('Error during adding permissions to user')
-  except toolkit.ValidationError, e:
-    log.warn(e)
+  user['dataset_url'] = h.url_for(controller='package', action='read', id=_get_assets_container_name(data_dict['name']))
 
   return user
 
@@ -427,11 +408,47 @@ def _get_license_name(id):
 
 def _get_pkid_and_resource(context):
   package_id = _get_assets_container_name(context['auth_user_obj'].name)
-  package = session.query(model.Package).filter(
-    model.Package.name == package_id
-  ).first()
-  resources = filter(lambda x: x.state == 'active' and x.resource_type == 'asset', package.resources)
+  try:
+    package = session.query(model.Package).filter(
+      model.Package.name == package_id
+    ).one()
+    resources = filter(lambda x: x.state == 'active' and x.resource_type == 'asset', package.resources)
+  except NoResultFound, e:
+    log.error(e)
+    log.error(type(e))
+
+    _user_create_base_dataset(context, {'name': context['auth_user_obj'].name})
+    resources = {}
+  
   return package_id, resources
+
+def _user_create_base_dataset(context, data_dict, **kargs):
+  try:
+    name = _get_assets_container_name(data_dict['name'])
+    package = toolkit.get_action('package_create')(context, {
+      'name' : name,
+      'title':kargs.get('title', name),
+      'notes':kargs.get('notes', ''),
+      'tags':kargs.get('tags', [])
+    })
+
+    try:
+      toolkit.get_action('package_owner_org_update')(context,{
+        'id':package['id'],
+        'organization_id':'brand-cbr'
+      })
+    except Exception:
+      log.warn('Error during adding user to organization ')
+    try:
+      toolkit.get_action('organization_member_create')(context, {
+        'id':data_dict.get('organization_id','brand-cbr'),
+        'username': data_dict['name'],
+        'role':'editor'
+      })
+    except Exception:
+      log.warn('Error during adding permissions to user')
+  except toolkit.ValidationError, e:
+    log.warn(e)
 
 def _default_datastore_create(context, id):
   toolkit.get_action('datastore_create')(context, {

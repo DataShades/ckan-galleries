@@ -298,12 +298,12 @@ class DFMPSearchQuery(SearchQuery):
                 parent.member_all
               )
             ])
+      private_query = model.Session.query(model.Package.id, model.Package.owner_org).\
+        filter(model.Package.private==True)
+      if user_groups:
+        private_query = private_query.filter(~model.Package.owner_org.in_(user_groups))
 
-      private = model.Session.query(model.Package.id, model.Package.owner_org).\
-        filter(
-          model.Package.private==True,
-          ~model.Package.owner_org.in_(user_groups)
-        ).all()
+      private = private_query.all()
       for id in private:
         fq += " -package_id:{id}".format(id=id[0])
     query['fq'] = [fq]
