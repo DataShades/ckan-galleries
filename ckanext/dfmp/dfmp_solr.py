@@ -74,6 +74,11 @@ class DFMPSolr(SearchIndex):
       except ValueError:
         ast_dict['metadata'] = json.loads(_unjson(ast_dict['metadata']))
 
+    if 'exif' in ast_dict['metadata']:
+      for ex_key, ex_val in ast_dict['metadata']['exif'].items():
+        for ex_key in ['EXIF:CreateDate', 'EXIF:Model', 'EXIF:Artist']:
+          ast_dict[ex_key.replace(':','_')] = ex_val
+
     for field in ('organization', 'text', 'notes'):
       if not ast_dict['metadata'].get(field):
         ast_dict[field] = None

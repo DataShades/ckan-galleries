@@ -1,5 +1,5 @@
 import ckan.plugins.toolkit as toolkit
-import hashlib, string
+import hashlib, string, json
 from pylons import config
 from ckan.common import c
 import ckan.model as model
@@ -28,7 +28,11 @@ def _unjson_base(string):
     .replace('\\\\""','\\""')
 
 def _unjson(string):
-  return _unjson_base(string).replace('""','"')
+  try:
+    return _unjson_base(string).replace('""','"')
+  except:
+    return json.loads(string)
+
 
 def _get_package_id_by_res(id):
   return session.query(model.Resource).filter_by(id=id).first().get_package_id()
