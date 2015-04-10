@@ -8,7 +8,7 @@ from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
 import ckan.model as model
 from pylons import config
 from sqlalchemy.orm.exc import NoResultFound
-from ckanext.dfmp.bonus import _validate, _get_index_id, _name_normalize
+from ckanext.dfmp.bonus import _validate, _get_index_id, _name_normalize, _only_admin
 import ckan.lib.helpers as h
 log = logging.getLogger(__name__)
 session = model.Session
@@ -35,7 +35,13 @@ def solr_add_assets(context, data_dict):
       log.warn(e)
       log.warn(type(e))
   indexer.commit()
-  
+
+@side_effect_free
+@_only_admin
+def delete_from_solr(context, data_dict):
+  if 'whole_resource' in data_dict:
+    indexer.delete_asset({'whole_resource':data_dict['whole_resource']})
+
 @side_effect_free
 def all_user_list(context, data_dict):
   U = context['model'].User
@@ -290,6 +296,7 @@ def user_update_dataset(context, data_dict):
 def user_create_with_dataset(context, data_dict):
   log.warn('USER CREATE WITH DATASET')
   log.warn(data_dict)
+  log.error(data_dict)
   _validate(data_dict, 'password', 'name', 'email' )
   title = data_dict.get('title', data_dict['name'])
   notes = data_dict.get('description', '')
@@ -306,12 +313,13 @@ def user_create_with_dataset(context, data_dict):
   try:
     user = toolkit.get_action('user_create')(context, data_dict)
   except toolkit.ValidationError, e:
+    log.error(e)
     raise e
 
   _user_create_base_dataset(context, data_dict, title=title, notes=notes, tags=tags)
 
   user['dataset_url'] = h.url_for(controller='package', action='read', id=_get_assets_container_name(data_dict['name']))
-
+  log.error(user)
   return user
 
 def delete_user_test(context, data_dict):

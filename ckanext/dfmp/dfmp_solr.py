@@ -187,7 +187,7 @@ class DFMPSolr(SearchIndex):
     finally:
       conn.close()
     commit_debug_msg = 'Not commited yet' if defer_commit else 'Commited'
-    log.debug('Updated index for %s [%s]' % (ast_dict.get('name'), commit_debug_msg))
+    # log.debug('Updated index for %s [%s]' % (ast_dict.get('name'), commit_debug_msg))
 
   def commit(self):
     try:

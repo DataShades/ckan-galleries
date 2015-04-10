@@ -34,6 +34,12 @@ def datastore_mass(context, data, workflow):
       }
       print(workflow)
 
+      if data.get('solr_index') and workflow=='clearing':
+        datastore = _celery_api_request(
+          'delete_from_solr',
+          context,
+          {'whole_resource':data['resource']}
+        )
       result = {
         'clearing' : clearing,
         'getting_tweets' : getting_tweets,
@@ -82,6 +88,7 @@ def revoke(data, context):
   else:
     print 'done'
 def clearing(data, context, post_data, offlim):
+  solr_index = data.get('solr_index')
   try:
     datastore = _celery_api_request(
       'datastore_search',
@@ -94,7 +101,7 @@ def clearing(data, context, post_data, offlim):
 
   items = []
   for record in datastore['records']:
-    if data.get('solr_index'):
+    if solr_index:
       record.update(id=data['resource'])
       items.append(record)
     else:
@@ -111,7 +118,7 @@ def clearing(data, context, post_data, offlim):
           'assetID':record['assetID']
         })
 
-  if data.get('solr_index'):
+  if solr_index:
     try:
       response = _celery_api_request(
         'solr_add_assets',
