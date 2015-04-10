@@ -29,7 +29,11 @@ def solr(context, data_dict):
 
 def solr_add_assets(context, data_dict):
   for item in data_dict['items']:
-    _asset_to_solr(item)
+    try:
+      _asset_to_solr(item)
+    except Exception, e:
+      log.warn(e)
+      log.warn(type(e))
   indexer.commit()
   
 @side_effect_free
@@ -298,7 +302,7 @@ def user_create_with_dataset(context, data_dict):
     ]
   data_dict['fullname'] = data_dict['name']
   data_dict['name'] = _name_normalize(data_dict['name']).lower()
-
+  data_dict['sysadmin'] = ( data_dict.get('role_name', 'empty') == config.get('ckanext.drupal7.sysadmin_role', 'not defined') )
   try:
     user = toolkit.get_action('user_create')(context, data_dict)
   except toolkit.ValidationError, e:

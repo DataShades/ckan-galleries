@@ -26,7 +26,8 @@ setup(
         'tweepy',
         'ckanapi',
         'requests',
-        'Polygon2'
+        'Polygon2',
+        'mysql-python'
     ],
     entry_points='''
         [ckan.plugins]

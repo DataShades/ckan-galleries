@@ -10,6 +10,23 @@
 body {
     background: $footer_back;
     font-family: Arial;
+
+    .icon-search{
+        text-indent: 100px;
+        &:before{
+            content: ".";
+            display: block;
+            width: 30px;
+            background: {
+                image: $blue_search;
+                size: contain;
+                repeat: no-repeat;
+            }
+        }
+        &:hover:before{
+            background-image: $orange_search;
+        }
+    }
 }
 
 .homepage .module-search .module-content {
@@ -179,13 +196,6 @@ a:hover, a:focus {
     }
     &, & a, &:hover, & a:hover {
         color: $black;
-    }
-}
-
-.simple-input .field .btn-search, .search-form .search-input button i {
-    color: $green;
-    &:hover {
-        color: $orange;
     }
 }
 

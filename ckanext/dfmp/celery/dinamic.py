@@ -112,21 +112,21 @@ def clearing(data, context, post_data, offlim):
         })
 
   if data.get('solr_index'):
-    response = _celery_api_request(
+    try:
+      response = _celery_api_request(
         'solr_add_assets',
         context,
         {'items':items}
       )
+    except Exception, e:
+      log.warn(e)
+      log.warn(type(e))
   else:
     response = _celery_api_request(
       'user_remove_asset',
       context,
       { 'items' : items }
     )
-
-  print response
-  # print items
-  # print 'removed'
 
   offlim[0] += offlim[1]
   _change_status(
