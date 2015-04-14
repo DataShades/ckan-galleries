@@ -18,6 +18,12 @@ from os import getpid
 
 def datastore_mass(context, data, workflow):
   context = json.loads(context)
+  if data.get('solr_index') and workflow=='clearing':
+    datastore = _celery_api_request(
+      'delete_from_solr',
+      context,
+      {'whole_resource':data['resource']}
+    )
   offlim = [0, 500]
   try:
     while True:
@@ -34,12 +40,6 @@ def datastore_mass(context, data, workflow):
       }
       print(workflow)
 
-      if data.get('solr_index') and workflow=='clearing':
-        datastore = _celery_api_request(
-          'delete_from_solr',
-          context,
-          {'whole_resource':data['resource']}
-        )
       result = {
         'clearing' : clearing,
         'getting_tweets' : getting_tweets,

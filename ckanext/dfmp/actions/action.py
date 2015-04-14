@@ -128,10 +128,12 @@ def flag_asset(context, data_dict):
   })['results']
   if len(dd):
     asset = json.loads(dd[0]['data_dict'])
-    asset['metadata']['flag'] = data_dict.get('flag','warning')
+    flag = data_dict.get('flag') or 'warning'
+    asset['metadata']['flag'] = flag
     _asset_to_solr(asset, defer_commit=False)
     return True
   return False
+
 
 # ASSET functions
 def user_add_asset_inner(context, data_dict, package_id, resources):

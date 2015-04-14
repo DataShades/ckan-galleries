@@ -76,9 +76,9 @@ class DFMPSolr(SearchIndex):
     try:
       if 'exif' in ast_dict['metadata']:
         for ex_key, ex_val in ast_dict['metadata']['exif'].items():
-          if ex_key in ['EXIF:CreateDate', 'EXIF:Model', 'EXIF:Artist']:
+          if ex_key in ['EXIF:CreateDate', 'EXIF:Model', 'EXIF:Artist', 'EXIF_CreateDate', 'EXIF_Model', 'EXIF_Artist']:
             if type(ex_val) in (unicode, str):
-              ast_dict[ex_key.replace(':','_')] = ex_val
+              ast_dict['metadata'][ex_key.replace(':','_')] = ex_val
     except:
       pass
 
