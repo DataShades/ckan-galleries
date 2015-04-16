@@ -59,7 +59,12 @@ def resource_items(context, data_dict):
   if organization:
     organization['dfmp_link'] = config.get('ckan.site_url') + '/organization/{name}'.format(name=organization['name'])
 
-    pkgs = session.query(model.Group).get(organization['id']).packages()
+    pkgs = session.query(model.Package).filter(
+      model.Package.owner_org == organization['id'],
+      model.Package.private == False,
+      model.Package.state == 'active'
+    ).all()
+
     all_res = []
     for pkg in pkgs:
       for res in pkg.resources:
