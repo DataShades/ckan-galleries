@@ -188,7 +188,7 @@ def flickr_group_pool_add_images_to_dataset(context, data):
 
   # We get the total number of photos in the pool here
   photos = flickr.groups.pools.getPhotos(group_id=datastore['id'], per_page=1, page=1)
-  log.warn(photos);
+
   rough_total = int(photos[u"photos"][u"total"])
 
   # counting the number of iterations
@@ -288,7 +288,6 @@ def flickr_group_pool_import(context, url):
 
   # Group lookup
   group = flickr.urls.lookupGroup(url=group_url)
-  log.warn(group)
   # log.info(group)
 
   # Harvesting images from the group if possible
