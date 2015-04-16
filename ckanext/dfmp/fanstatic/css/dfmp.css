@@ -233,7 +233,7 @@ body .account-masthead .account.not-authed ul li:last-child a:hover, body .accou
   background-image: url("../../../../dfmp/images/texture.png"), -ms-linear-gradient(bottom, #046574 0%, #027f98 100%);
   background-image: url("../../../../dfmp/images/texture.png"), linear-gradient(to top, #046574 0%, #027f98 100%);
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='$a', endColorstr='$b',GradientType=1 ); }
-.recline-data-explorer .active.btn, .recline-data-explorer .btn-primary:hover, .recline-data-explorer .btn-primary:focus, .recline-data-explorer .btn-group.open .btn-primary.dropdown-toggle, .btn-group.open .recline-data-explorer .btn-primary.dropdown-toggle, .recline-data-explorer .btn-success:hover, .recline-data-explorer .btn-success:focus, .recline-data-explorer .btn-group.open .btn-success.dropdown-toggle, .btn-group.open .recline-data-explorer .btn-success.dropdown-toggle, .recline-data-explorer .btn:hover, .recline-data-explorer .dropdown-menu li a:hover, .dropdown-menu li .recline-data-explorer a:hover, .recline-data-explorer .dropdown-menu li a:focus, .dropdown-menu li .recline-data-explorer a:focus, .recline-data-explorer .dropdown-submenu:hover a, .dropdown-submenu:hover .recline-data-explorer a, .recline-data-explorer .dropdown-submenu:focus a, .dropdown-submenu:focus .recline-data-explorer a, .recline-data-explorer .recline-pager a.active, .recline-data-explorer .recline-pager a:hover {
+.recline-data-explorer .btn.active, .recline-data-explorer .btn:hover, .recline-data-explorer .btn-primary:hover, .recline-data-explorer .btn-primary:focus, .recline-data-explorer .btn-group.open .btn-primary.dropdown-toggle, .btn-group.open .recline-data-explorer .btn-primary.dropdown-toggle, .recline-data-explorer .btn-success:hover, .recline-data-explorer .btn-success:focus, .recline-data-explorer .btn-group.open .btn-success.dropdown-toggle, .btn-group.open .recline-data-explorer .btn-success.dropdown-toggle, .recline-data-explorer .dropdown-menu li a:hover, .dropdown-menu li .recline-data-explorer a:hover, .recline-data-explorer .dropdown-menu li a:focus, .dropdown-menu li .recline-data-explorer a:focus, .recline-data-explorer .dropdown-submenu:hover a, .dropdown-submenu:hover .recline-data-explorer a, .recline-data-explorer .dropdown-submenu:focus a, .dropdown-submenu:focus .recline-data-explorer a, .recline-data-explorer .recline-pager a.active, .recline-data-explorer .recline-pager a:hover {
   background: #01525e;
   color: #ede112; }
 .recline-data-explorer .add-on {
@@ -307,16 +307,18 @@ body {
   background: #18191b;
   font-family: Arial; }
 body .icon-search {
-  text-indent: 100px; }
-body .icon-search:before {
+  text-indent: 99999px; }
+body .icon-search:before, body .search-form .icon-search:before {
   content: ".";
   display: block;
-  width: 30px;
+  width: 16px;
   background-image: url("../../../../dfmp/images/blue_search.png");
   background-size: contain;
   background-repeat: no-repeat; }
 body .icon-search:hover:before {
   background-image: url("../../../../dfmp/images/orange_search.png"); }
+body .search-form .icon-search:before {
+  width: 30px; }
 
 .homepage .module-search .module-content {
   background-color: #fff; }
@@ -429,7 +431,7 @@ a:hover, a:focus {
 .wrapper {
   box-shadow: none;
   border: none;
-  background: white url("../../../../dfmp/images/nav.png") 0 0 repeat-y; }
+  background: #fff url("../../../../dfmp/images/nav.png") 0 0 repeat-y; }
 
 .module > .module-content > small {
   display: block;
@@ -473,14 +475,14 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
   text-shadow: none;
   box-shadow: none;
   color: #1e1f21; }
-.btn-danger.btn {
+.btn.btn-danger {
   color: white; }
-.btn-primary:hover, .btn-primary:focus, .btn-group.open .btn-primary.dropdown-toggle, .btn-success:hover, .btn-success:focus, .btn-group.open .btn-success.dropdown-toggle, .btn:hover, .dropdown-menu li a:hover, .dropdown-menu li a:focus, .dropdown-submenu:hover a, .dropdown-submenu:focus a, .hover.btn {
+.btn:hover, .btn-primary:hover, .btn-primary:focus, .btn-group.open .btn-primary.dropdown-toggle, .btn-success:hover, .btn-success:focus, .btn-group.open .btn-success.dropdown-toggle, .dropdown-menu li a:hover, .dropdown-menu li a:focus, .dropdown-submenu:hover a, .dropdown-submenu:focus a, .btn.hover {
   color: #1e1f21;
   background: #eda712; }
 .btn-primary, .btn-success {
   width: 190px; }
-.btn-green, [type=submit].btn {
+.btn-green, .btn[type=submit] {
   background: #0991ad url("../../../../dfmp/images/texture.png");
   background-image: url("../../../../dfmp/images/texture.png"), -moz-linear-gradient(bottom, #056e80 0%, #0991ad 100%);
   background-image: url("../../../../dfmp/images/texture.png"), -webkit-gradient(linear, bottom top, top top, color-stop(0%, #056e80), color-stop(100%, #0991ad));
@@ -492,16 +494,16 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
   width: 190px;
   border: 1px solid #006274;
   color: white; }
-.btn-green:hover, [type=submit].btn-primary:hover, [type=submit].btn-primary:focus, .btn-group.open [type=submit].btn-primary.dropdown-toggle, [type=submit].btn-success:hover, [type=submit].btn-success:focus, .btn-group.open [type=submit].btn-success.dropdown-toggle, [type=submit].btn:hover, .dropdown-menu li a[type=submit]:hover, .dropdown-menu li a[type=submit]:focus, .dropdown-submenu:hover a[type=submit], .dropdown-submenu:focus a[type=submit] {
+.btn-green:hover, .btn[type=submit]:hover, [type=submit].btn-primary:hover, [type=submit].btn-primary:focus, .btn-group.open [type=submit].btn-primary.dropdown-toggle, [type=submit].btn-success:hover, [type=submit].btn-success:focus, .btn-group.open [type=submit].btn-success.dropdown-toggle, .dropdown-menu li a[type=submit]:hover, .dropdown-menu li a[type=submit]:focus, .dropdown-submenu:hover a[type=submit], .dropdown-submenu:focus a[type=submit] {
   background: #007187; }
 .btn-danger {
-  background: #ad0909 url("../../../../dfmp/images/texture.png");
-  background-image: url("../../../../dfmp/images/texture.png"), -moz-linear-gradient(bottom, #800505 0%, #ad0909 100%);
-  background-image: url("../../../../dfmp/images/texture.png"), -webkit-gradient(linear, bottom top, top top, color-stop(0%, #800505), color-stop(100%, #ad0909));
-  background-image: url("../../../../dfmp/images/texture.png"), -webkit-linear-gradient(bottom, #800505 0%, #ad0909 100%);
-  background-image: url("../../../../dfmp/images/texture.png"), -o-linear-gradient(bottom, #800505 0%, #ad0909 100%);
-  background-image: url("../../../../dfmp/images/texture.png"), -ms-linear-gradient(bottom, #800505 0%, #ad0909 100%);
-  background-image: url("../../../../dfmp/images/texture.png"), linear-gradient(to top, #800505 0%, #ad0909 100%);
+  background: #AD0909 url("../../../../dfmp/images/texture.png");
+  background-image: url("../../../../dfmp/images/texture.png"), -moz-linear-gradient(bottom, #800505 0%, #AD0909 100%);
+  background-image: url("../../../../dfmp/images/texture.png"), -webkit-gradient(linear, bottom top, top top, color-stop(0%, #800505), color-stop(100%, #AD0909));
+  background-image: url("../../../../dfmp/images/texture.png"), -webkit-linear-gradient(bottom, #800505 0%, #AD0909 100%);
+  background-image: url("../../../../dfmp/images/texture.png"), -o-linear-gradient(bottom, #800505 0%, #AD0909 100%);
+  background-image: url("../../../../dfmp/images/texture.png"), -ms-linear-gradient(bottom, #800505 0%, #AD0909 100%);
+  background-image: url("../../../../dfmp/images/texture.png"), linear-gradient(to top, #800505 0%, #AD0909 100%);
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='$a', endColorstr='$b',GradientType=1 );
   border: 1px solid #870000; }
 .btn-danger:hover {
@@ -545,7 +547,7 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
   background-image: url("../../../../dfmp/images/sprite-ckan-icons.png"); }
 .secondary .nav-facet .nav-item.active a, .secondary .nav-facet .nav-item.active a:hover, .secondary .nav-facet .nav-item.active a:focus, .tertiary .nav-facet .nav-item.active a, .tertiary .nav-facet .nav-item.active a:hover, .tertiary .nav-facet .nav-item.active a:focus {
   color: #fff;
-  background-color: #037f99; }
+  background-color: #037F99; }
 .secondary .nav-facet .nav-item a:hover, .secondary .nav-facet .nav-item a:focus, .tertiary .nav-facet .nav-item a:hover, .tertiary .nav-facet .nav-item a:focus {
   background-color: #ede112;
   color: #1e1f21; }
@@ -569,3 +571,5 @@ thead th, .table-header thead th {
 
 .group-list .module-heading h3 a {
   color: #056c7f; }
+
+/*# sourceMappingURL=dfmp.css.map */

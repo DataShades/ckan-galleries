@@ -12,11 +12,11 @@ body {
     font-family: Arial;
 
     .icon-search{
-        text-indent: 100px;
+        text-indent: 99999px;
         &:before{
             content: ".";
             display: block;
-            width: 30px;
+            width: 16px;
             background: {
                 image: $blue_search;
                 size: contain;
@@ -26,6 +26,10 @@ body {
         &:hover:before{
             background-image: $orange_search;
         }
+    }
+    .search-form .icon-search:before{
+        @extend .icon-search:before;
+        width: 30px;
     }
 }
 
