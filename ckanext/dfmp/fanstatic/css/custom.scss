@@ -418,6 +418,41 @@ input[type=text], input[type=password], select {
       color: $green;
     }
   }
+  .dfmp-manage-asset-btn {
+    vertical-align: middle;
+    &.remove-action a:hover{
+        background-color: $remove_btn_b;
+    }
+
+    &.hide-action a:hover{
+        background-color: $green;
+    }
+    a{
+         &[data-module-action="hide"]:hover, &[data-module-action="unhide"]:hover{
+            border-color: #c4d2e3;
+        }
+        &[data-module-action="solr-delete"]:hover, &[data-module-action="delete"]:hover{
+            border-color: #870000;
+        }
+        display:block;
+        text-align: center;
+        width: 60px;
+        height: 30px;
+        border-radius: 3px;
+        margin: auto;
+        color:$black;
+        &:hover{
+            text-decoration: none;
+            color: $white;
+        }
+            border: 1px solid $abtn_b;
+            background-color: $dbtn_c;
+        i{
+            font-size: 22px;
+            line-height: 30px;
+        }
+    }
+  }
 }
 
 .group-list .module-heading h3 {
@@ -444,3 +479,7 @@ input[type=text], input[type=password], select {
 }
 .float-right{float:right;}
 .bold{font-weight: bold;}
+i.in-progress:before{
+    background: url("../../../../base/images/loading-spinner.gif") 50% no-repeat;
+    color: transparent;
+}
