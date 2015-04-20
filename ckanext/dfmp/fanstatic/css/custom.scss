@@ -404,6 +404,9 @@ input[type=text], input[type=password], select {
   .flags-asset-column{
     width: 77px;
   }
+  .dfmp-sort-column{
+    cursor: pointer;
+  }
   .flag-preview .popover {
     width: auto;
     img{

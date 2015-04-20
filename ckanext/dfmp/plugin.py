@@ -124,6 +124,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       'dfmp_current_server_time':dfmp_current_server_time,
       'dfmp_relationship':dfmp_relationship,
       'dfmp_nice_date':dfmp_nice_date,
+      'dfmp_relative_time':dfmp_relative_time,
       }
 
   def update_config(self, config):

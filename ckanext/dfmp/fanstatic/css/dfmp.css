@@ -563,6 +563,8 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
   color: #056c7f; }
 .table .flags-asset-column {
   width: 77px; }
+.table .dfmp-sort-column {
+  cursor: pointer; }
 .table .flag-preview .popover {
   width: auto; }
 .table .flag-preview .popover img {

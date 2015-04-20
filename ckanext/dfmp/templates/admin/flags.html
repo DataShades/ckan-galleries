@@ -5,6 +5,7 @@
 {% block scripts %}
   {{ super() }}
   {% resource 'dfmp/js/dfmp_fancy_lightbox.js' %}
+  {% resource 'dfmp/js/dfmp_table_sorting.js' %}
 {% endblock %}
 
 {% block primary_content_inner %}
@@ -13,10 +14,12 @@
     <thead>
       <tr>
         <th class="gallery-preview-column"></th>
-        <th>Link to gallery</th>
-        <th>Link to resource</th>
+        <!--<th>Link to gallery</th>
+        <th>Link to resource</th>-->
+        <th>Links</th>
         <th class="flags-asset-column">Asset ID</th>
         <th>Flag</th>
+        <th class="dfmp-sort-column" data-module="dfmp-table-sorting" data-module-current="{{ sort }}" data-module-reverse="metadata_modified">Date Flagged</th>
         <th>Actions</th>
       </tr>
     </thead>
@@ -28,10 +31,14 @@
           <a class="flag-preview" href="#flag-preview-{{loop.index}}"><img class="preview-smallest-image" src="{{ thumbnail }}" alt=""></a>
           <div style="display:none"><div id="flag-preview-{{loop.index}}"><p class="asset-preview-title"><i class="icon-remove asset-preview-close" onclick="$.fancybox.close()"></i>{{ asset.name }}</p><img src="{{ asset.url }}" alt=""></div></div>
         </td>
-        <td><a class='' href="/gallery/item/{{asset.id}}/{{asset.assetID}}">{{ _('Gallery') }}</a></td>
-        <td><a class='' href="{{ h.url_for( controller='package', action='resource_read', id=asset.get('package_id'), resource_id=asset['id']) }}">{{ _('Resource') }}</a></td>
+        <td><a class='' href="/gallery/item/{{asset.id}}/{{asset.assetID}}">{{ _('Gallery') }}</a>
+        <!--</td>
+        <td>-->
+        <p></p>
+        <a class='' href="{{ h.url_for( controller='package', action='resource_read', id=asset.get('package_id'), resource_id=asset['id']) }}">{{ _('Resource') }}</a></td>
         <td>{{ asset.assetID }}</td>
         <td>{{ asset.metadata.flag }}</td>
+        <td>{{ h.dfmp_relative_time(asset.metadata_modified) }}</td>
         <td></td>
       </tr>
       {% endfor %}

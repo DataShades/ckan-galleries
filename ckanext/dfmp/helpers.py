@@ -65,3 +65,32 @@ def dfmp_relationship(org):
             .filter(model.Group.id.in_(org_ids))\
             .all())
   return parents, children, friends, orgs
+
+def dfmp_relative_time(time):
+  import logging as log
+  try:
+    parsed_time = parse(time).replace(tzinfo=None)
+    diff = datetime.datetime.now() - parsed_time
+    sec = diff.seconds
+    if sec < 60:
+      di = sec
+      ending = 's' if di > 1 else ''
+      return "{0} second{1} ago".format(di, ending)
+    elif sec / 60 < 60:
+      di = sec / 60
+      ending = 's' if di > 1 else ''
+      return "{0} minute{1} ago".format(di, ending)
+    elif sec / 60 / 24 < 24:
+      di = sec / 60 / 24
+      ending = 's' if di > 1 else ''
+      return "{0} hour{1} ago".format(di, ending)
+    elif sec / 60 / 24 / 7 < 2:
+      time = parsed_time.strftime('%I:%M %p')
+      return "{0} yesterday".format(time)
+    else:
+      time = parsed_time.strftime('%I:%M %p %d %b %Y')
+      return time
+    return time
+  except Exception, e:
+    log.warn(e)
+    return time

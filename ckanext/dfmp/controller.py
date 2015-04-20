@@ -243,17 +243,22 @@ class DFMPController(base.BaseController):
   def flags(self):
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
+    sort = request.params.get('sort', 'metadata_modified asc')
     flagged = DFMPSearchQuery()({
       'q':'',
       'rows':100,
       'start':0,
+      'sort': sort,
+      'fl':'data_dict, metadata_modified',
       'fq':'+extras_flag:[* TO *]',
     })['results']
     assets = []
     if flagged:
       for item in flagged:
-        assets.append(json.loads(item['data_dict']))
-    return base.render('admin/flags.html', extra_vars={'assets':assets})
+        asset = json.loads(item['data_dict'])
+        asset['metadata_modified'] = item['metadata_modified']
+        assets.append(asset)
+    return base.render('admin/flags.html', extra_vars={'assets':assets, 'sort': sort})
 
   def terminate_listener(self, id, resource_id):
     self._listener_route('terminate', id, resource_id)
