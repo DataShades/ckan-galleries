@@ -297,7 +297,8 @@ body {
 body .icon-search {
   text-indent: 99999px; }
 body .icon-search:before, body .search-form .icon-search:before {
-  content: ".";
+  content: "a..";
+  color: transparent;
   display: block;
   width: 16px;
   background-image: url("../../../../dfmp/images/blue_search.png");

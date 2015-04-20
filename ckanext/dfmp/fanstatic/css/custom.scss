@@ -5,7 +5,8 @@ body {
     .icon-search{
         text-indent: 99999px;
         &:before{
-            content: ".";
+            content: "a..";
+            color: transparent;
             display: block;
             width: 16px;
             background: {
