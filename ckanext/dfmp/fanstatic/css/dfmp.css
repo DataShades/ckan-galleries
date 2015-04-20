@@ -1,30 +1,3 @@
-.alert-error a {
-  text-decoration: underline; }
-
-.table.center-aligned td {
-  text-align: center;
-  vertical-align: middle; }
-
-.flickr-flash .close {
-  display: none; }
-
-.asset-item {
-  border-bottom: 1px dotted #dddddd;
-  padding-bottom: 20px;
-  margin-bottom: 20px; }
-.asset-list .asset-content {
-  position: relative; }
-.asset-list .asset-content img {
-  max-width: 150px; }
-.asset-actions i {
-  cursor: pointer; }
-
-.float-right {
-  float: right; }
-
-.bold {
-  font-weight: bold; }
-
 body .account-masthead {
   background-color: #01515e;
   border-bottom: 1px solid #014d5a; }
@@ -303,6 +276,21 @@ body .account-masthead .account.not-authed ul li:last-child a:hover, body .accou
   background-image: none, linear-gradient(to right, #078e90 0%, #19b2d8 100%);
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='$a', endColorstr='$b',GradientType=1 ); }
 
+#fancybox-outer, #fancybox-content {
+  border-radius: 6px; }
+
+.asset-preview-title {
+  color: #056c7f; }
+
+.asset-preview-close:before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 30px;
+  color: #000;
+  cursor: pointer; }
+
 body {
   background: #18191b;
   font-family: Arial; }
@@ -558,18 +546,55 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
 .secondary .nav-item.active a:before, .secondary .nav-aside li.active a:before, .tertiary .nav-item.active a:before, .tertiary .nav-aside li.active a:before {
   background-image: url("../../../../dfmp/images/nav-active.png"); }
 
-.table-striped tbody tr:nth-child(even) td, .table-striped tbody tr:nth-child(even) th, .table-bordered tbody tr:nth-child(even) td, .table-bordered tbody tr:nth-child(even) th {
+.table.center-aligned td {
+  text-align: center;
+  vertical-align: middle; }
+.table.table-striped tbody tr:nth-child(even) td, .table.table-striped tbody tr:nth-child(even) th, .table .table-bordered tbody tr:nth-child(even) td, .table .table-bordered tbody tr:nth-child(even) th {
   background-color: #e4f2f4; }
-
-.table a {
-  color: #056c7f; }
-
-thead th, .table-header thead th {
+.table thead th, .table .table-header thead th {
   color: #fff;
   background: #01525e;
   text-shadow: none; }
+.table .gallery-preview-column {
+  width: 50px;
+  padding: 10px;
+  vertical-align: top; }
+.table a {
+  color: #056c7f; }
+.table .flags-asset-column {
+  width: 77px; }
+.table .flag-preview .popover {
+  width: auto; }
+.table .flag-preview .popover img {
+  max-width: 140px;
+  max-height: 180px; }
+.table .flag-preview .popover p {
+  color: #056c7f; }
 
 .group-list .module-heading h3 a {
   color: #056c7f; }
+
+.alert-error a {
+  text-decoration: underline; }
+
+.flickr-flash .close {
+  display: none; }
+
+.asset-item {
+  border-bottom: 1px dotted #dddddd;
+  padding-bottom: 20px;
+  margin-bottom: 20px; }
+.asset-list .asset-content {
+  position: relative; }
+.asset-list .asset-content img {
+  max-width: 150px; }
+.asset-actions i {
+  cursor: pointer; }
+
+.float-right {
+  float: right; }
+
+.bold {
+  font-weight: bold; }
 
 /*# sourceMappingURL=dfmp.css.map */

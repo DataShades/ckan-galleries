@@ -2,11 +2,14 @@
 
 {% block styles %}
   {{ super() }}
+  {% resource 'dfmp/vendor/fancybox/jquery.fancybox-1.3.4.css' %}
   {% resource 'dfmp/css/dfmp.css' %}
+
 {% endblock %}
 
 {% block scripts %}
   {{ super() }}
+  {% resource 'dfmp/js/afancybox_min.js' %}
   {% resource 'dfmp/js/amoment_min.js' %}
   {% resource 'dfmp/js/dfmp_asset_last_items.js' %}
   {% resource 'dfmp/js/dfmp.js' %}
@@ -21,24 +24,5 @@
 
   <script src="https://maps.googleapis.com/maps/api/js?v=3.exp"></script>
   {% resource 'dfmp/js/assets_geo.js' %}
-
-
-  <script>
-  (window.onload = function(){
-    $ = window.$ || window.jQuery;
-    if (!$) return;
-    var $head = $("iframe").contents().find("head");
-    if (!$head) return;
-    csss = $('link[type="text/css"]').filter(function(a,b){return $(b).attr('href').match('dfmp\.css')});
-    if (!csss.length) return;
-    href = $(csss[0]).attr('href');
-    $head.append($("<link/>",{
-      rel: "stylesheet",
-      href: href,
-      type: "text/css"
-    }));
-    $("iframe").contents().find("body").css('background','#fff');
-  })()
-  </script>
 
 {% endblock %}

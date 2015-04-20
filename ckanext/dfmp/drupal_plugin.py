@@ -136,9 +136,9 @@ class DrupalAuthPlugin(p.SingletonPlugin):
             self.create_drupal_session_name()
         # Can we find the user?
         cookies = p.toolkit.request.cookies
-        log.warn(cookies)
+        # log.warn(cookies)
         drupal_sid = cookies.get(self.drupal_session_name)
-        log.warn(drupal_sid)
+        # log.warn(drupal_sid)
         if drupal_sid:
             engine = sa.create_engine(self.connection)
             rows = engine.execute(

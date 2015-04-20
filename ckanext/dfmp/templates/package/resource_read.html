@@ -10,3 +10,24 @@
   {% endif %}
 
 {% endblock #}
+
+{% block scripts %}
+  {{ super() }}
+  <script>
+  (window.onload = function(){
+    $ = window.$ || window.jQuery;
+    if (!$) return;
+    var $head = $("iframe").contents().find("head");
+    if (!$head) return;
+    csss = $('link[type="text/css"]').filter(function(a,b){return $(b).attr('href').match('dfmp\.css')});
+    if (!csss.length) return;
+    href = $(csss[0]).attr('href');
+    $head.append($("<link/>",{
+      rel: "stylesheet",
+      href: href,
+      type: "text/css"
+    }));
+    $("iframe").contents().find("body").css('background','#fff');
+  })()
+  </script>
+{% endblock %}
