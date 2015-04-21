@@ -24,6 +24,7 @@
      $('#el').spin('flower', 'red');
      */
 
+
 (function(factory) {
 
     if (typeof exports == 'object') {
