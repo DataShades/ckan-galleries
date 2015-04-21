@@ -1,41 +1,47 @@
 import ckan.plugins as plugins
 import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
+from ckan.common import g
 from datetime import datetime
-import logging, copy, uuid, string, json
+import logging, copy, uuid, json, Polygon
 from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
 import ckan.model as model
 from pylons import config
-from ckanext.dfmp.bonus import _validate, _get_index_id
+from sqlalchemy.orm.exc import NoResultFound
+from ckanext.dfmp.bonus import _validate, _get_index_id, _name_normalize, _only_admin
+import ckan.lib.helpers as h
 log = logging.getLogger(__name__)
-KEY_CHARS = string.digits + string.letters + "_-"
 session = model.Session
 indexer = DFMPSolr()
 searcher = DFMPSearchQuery()
 #GET functions
 @side_effect_free
 def solr(context, data_dict):
-  if 'commit' in data_dict: indexer.commit()
-  elif 'search' in data_dict: 
-    result = searcher({
-      'q':data_dict['q'],
-      'fl':'data_dict',
-      'fq':'-state:hidden'
-    })
-    for item in result.get('results', []):
-      try:
-        json_str = item['data_dict']
-        json_dict = json.loads(json_str)
-        item['data_dict'] = json_dict
-      except:
-        pass
-    return result
-  else:indexer.delete_asset(data_dict)
+  result = searcher(data_dict)
+  for item in result.get('results', []):
+    try:
+      json_str = item['data_dict']
+      json_dict = json.loads(json_str)
+      item['data_dict'] = json_dict
+    except:
+      pass
+  return result
 
 def solr_add_assets(context, data_dict):
   for item in data_dict['items']:
-    _asset_to_solr(item)
-  
+    try:
+      _asset_to_solr(item)
+    except Exception, e:
+      log.warn(e)
+      log.warn(type(e))
+  indexer.commit()
+
+@side_effect_free
+@_only_admin
+def delete_from_solr(context, data_dict):
+  if 'whole_resource' in data_dict:
+    indexer.delete_asset({'whole_resource':data_dict['whole_resource']})
+
 @side_effect_free
 def all_user_list(context, data_dict):
   U = context['model'].User
@@ -96,7 +102,7 @@ def user_get_assets(context, data_dict):
   except Exception, e:
     log.warn(_get_assets_container_name(context['auth_user_obj'].name))
     log.warn(e)
-    return {}
+    raise e
 
 @side_effect_free
 def dfmp_tags(context, data_dict):
@@ -122,10 +128,12 @@ def flag_asset(context, data_dict):
   })['results']
   if len(dd):
     asset = json.loads(dd[0]['data_dict'])
-    asset['metadata']['flag'] = data_dict.get('flag','warning')
+    flag = data_dict.get('flag') or 'warning'
+    asset['metadata']['flag'] = flag
     _asset_to_solr(asset, defer_commit=False)
     return True
   return False
+
 
 # ASSET functions
 def user_add_asset_inner(context, data_dict, package_id, resources):
@@ -161,7 +169,8 @@ def user_add_asset_inner(context, data_dict, package_id, resources):
 
   if not parent.get('datastore_active'):
     _default_datastore_create(context, parent['id'])
-
+  metadata = {'source':'user'}
+  metadata.update(data_dict)
   datastore_item = toolkit.get_action('datastore_upsert')(context, {
     'resource_id':parent['id'],
     'force': True,
@@ -171,7 +180,7 @@ def user_add_asset_inner(context, data_dict, package_id, resources):
       'name':data_dict['name'],
       'url':data_dict['url'],
       'spatial':location,
-      'metadata':data_dict,
+      'metadata':metadata,
       }
     ],
     'method':'upsert'
@@ -189,24 +198,24 @@ def user_add_asset_inner(context, data_dict, package_id, resources):
   _asset_to_solr(ind)
 
   result['parent_id'] = parent['id']
+  indexer.commit()
   return result
 
 def user_update_asset_inner(context, data_dict):
   """Update assets"""
-  if not 'items' in data_dict:
-    data_dict['items'] = [data_dict.copy()]
-
-  updater = _update_generator(context, data_dict['items'])
-  resources = [resource for resource in updater]
-  return resources
+  return _changes_route(context, data_dict, _update_generator)
 
 def user_remove_asset_inner(context, data_dict):
   """Remove assets"""
+  return _changes_route(context, data_dict, _delete_generator)
+
+def _changes_route(context, data_dict, generator):
   if not 'items' in data_dict:
     data_dict['items'] = [data_dict.copy()]
 
-  deleter = _delete_generator(context, data_dict['items'])
-  resources = [resource for resource in deleter]
+  changer = generator(context, data_dict['items'])
+  resources = [resource for resource in changer]
+  indexer.commit()
   return resources
 
 def _update_generator(context, data_dict):
@@ -227,16 +236,17 @@ def _update_generator(context, data_dict):
         res['metadata']['license_id']   = res['metadata']['license'] = item['license']
         res['metadata']['license_name'] = _get_license_name(item['license'])
 
-        ind_res = copy.deepcopy(res)
-        result = toolkit.get_action('datastore_upsert')(context,{
-          'resource_id' : item['id'],
-          'force':True,
-          'method': 'update',
-          'records':[res]}
-        )['records'][0]
-        ind = {'id': item['id']}
-        ind.update(ind_res)
-        _asset_to_solr(ind)
+      ind_res = copy.deepcopy(res)
+      result = toolkit.get_action('datastore_upsert')(context,{
+        'resource_id' : item['id'],
+        'force':True,
+        'method': 'update',
+        'records':[res]}
+      )['records'][0]
+      ind = {'id': item['id']}
+      
+      ind.update(ind_res)
+      _asset_to_solr(ind)
       yield res
 
     except toolkit.ObjectNotFound:
@@ -288,6 +298,7 @@ def user_update_dataset(context, data_dict):
 def user_create_with_dataset(context, data_dict):
   log.warn('USER CREATE WITH DATASET')
   log.warn(data_dict)
+  log.error(data_dict)
   _validate(data_dict, 'password', 'name', 'email' )
   title = data_dict.get('title', data_dict['name'])
   notes = data_dict.get('description', '')
@@ -298,40 +309,19 @@ def user_create_with_dataset(context, data_dict):
       in data_dict.get('tags', '').split(',')
       if name
     ]
-
+  data_dict['fullname'] = data_dict['name']
   data_dict['name'] = _name_normalize(data_dict['name']).lower()
-
+  data_dict['sysadmin'] = ( data_dict.get('role_name', 'empty') == config.get('ckanext.drupal7.sysadmin_role', 'not defined') )
   try:
     user = toolkit.get_action('user_create')(context, data_dict)
   except toolkit.ValidationError, e:
+    log.error(e)
     raise e
 
-  try:
-    package = toolkit.get_action('package_create')(context, {
-      'name' : _get_assets_container_name(data_dict['name']),
-      'title':title,
-      'notes':notes,
-      'tags':tags
-    })
+  _user_create_base_dataset(context, data_dict, title=title, notes=notes, tags=tags)
 
-    try:
-      toolkit.get_action('package_owner_org_update')(context,{
-        'id':package['id'],
-        'organization_id':'brand-cbr'
-      })
-    except Exception:
-      log.warn('Error during adding user to organization ')
-    try:
-      toolkit.get_action('organization_member_create')(context, {
-        'id':'brand-cbr',
-        'username': data_dict['name'],
-        'role':'editor'
-      })
-    except Exception:
-      log.warn('Error during adding permissions to user')
-  except toolkit.ValidationError, e:
-    log.warn(e)
-
+  user['dataset_url'] = h.url_for(controller='package', action='read', id=_get_assets_container_name(data_dict['name']))
+  log.error(user)
   return user
 
 def delete_user_test(context, data_dict):
@@ -364,12 +354,13 @@ def create_organization(context, data_dict):
   })
   return org
 
+@side_effect_free
 def organization_add_user(context, data_dict):
   _validate(data_dict, 'user', 'organization')
   user = _user_by_apikey(context, data_dict['user']).first()
   username = user.id
   user_current_org = _organization_from_list(_user_get_groups(user))[0]
-  if user_current_org:
+  if user_current_org and not data_dict.get('only_update', False):
     toolkit.get_action('organization_member_delete')(context, {
       'id':user_current_org,
       'username':username
@@ -378,7 +369,7 @@ def organization_add_user(context, data_dict):
     res = toolkit.get_action('organization_member_create')(context, {
       'id':data_dict['organization'],
       'username': username,
-      'role':'editor'
+      'role':data_dict.get('role','editor')
     })
   except Exception, e:
     log.warn(e)
@@ -429,21 +420,49 @@ def _get_license_name(id):
     return license[0]['title']
   return ''
 
-def _name_normalize(name):
-  return ''.join([
-      c
-      for c
-      in name
-      if c in KEY_CHARS
-    ])
-
 def _get_pkid_and_resource(context):
   package_id = _get_assets_container_name(context['auth_user_obj'].name)
-  package = session.query(model.Package).filter(
-    model.Package.name == package_id
-  ).first()
-  resources = filter(lambda x: x.state == 'active' and x.resource_type == 'asset', package.resources)
+  try:
+    package = session.query(model.Package).filter(
+      model.Package.name == package_id
+    ).one()
+    resources = filter(lambda x: x.state == 'active' and x.resource_type == 'asset', package.resources)
+  except NoResultFound, e:
+    log.error(e)
+    log.error(type(e))
+
+    _user_create_base_dataset(context, {'name': context['auth_user_obj'].name})
+    resources = {}
+  
   return package_id, resources
+
+def _user_create_base_dataset(context, data_dict, **kargs):
+  try:
+    name = _get_assets_container_name(data_dict['name'])
+    package = toolkit.get_action('package_create')(context, {
+      'name' : name,
+      'title':kargs.get('title', name),
+      'notes':kargs.get('notes', ''),
+      'tags':kargs.get('tags', [])
+    })
+
+    try:
+      toolkit.get_action('package_owner_org_update')(context,{
+        'id':package['id'],
+        'organization_id':'brand-cbr'
+      })
+    except Exception:
+      log.warn('Error during adding user to organization ')
+    try:
+      toolkit.get_action('organization_member_create')(context, {
+        'id':data_dict.get('organization_id','brand-cbr'),
+        'username': data_dict['name'],
+        'role':'editor'
+      })
+    except Exception:
+      log.warn('Error during adding permissions to user')
+  except toolkit.ValidationError, e:
+    log.warn(e)
 
 def _default_datastore_create(context, id):
   toolkit.get_action('datastore_create')(context, {
@@ -469,3 +488,64 @@ def _asset_to_solr(data_dict, defer_commit=True):
 
 def make_uuid():
   return unicode(uuid.uuid4())
+
+@side_effect_free
+def get_last_geo_asset(context, data_dict):
+  last_added = {}
+
+  # search iteration start
+  start = 0
+
+  # define possible polygon coords
+  min_lat = -35.47779
+  max_lat = -35.12090
+  min_lng = 148.76224
+  max_lng = 149.42004
+
+  # polygon validation
+  def __not_in_polygon(lat, lng):
+    return (lat > max_lat and (lng < min_lng or lng > max_lng)) or\
+          (lat < min_lat and (lng < min_lng or lng > max_lng))
+
+  # gets latest valid image
+  while True:
+    # requests the latest image
+    last_added = DFMPSearchQuery()({
+      'q': ' +entity_type:asset +type:image* +spatial:["" TO *] ',
+      'sort': 'metadata_created desc',
+      'start': start,
+      'rows': 1
+    })['results']
+    start += 1
+
+    # if there is no any assets with coordinates
+    if not last_added: break
+    
+    # gets dict
+    last_added = json.loads(last_added[0]['data_dict'])
+
+    # Validates coordinates
+    valid = True
+    if last_added['spatial']['type'] == 'Polygon':
+      # finds center of polygon
+      polygon = Polygon.Polygon(last_added['spatial']['coordinates'][0])
+      center = polygon.center()
+      # center's lat and lng
+      lat = center[1]
+      lng = center[0]
+      last_added['spatial']['coordinates'] = [lng, lat]
+      last_added['spatial']['type'] = 'Point'
+      if __not_in_polygon(lat, lng):
+        valid = False
+
+    else:
+      # point's lat and lng
+      lat = last_added['spatial']['coordinates'][1]
+      lng = last_added['spatial']['coordinates'][0]
+      if __not_in_polygon(lat, lng):
+          valid = False
+    # stops loop once valid asset is found
+    if valid:
+      break
+
+  return json.dumps(last_added)

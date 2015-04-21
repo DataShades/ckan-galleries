@@ -1,0 +1,23 @@
+#fancybox-outer {
+  border-radius: 6px;
+}
+#fancybox-content{
+  @extend #fancybox-outer;
+}
+.asset-preview-title{
+  color: $green;
+}
+
+.asset-preview-close:before{
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 30px;
+  height: 30px;
+  color: #000;
+  cursor: pointer;
+}
+
+// .flag-preview img{
+//   @include resample;
+// }

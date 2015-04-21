@@ -3,24 +3,28 @@ from ckan.logic import side_effect_free
 from ckanext.dfmp.bonus import _validate, _unjson, _unjson_base, _get_package_id_by_res
 from ckan.lib.helpers import url_for
 import ckan.model as model
-from random import shuffle, sample, randint
+from random import randint
 import logging, requests, json
-log = logging.getLogger(__name__)
 from dateutil.parser import parse
-from ckanext.dfmp.dfmp_model import DFMPAssets
-from sqlalchemy import func
 
 from pylons import config
 
 from ckanext.dfmp.actions.action import indexer, searcher
+from ckanext.dfmp.dfmp_solr import _asset_search
+
+log = logging.getLogger(__name__)
+session = model.Session
 
 DEF_LIMIT = 21
 DEF_FIELDS = '_id, CAST("assetID" AS TEXT), CAST(url AS TEXT), CAST("lastModified" AS TEXT), metadata, name, spatial'
-session = model.Session
 
 @side_effect_free
 def resource_items(context, data_dict):
-  '''Returns items from asset if only {id} specified or single item if {item} specified as well. Also you can use {limit} and {offset} for global search'''
+  '''
+  Returns items from asset if only {id} specified or single item
+  if {item} specified as well. Also you can use {limit} and {offset} 
+  for global search
+  '''
   _validate(data_dict, 'id')
   sql = "SELECT {fields} FROM \"{table}\"".format(fields=DEF_FIELDS, table=_sanitize(data_dict['id']) )
   sql_search =  toolkit.get_action('datastore_search_sql')
@@ -55,7 +59,12 @@ def resource_items(context, data_dict):
   if organization:
     organization['dfmp_link'] = config.get('ckan.site_url') + '/organization/{name}'.format(name=organization['name'])
 
-    pkgs = session.query(model.Group).get(organization['id']).packages()
+    pkgs = session.query(model.Package).filter(
+      model.Package.owner_org == organization['id'],
+      model.Package.private == False,
+      model.Package.state == 'active'
+    ).all()
+
     all_res = []
     for pkg in pkgs:
       for res in pkg.resources:
@@ -77,12 +86,16 @@ def resource_items(context, data_dict):
 
 @side_effect_free
 def static_gallery_reset(context, data_dict):
-  '''Deprecated'''
+  '''
+  Deprecated
+  '''
   return
 
 @side_effect_free
 def dfmp_static_gallery(context, data_dict):
-  '''Returns random items from gallery'''
+  '''
+  Returns random items from gallery
+  '''
   ammount = searcher({
     'q':'',
     'fq':'-state:hidden',
@@ -92,12 +105,11 @@ def dfmp_static_gallery(context, data_dict):
 
   offset = randint (0, ammount - limit - 1)
 
-  result = searcher({
+  result = _asset_search(**{
     'q':'',
-    'fl':'data_dict',
-    'fq':'-state:hidden',
-    'rows':limit,
-    'start':offset,
+    'fq':'-state:hidden', 
+    'limit':limit,
+    'offset':offset,
   })
   records = []
   for item in result['results']:
@@ -107,8 +119,6 @@ def dfmp_static_gallery(context, data_dict):
       records.append(json_dict)
     except:
       pass
-  # del result['results']
-  # result.update(records=records, limit=limit, has_more=None)
   return records
 
 @side_effect_free
@@ -120,13 +130,14 @@ def dfmp_all_assets(context, data_dict):
     'facet.field':'id',
     'rows':0,
   })
-  ids = result['facets']['id'].keys()[offset:]
-  log.warn(ids)
+  ids = result['facets']['id'].keys()[offset:offset+limit]
   response = []
   for item in ids:
     try:
       package_id = _get_package_id_by_res(item)
-    except AttributeError:
+    except AttributeError, e:
+      log.warn(e)
+      log.warn('Package not exists')
       continue
     package = toolkit.get_action('package_show')( 
       context,
@@ -146,6 +157,8 @@ def dfmp_all_assets(context, data_dict):
 
     package['dfmp_total']=dfmp_img['count']
     package['tags'] = [tag['display_name'] for tag in package['tags']]
+    package['dfmp_site_assets_ammount']=result['count']
+    package['dfmp_site_resources_ammount']=len(result['facets']['id'])
 
     package['dataset_link']=url_for(controller='package', action='read', id=package_id)
     package['asset_link'] = package['dataset_link'] + '/resource/{res}'.format(res=item)
@@ -158,60 +171,73 @@ def dfmp_all_assets(context, data_dict):
 
 @side_effect_free
 def search_item(context, data_dict):
-  '''Search by name'''
-  log.warn(data_dict)
-  # {'query_string': {'date': u'2015-03-11', 'name': u'f', 'tags': u'awesome'}, 'limit': 12}
+  '''
+  Search by name, tags, type, from date
+  '''
   _validate(data_dict, 'query_string')
+  user_query = data_dict['query_string']
+  search_query = { 
+    'facet_fields': [
+      'organization',
+      'tags',
+      'license_id'
+    ]
+  }
+  fq = query = ''
 
-  # data_dict['queryery_string'] = json.loads(data_dict['query_string'])
-  try:
-    limit = int(data_dict.get('limit', 21))
-  except:
-    limit = 21
-  try:
-    offset = int(data_dict.get('offset', 0))
-  except:
-    offset = 0
-  atype = data_dict['query_string'].get('type') or ''
+  try: limit = int(data_dict['limit'])
+  except: limit = 21
+  try: offset = int(data_dict['offset'])
+  except: offset = 0
+  search_query.update(limit=limit, offset=offset)
+
+  atype = user_query.get('type') or ''
   if atype:
     if atype == 'cc':
-      atype = '+license_id:{type}*'.format(type=atype)
+      atype = ' +license_id:{type}*'.format(type=atype)
     else:
-      atype = '+(extras_mimetype:{type}* OR extras_type:{type}*)'.format(type=atype)
+      atype = ' +(extras_mimetype:{type}* OR extras_type:{type}*)'.format(type=atype)
 
-  tags = data_dict['query_string'].get('tags') or ''
+  tags = user_query.get('tags') or ''
   if type(tags) in (str, unicode):
     tags = [tag.strip() for tag in tags.split(',') if tag]
-  tags = '+tags:({tags})'.format(tags = ' OR '.join(tags)) if tags else ''
+  tags = ' +tags:({tags})'.format(tags = ' AND '.join(tags)) if tags else ''
 
-  name = data_dict['query_string'].get('name') or ''
+  include_description = user_query.get('include_description')
+  name = user_query.get('name') or ''
   if name:
-    name = '{name}'.format(name = name)
+    if include_description:
+      name += '(name:{name} OR text:{name})'.format(name = name)
+    else:
+      name = 'name:{name}'.format(name = name)
+    
   
-  date = data_dict['query_string'].get('date')
+  license = user_query.get('licence') or ''
+  if license:
+    license = ' +license_id:{license}*'.format(license=license)
+  
+  date = user_query.get('date')
   try:
     date = '+metadata_modified:[{start} TO *]'.format(
       start= parse(date).isoformat() + 'Z'
     )
-  except ValueError:
-    date = ''
-  except AttributeError:
-    date = ''
-  query = '{name} {tags} {date} {type}'.format(
+  except ValueError: date = ''
+  except AttributeError: date = ''
+
+  query = '{name} {date} {tags} {type} {license}'.format(
     name = name,
-    tags = tags,
     date = date,
-    type = atype
+    tags = tags,
+    type = atype,
+    license = license
   )
-  if not query.strip():
-    query = '*:*'
-  result = searcher({
-    'q':query,
-    'fl':'data_dict',
-    'rows':limit,
-    'start':offset,
-    'sort':'score desc, metadata_modified desc'
-  })
+
+  if query.strip():
+    search_query.update(q=query)
+
+  if fq.strip():
+    search_query.update(fq=fq)
+  result = _asset_search(**search_query)
   records = []
   for item in result['results']:
     try:
@@ -221,8 +247,8 @@ def search_item(context, data_dict):
     except:
       pass
   del result['results']
+
   result.update(records=records, limit=limit, offset=offset)
-  log.warn(result)
   return result
 
 
@@ -249,17 +275,3 @@ def _check_datastore_json(rec, field):
 
 def _sanitize(s):
   return s.replace(';','').replace('"','').replace("'","")
-
-def _concat_items(result, item):
-  if item.parent in result:
-    result[item.parent] += "', '{0}".format(item.asset_id)
-  else:
-    result[item.parent] = item.asset_id
-
-def _concat_sql(result, limit=''):
-  sql = [ '( SELECT {fields} FROM "{id}" WHERE  "assetID" IN ( \'{assetID}\' {limit}) ) '.format(fields=DEF_FIELDS, id=item[0], assetID=item[1], limit=limit) for item in result.items() ]
-  if len(sql) > 1:
-    sql = ' UNION '.join(sql)
-  else:
-    sql = sql[0]
-  return sql

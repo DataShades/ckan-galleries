@@ -18,7 +18,13 @@ from os import getpid
 
 def datastore_mass(context, data, workflow):
   context = json.loads(context)
-  offlim = [0, 1000]
+  if data.get('solr_index') and workflow=='clearing':
+    datastore = _celery_api_request(
+      'delete_from_solr',
+      context,
+      {'whole_resource':data['resource']}
+    )
+  offlim = [0, 500]
   try:
     while True:
       current_status = _get_status(context, data, task_type=workflow)
@@ -82,6 +88,7 @@ def revoke(data, context):
   else:
     print 'done'
 def clearing(data, context, post_data, offlim):
+  solr_index = data.get('solr_index')
   try:
     datastore = _celery_api_request(
       'datastore_search',
@@ -94,7 +101,7 @@ def clearing(data, context, post_data, offlim):
 
   items = []
   for record in datastore['records']:
-    if data.get('solr_index'):
+    if solr_index:
       record.update(id=data['resource'])
       items.append(record)
     else:
@@ -111,22 +118,22 @@ def clearing(data, context, post_data, offlim):
           'assetID':record['assetID']
         })
 
-  if data.get('solr_index'):
-    response = _celery_api_request(
+  if solr_index:
+    try:
+      response = _celery_api_request(
         'solr_add_assets',
         context,
         {'items':items}
       )
+    except Exception, e:
+      log.warn(e)
+      log.warn(type(e))
   else:
     response = _celery_api_request(
       'user_remove_asset',
       context,
       { 'items' : items }
     )
-
-  print response
-  # print items
-  # print 'removed'
 
   offlim[0] += offlim[1]
   _change_status(
@@ -162,11 +169,16 @@ def getting_tweets(data, context, post_data, offlim):
       assetID = item.entities['media'][0]['id_str']
       if assetID in forbidden_id: continue
       item_json = item._json
+      if len(item_json['text']) > 139:
+        item_json['text'] = item_json['text'][:item_json['text'].rfind('http')]
       item_json.update(
         thumb = item.entities['media'][0]['media_url'] + ':small',
         mimetype = 'image/jpeg',
         type = 'image/jpeg',
-        tags = ','.join( [ tag['text'] for tag in item.entities.get('hashtags', []) ] ) )
+        tags = ','.join( [ tag['text'] for tag in item.entities.get('hashtags', []) ] ),
+        source = 'twitter',
+        post_url = item.entities['media'][0]['url']
+      )
       records.append({
         'assetID': assetID,
         'lastModified': item.created_at.isoformat(' '),
@@ -302,7 +314,10 @@ class TwitterListener(StreamListener):
       )
       print 'Listening...'
       return True
-    def on_error(self, status):
+    def on_error(self, status, *car):
+      print self
+      print dir(self)
+      print car
       _change_status(self.context,
         self.data,
         'Error %s, process %s will be restarted in 30 minutes' % (status, getpid()),
@@ -395,4 +410,3 @@ def flickr_add_image_to_dataset(context, data_dict):
     from ckanext.dfmp.scripts.flickr_import import flickr_group_pool_add_images_to_dataset
     flickr_group_pool_add_images_to_dataset(context, data_dict)
     _celery_api_request('celery_solr_indexing', json.loads(context), {'resource':data_dict['datastore']['id']})
-

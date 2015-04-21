@@ -4,7 +4,7 @@ from ckanext.dfmp.bonus import _get_index_id
 
 from pylons import config
 from paste.deploy.converters import asbool
-
+from ckan.common import c
 from ckan.lib.search.query import SearchQuery, VALID_SOLR_PARAMETERS, SearchQueryError, SearchError
 
 from ckan.lib.search.common import SearchIndexError, make_connection
@@ -26,6 +26,18 @@ RESERVED_FIELDS = SOLR_FIELDS + ["tags", "groups", "res_description",
 # Regular expression used to strip invalid XML characters
 _illegal_xml_chars_re = re.compile(u'[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uFFFE\uFFFF]')
 
+
+def _asset_search(q = '*:*', fl = 'data_dict', fq = '', facet_fields = '', sort='score desc, metadata_created desc', limit=20, offset=1):
+  return DFMPSearchQuery()({
+    'q':q,
+    'fl':fl,
+    'fq':fq,
+    'facet.field':facet_fields,
+    'sort':sort,
+    'rows':limit,
+    'start':offset
+  })
+
 def escape_xml_illegal_chars(val, replacement=''):
   '''
     Replaces any character not supported by XML with
@@ -43,11 +55,10 @@ class DFMPSolr(SearchIndex):
   def index_asset(self, ast_dict, defer_commit=False):
     if ast_dict is None:
       return
-
     ast_dict[TYPE_FIELD] = ASSET_TYPE
     ast_dict['capacity'] = 'public'
-
-    ast_dict['package_id'] = _get_package_id_by_res(ast_dict['id'])
+    if not ast_dict.get('package_id'):
+      ast_dict['package_id'] = _get_package_id_by_res(ast_dict['id'])
 
     bogus_date = datetime.datetime(1, 1, 1)
     try:
@@ -62,6 +73,14 @@ class DFMPSolr(SearchIndex):
         ast_dict['metadata'] = json.loads(_unjson_base(ast_dict['metadata']))
       except ValueError:
         ast_dict['metadata'] = json.loads(_unjson(ast_dict['metadata']))
+    try:
+      if 'exif' in ast_dict['metadata']:
+        for ex_key, ex_val in ast_dict['metadata']['exif'].items():
+          if ex_key in ['EXIF:CreateDate', 'EXIF:Model', 'EXIF:Artist', 'EXIF_CreateDate', 'EXIF_Model', 'EXIF_Artist']:
+            if type(ex_val) in (unicode, str):
+              ast_dict['metadata'][ex_key.replace(':','_')] = ex_val
+    except:
+      pass
 
     for field in ('organization', 'text', 'notes'):
       if not ast_dict['metadata'].get(field):
@@ -168,7 +187,7 @@ class DFMPSolr(SearchIndex):
     finally:
       conn.close()
     commit_debug_msg = 'Not commited yet' if defer_commit else 'Commited'
-    log.debug('Updated index for %s [%s]' % (ast_dict.get('name'), commit_debug_msg))
+    # log.debug('Updated index for %s [%s]' % (ast_dict.get('name'), commit_debug_msg))
 
   def commit(self):
     try:
@@ -183,12 +202,18 @@ class DFMPSolr(SearchIndex):
 
   def delete_asset(self, ast_dict, defer_commit=False):
     conn = make_connection()
+    if ast_dict.get('remove_all_assets'):
+      index = ''
+    elif ast_dict.get('whole_resource'):
+      index = ' +id:{id} '.format(id=ast_dict['whole_resource'])
+    else:
+      index = ' +index_id:\"{index}\"'.format(
+        index=_get_index_id(ast_dict['id'], ast_dict['assetID'])
+      )
     query = "+{type}:{asset} {index} +site_id:\"{site}\"".format(
       type=TYPE_FIELD,
       asset=ASSET_TYPE,
-      index='' if ast_dict.get('remove_all_assets') else '+index_id:\"{index}\"'.format(
-        index=_get_index_id(ast_dict['id'], ast_dict['assetID'])
-      ),
+      index=index,
       site=config.get('ckan.site_id'))
     try:
       conn.delete_query(query)
@@ -247,6 +272,48 @@ class DFMPSearchQuery(SearchQuery):
     if not '+state:' in q and not '+state:' in fq:
       fq += " -state:hidden -state:deleted"
 
+    user = c.userobj
+    if user and (user.sysadmin or user.email.endswith('@act.gov.au')): pass
+    else:
+      user_groups = []
+      if user:
+        for group in user.get_groups():
+          user_groups.append(group.id)
+
+          #get all child orgs
+          user_groups.extend([
+            item.table_id for item
+            in filter(
+              lambda x: x.capacity=='child_organization' and x.state == 'active',
+              group.member_all
+            )
+          ])
+
+          #get all brothers
+          parents = model.Session.query(model.Group)\
+            .filter(model.Group.id.in_([
+              item.table_id for item
+              in filter(
+                lambda x: x.capacity=='parent_organization' and x.state == 'active',
+                group.member_all
+              )
+            ])).all()
+          for parent in parents:
+            user_groups.extend([
+              item.table_id for item
+              in filter(
+                lambda x: x.capacity=='child_organization' and x.state == 'active',
+                parent.member_all
+              )
+            ])
+      private_query = model.Session.query(model.Package.id, model.Package.owner_org).\
+        filter(model.Package.private==True)
+      if user_groups:
+        private_query = private_query.filter(~model.Package.owner_org.in_(user_groups))
+
+      private = private_query.all()
+      for id in private:
+        fq += " -package_id:{id}".format(id=id[0])
     query['fq'] = [fq]
 
     fq_list = query.get('fq_list', [])

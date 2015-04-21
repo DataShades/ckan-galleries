@@ -1,9 +1,14 @@
-.account-masthead {
+body .account-masthead {
     background-color: $top_bar;
     border-bottom: $top_bar_border;
     .account {
         ul {
             li {
+
+                &:first-child{
+                    border-left:$account_action_border
+                }
+                border-left: none;
                 border-right: $account_action_border;
                 a {
                     color: #fff;
@@ -14,15 +19,25 @@
                 }
             }
         }
-        &.not-authed ul li a:hover {
-            color: $yellow;
-            background-color: $login_back;
+
+        &.not-authed ul li {
+            a:hover {
+                color: $yellow;
+                background-color: $login_back;
+            }
+            &:last-child a:hover, a.sub:hover{
+                color: $register_text;
+                background-color: $register_back;
+            
+            }
         }
     }
 }
 
 .masthead {
-    @include masthead_gradient(left, right, $masthead_gradient_from, $masthead_gradient_to);
+    // @include masthead_gradient(left, right, $masthead_gradient_from, $masthead_gradient_to);
+    background: $header_image;
+    background-size: cover;
     .header-image {
         margin: 20px 0;
         position: relative;

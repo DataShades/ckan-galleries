@@ -1,6 +1,10 @@
 {% set form_action = h.url_for('manage_assets', id=id, resource_id=resource_id  ) %}
 {% extends "package/resource_edit_base.html" %}
-
+{% block scripts %}
+  {{ super() }}
+  {% resource 'dfmp/js/dfmp_fancy_lightbox.js' %}
+  {% resource 'dfmp/js/dfmp_manage_flagged.js' %}
+{% endblock %}
 {% block subtitle %}{{ _('Manage assets') }} - {{ h.resource_display_name(c.resource) }} - {{ h.dataset_display_name(c.pkg_dict) }}{% endblock %}
 
 {% block form %}
@@ -9,24 +13,33 @@
 {% block primary_content_inner %}
   {% if assets or hidden_assets %}
     {% if assets %}
-    <table class="table table-striped table-bordered table-condensed " data-module="asset-actions" data-module-id="{{ c.resource.id }}" data-module-url="{{ action_url }}">
+    <table class="table table-striped table-bordered table-condensed ">
       <thead>
         <tr>
+          <th class="gallery-preview-column"></th>
           <th>Link to gallery</th>
           <th>Link to resource</th>
-          <th class="asset-actions">
-            <i class="icon-eye-close hide-action" title="Hide"></i>
-            <i class="icon-remove remove-action" title="Remove"></i>
-          </th>
+          <th>Hide asset</th>
+          <th>Delete asset</th>
         </tr>
       </thead>
       <tbody>
         {% for asset in assets %}
+        {% set thumbnail = asset.metadata.thumbnailURL or asset.metadata.thumb or asset.url %}
         <tr>
+          <td data-module="dfmp-fancy-lightbox" data-module-selector=".flag-preview" data-module-title="{{ asset.name }}" data-module-thumbnail="{{ thumbnail }}" class="gallery-preview-column">
+            <a class="flag-preview" href="#flag-preview-{{loop.index}}"><img class="preview-smallest-image" src="{{ thumbnail }}" alt=""></a>
+            <div style="display:none"><div id="flag-preview-{{loop.index}}"><p class="asset-preview-title"><i class="icon-remove asset-preview-close" onclick="$.fancybox.close()"></i>{{ asset.name }}</p><img src="{{ asset.url }}" alt=""></div></div>
+          </td>
           <td><a class='' href="/gallery/item/{{c.resource.id}}/{{asset.assetID}}">ID:{{asset._id}}: {{ asset.name }}</a></td>
           <td><a class='' href="{{ h.url_for( controller='package', action='resource_read', id=c.pkg_dict.id, resource_id=c.resource.id) }}">AssetID: {{ asset.assetID }}</a></td>
-          <td>
-            <input type="checkbox" class="bulk-action" value="s{{ asset.assetID }}">
+          <td class="dfmp-manage-asset-btn hide-action">
+            <a data-module="dfmp-manage-flagged" data-module-res="{{ c.resource.id }}" data-module-asset="s{{ asset.assetID }}" 
+            data-module-action="hide" data-module-url="{{ action_url }}"><i class="icon-eye-close"></i></a>
+          </td>
+          <td class="dfmp-manage-asset-btn remove-action">
+            <a data-module="dfmp-manage-flagged" data-module-res="{{ c.resource.id }}" data-module-asset="s{{ asset.assetID }}"
+           data-module-action="delete" data-module-url="{{ action_url }}"><i class="icon-trash"></i></a>
           </td>
         </tr>
         {% endfor %}
@@ -39,20 +52,32 @@
         <tr>
           <th>Name</th>
           <th>Image URL</th>
-          <th class="asset-actions">
-            <i class="icon-remove solr-remove-action" title="Remove"></i>
-            <i class="icon-eye-open unhide-action" title="Show"></i>
-          </th>
+          <th>Unhide asset</th>
+          <th>Delete asset</th>
         </tr>
       </thead>
       <tbody>
         {% for asset in hidden_assets %}
+        {% set thumbnail = asset.metadata.thumbnailURL or asset.metadata.thumb or asset.url %}
         <tr>
+        <tr>
+          <td data-module="dfmp-fancy-lightbox" data-module-selector=".flag-preview" data-module-title="{{ asset.name }}" data-module-thumbnail="{{ thumbnail }}" class="gallery-preview-column">
+            <a class="flag-preview" href="#flag-preview-{{loop.index}}"><img class="preview-smallest-image" src="{{ thumbnail }}" alt=""></a>
+            <div style="display:none"><div id="flag-preview-{{loop.index}}"><p class="asset-preview-title"><i class="icon-remove asset-preview-close" onclick="$.fancybox.close()"></i>{{ asset.name }}</p><img src="{{ asset.url }}" alt=""></div></div>
+          </td>
           <td>{{asset.name}}</td>
           <td><a href="{{asset.url}}">{{asset.name}}</a></td>
-          <td>
-            <input type="checkbox" class="bulk-action" value="s{{ asset.assetID }}">
-          </td>
+          <!--<td>
+            <input type="checkbox" class="bulk-action" value="s{# asset.assetID #}">
+          </td>-->
+          <td class="dfmp-manage-asset-btn hide-action">
+          <a data-module="dfmp-manage-flagged" data-module-res="{{ c.resource.id }}" data-module-asset="s{{ asset.assetID }}" 
+          data-module-action="unhide" data-module-url="{{ action_url }}"><i class="icon-eye-open"></i></a>
+        </td>
+        <td class="dfmp-manage-asset-btn remove-action">
+          <a data-module="dfmp-manage-flagged" data-module-res="{{ c.resource.id }}" data-module-asset="s{{ asset.assetID }}"
+         data-module-action="solr-delete" data-module-url="{{ action_url }}"><i class="icon-trash"></i></a>
+       </td>
         </tr>
         {% endfor %}
       </tbody>

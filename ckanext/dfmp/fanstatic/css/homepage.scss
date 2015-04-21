@@ -1,7 +1,18 @@
 .homepage {
-    background: $gray;
+    .box{
+        background: none;
+        border: 1px solid $promote_border;
+        border-radius: 2px;
+        box-shadow: none;
+    }
+    &, & [role=main]{
+        background: $gray $gray_back{
+            repeat: no-repeat;
+            size: 100% 100%;
+        }
+    }
     .hero{
-        background: $home_back{
+        background: #011b12 $home_back{
             repeat: no-repeat;
             size: 100% auto;
         }
@@ -15,7 +26,45 @@
         }
     }
     &.layout-2 {
+        #map-canvas {
+              height: 350px;
+              width: 100%;
+              margin: 0;
+              padding: 0;
+              background-color: #ffffff;
+        }
+        .with-top-margin{
+            margin-top: 20px;
+        }
+        #latest_asset_infowindow {
+         .infowindow_image {
+            max-height: 145px;
+            overflow: hidden;
+         }
+          p {
+            margin: 0;
+            text-align: justify;
+          }
+          h4 {
+            margin: 0;
+          }
+        }
+        #asset_spatial {overflow: hidden;}
+        .recent_numbers .col1,
+        .recent_numbers .col2 {
+          width: 50%;
+          float: left;
+          margin: 0;
+          text-align: center;
+          .number_value {
+            color: #005d7a;
+            font-size: 40px;
+            line-height: 45px;
+            font-family: "Times New Roman", Georgia, Serif;
+          }
+        }
         .span12{
+            padding-bottom:40px;
             header{
                 width:43%;
                 float: left;
@@ -41,20 +90,20 @@
             td {
                 float: none;
                 text-align: center;
-                // -width: 23%;
+                position: relative;
                 // width: auto;
-                &:nth-child(1) a b{
+                &:nth-child(1) a .number{
                     background: $yellow;
                     border-top-left-radius:3px;
                     border-bottom-left-radius:3px;
                 }
-                &:nth-child(2) a b{
+                &:nth-child(2) a .number{
                     background: $dark_yellow;
                 }
-                &:nth-child(3) a b{
+                &:nth-child(3) a .number{
                     background: $light_orange;}
 
-                &:nth-child(4) a b{
+                &:nth-child(4) a .number{
                     background: $orange;
                     border-top-right-radius:3px;
                     border-bottom-right-radius:3px;
@@ -65,7 +114,10 @@
                     text-transform: uppercase;
                     font-size: 13px;
                     &:hover{text-decoration:none;}
-                    b{  
+                    .number{  
+                        position: absolute;
+                        top: 0;
+                        width: 100%;
                         font-size: 35px;
                         display:block;
                         padding: 2px;
@@ -76,18 +128,30 @@
                     span{
                         color: $black;
                     }
+                    .stat-type-name{
+                        color: $yellow;
+                        position: relative;
+                        top: 65px;
+                    }
                 }
             }
         }
         .home-top-row{
             background: rgba(23,58,69,0.9);
-            margin: 60px 0 40px 20px;
+            margin: 40px 0 40px 20px;
             position: relative;
             border-radius: 3px;
             .col{
                 &-left, &-right{
                     width:50%;
                     display:inline-block;
+                    .search-form{
+                        padding-bottom:0;
+                    }
+                    .tags{
+                        margin-top: -12px;
+                    }
+                    
                     .box, .tags,.module-search .module-content{
                         background: none;
                         border: none;
@@ -100,7 +164,7 @@
                 &-right{
                     position: absolute;right: 0;
                     .box .inner{
-                        padding: 20px 10px;
+                        padding: 20px 21px 20px 0;
                     }
                 }
 

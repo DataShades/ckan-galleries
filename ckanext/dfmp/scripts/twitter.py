@@ -2,14 +2,12 @@
 # encoding='utf-8'
 from tweepy import Stream, OAuthHandler
 from tweepy.streaming import StreamListener
-import argparse
-import json
+import argparse, copy, json,ckanapi
 from time import sleep
 from os import getpid
 from datetime import datetime
 
 from  ckan.logic import NotFound
-import ckanapi
 
 
 from sys import stdout
@@ -23,6 +21,27 @@ CS  = 'cciB0ZCwQnBASvRp9HPN1vbBdZSCEzyu118igFhQFxOwDVFmVD'
 AT  = '23904345-OmiSA5CLpceClmy46IRJ98ddEKoFJAPura2j53ryN'
 ATS = 'QYJwGyYODIFB5BJM8F5IXNUDn9coJnKzY6scJOErKRcAE'
 
+USED_KEY = 0
+twitter_api_keys = [
+  dict(
+    CK  = 'vKAo073zpwfmuiTkyR83qyZEe',
+    CS  = 'cciB0ZCwQnBASvRp9HPN1vbBdZSCEzyu118igFhQFxOwDVFmVD',
+    AT  = '23904345-OmiSA5CLpceClmy46IRJ98ddEKoFJAPura2j53ryN',
+    ATS = 'QYJwGyYODIFB5BJM8F5IXNUDn9coJnKzY6scJOErKRcAE'
+  ),
+  dict(
+    CK  = 'VmNHkKuFcza5ouvkNiimpoU8E',
+    CS  = 'E9CcaBikENNmbNC2LaG9aWhpiNuvpBBhUElPtZNGwulpvzIVu1',
+    AT  = '23904345-4PBhPAYyUn4XvniAFCDOv5HaVEIJt2ik2j7KhEWdx',
+    ATS = 'a7Qtt296u2FnSia9fGGpbejJ3Jg420OC0LBPbCmYIIKVs',
+  ),
+  dict(
+    CK  = 'A0aIjONlJLGHQxN9KR15OnQQp',
+    CS  = 'khhb58i3Qi2BTD0QhxsfNPurOfZZ7YBQbtMheSoNWldWNyR2oe',
+    AT  = '23904345-2MpF4FY06gvwGV1rNuJQ5oEdpvVMlMpWmWoEFXzMi',
+    ATS = '8YExrwTKpPVDb3pEGTAGokDyuCzKvKUTLprzcxHlVQ5rG',
+  ),
+]
 
 class TwitterListener(StreamListener):
   def on_data(self, data):
@@ -72,7 +91,6 @@ def _save_data(data):
       print e
       spatial = None
     resource = {
-      'text': data['text'],
       'name': data['user']['screen_name'],
       'time': data['timestamp_ms'][:-3]
     }
@@ -80,7 +98,7 @@ def _save_data(data):
     print e
     print 'Data not saved'
     return
-  tags = ','.join( [ tag['text'] for tag in data['extended_entities'].get('hashtags', []) ] )
+  tags = ','.join( [ tag['text'] for tag in data['entities'].get('hashtags', []) ] )
   for asset in data['extended_entities']['media']:
     forbidden_id = ckan.call_action(
       'resource_show',
@@ -89,20 +107,25 @@ def _save_data(data):
     if asset['id_str'] in forbidden_id: continue
     
     try:
-      resource.update(
+      if len(data['text']) > 139:
+        data['text'] = data['text'][:data['text'].rfind('http')]
+      meta = copy.deepcopy(data)
+      meta.update(
         thumb=asset['media_url']+':small',
         mimetype='image/jpeg',
         id=asset['id_str'],
-        tags=tags
+        tags=tags,
+        source='twitter',
+        post_url=asset['url']
       )
       tweet = {
-        'assetID': resource['id'],
+        'assetID': meta['id'],
         'lastModified': datetime\
           .fromtimestamp( int(resource['time']) )\
           .strftime('%Y-%m-%d %H:%M:%S'),
         'name':resource['name'],
         'url':asset['media_url'],
-        'metadata':resource,
+        'metadata':meta,
         'spatial': spatial,
       }
       ckan.call_action('datastore_upsert',  {
@@ -142,20 +165,16 @@ def get_args():
                       help='Tag or word for streaming',
                       required=True)
   parser.add_argument('--ck',
-                      default=CK,
-                      nargs=1,
+                      required=True,
                       help='Consumer Key (API Key)')
   parser.add_argument('--cs',
-                      default=CS,
-                      nargs=1,
+                      required=True,
                       help='Consumer Secret (API Secret)')
   parser.add_argument('--at',
-                      default=AT,
-                      nargs=1,
+                      required=True,
                       help='Access Token')
   parser.add_argument('--ats',
-                      default=ATS,
-                      nargs=1,
+                      required=True,
                       help='Access Token Secret')
   return parser.parse_args()
 

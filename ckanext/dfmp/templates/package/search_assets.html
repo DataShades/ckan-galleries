@@ -29,6 +29,6 @@
 {% endblock %}
 
 {% block package_search_results_list %}
-  {{ h.snippet('package/snippets/asset_list.html', assets=assets) }}
+  {{ h.snippet('package/snippets/asset_list.html', assets=assets, action_url=action_url) }}
 {% endblock %}
 

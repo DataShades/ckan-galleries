@@ -1,9 +1,10 @@
 import ckan.plugins as plugins
 from time import sleep
 from ckanext.dfmp.actions.action import *
+from ckanext.dfmp.actions.datastore_action import *
+from ckanext.dfmp.actions.get import *
 from ckanext.dfmp.actions.action import _get_pkid_and_resource
 
-from ckanext.dfmp.actions.datastore_action import *
 from ckan.logic import side_effect_free
 from ckanext.dfmp.actions.background import *
 from ckanext.dfmp.actions.social import *
@@ -56,53 +57,75 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
 
   def before_map(self, map):
     map.connect(
-        'getting_tweets', '/dataset/{id}/pull_tweets/{resource_id}',
-        controller='ckanext.dfmp.controller:DFMPController',
-        action='getting_tweets', ckan_icon='twitter-sign')
+      'getting_tweets', '/dataset/{id}/pull_tweets/{resource_id}',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='getting_tweets', ckan_icon='twitter-sign')
     map.connect(
-        'terminate_listener', '/dataset/{id}/terminate_listener/{resource_id}',
-        controller='ckanext.dfmp.controller:DFMPController',
-        action='terminate_listener', ckan_icon='twitter-sign')
+      'terminate_listener', '/dataset/{id}/terminate_listener/{resource_id}',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='terminate_listener', ckan_icon='twitter-sign')
     map.connect(
-        'start_listener', '/dataset/{id}/start_listener/{resource_id}',
-        controller='ckanext.dfmp.controller:DFMPController',
-        action='start_listener', ckan_icon='twitter-sign')
+      'start_listener', '/dataset/{id}/start_listener/{resource_id}',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='start_listener', ckan_icon='twitter-sign')
     map.connect(
-        'get_flickr', '/dataset/new_from_flickr',
-        controller='ckanext.dfmp.controller:DFMPController',
-        action='get_flickr')
+      'get_flickr', '/dataset/new_from_flickr',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='get_flickr')
     map.connect(
-        'ckanadmin_twitter_streamers', '/ckan-admin/twitter-listeners',
-        controller='ckanext.dfmp.controller:DFMPController',
-        action='twitter_listeners', ckan_icon='twitter-sign')
+      'ckanadmin_twitter_streamers', '/ckan-admin/twitter-listeners',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='twitter_listeners', ckan_icon='twitter-sign')
     map.connect(
-        'manage_assets', '/dataset/{id}/manage-assets/{resource_id}',
-        controller='ckanext.dfmp.controller:DFMPController',
-        action='manage_assets', ckan_icon='terminal')
+      'manage_assets', '/dataset/{id}/manage-assets/{resource_id}',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='manage_assets', ckan_icon='terminal')
     map.connect(
-        'ajax_actions', '/admin/ajax_actions',
-        controller='ckanext.dfmp.controller:DFMPController',
-        action='ajax_actions')
+      'ajax_actions', '/admin/ajax_actions',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='ajax_actions')
     map.connect(
-        'ckanadmin_flags', '/ckan-admin/flags',
-        controller='ckanext.dfmp.controller:DFMPController',
-        action='flags', ckan_icon='exclamation-sign')    
+      'ckanadmin_flags', '/ckan-admin/flags',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='flags', ckan_icon='exclamation-sign')
     map.connect(
-        'solr_commit', '/ckan-admin/solr_commit',
-        controller='ckanext.dfmp.controller:DFMPController',
-        action='solr_commit', ckan_icon='twitter-sign')
-    map.connect(
-        'search_assets', '/asset',
-        controller='ckanext.dfmp.controller:DFMPController',
-        action='search_assets', ckan_icon='')
+      'ckanadmin_org_relationship', '/organization/relationship/{org}',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='ckanadmin_org_relationship', ckan_icon='exclamation-sign')
     
+    map.connect(
+      'solr_commit', '/ckan-admin/solr_commit',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='solr_commit', ckan_icon='spinner')
+    map.connect(
+      'solr_clean_index', '/ckan-admin/solr_clean_index',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='solr_clean_index', ckan_icon='tint')
+    map.connect(
+      'flickr_update', '/ckan-admin/flickr_update',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='flickr_update', ckan_icon='camera-retro')
+
+    
+    map.connect(
+      'search_assets', '/asset',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='search_assets', ckan_icon='')
+
     return map
 
   def get_helpers(self):
-    return {'dfmp_with_gallery':dfmp_with_gallery,
-            'is_sysadmin':is_sysadmin,
-            'total_ammount_of_assets':total_ammount_of_assets,
-            }
+    return {
+      'dfmp_with_gallery':dfmp_with_gallery,
+      'is_sysadmin':is_sysadmin,
+      'dfmp_total_ammount_of_assets':dfmp_total_ammount_of_assets,
+      'dfmp_total_ammount_of_datasets':dfmp_total_ammount_of_datasets,
+      'dfmp_last_added_assets_with_spatial_data':dfmp_last_added_assets_with_spatial_data,
+      'dfmp_current_server_time':dfmp_current_server_time,
+      'dfmp_relationship':dfmp_relationship,
+      'dfmp_nice_date':dfmp_nice_date,
+      'dfmp_relative_time':dfmp_relative_time,
+      }
 
   def update_config(self, config):
     toolkit.add_template_directory(config, 'templates')
@@ -110,38 +133,40 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
     toolkit.add_public_directory(config, 'public')
 
   def get_actions(self):
-      return {
-        'user_get_assets': user_get_assets,
-        'user_add_asset': user_add_asset,
-        'user_update_asset': user_update_asset,
-        'user_remove_asset':user_remove_asset,
-        'user_create_with_dataset': user_create_with_dataset,
-        'all_user_list':all_user_list,
-        'delete_user_test':delete_user_test,
-        'create_organization':create_organization,
-        'organization_add_user':organization_add_user,
-        'organization_remove_user':organization_remove_user,
-        'all_organization_list':all_organization_list,
-        'user_get_organization':user_get_organization,
-        'resource_items':resource_items,
-        'static_gallery_reset':static_gallery_reset,
-        'dfmp_static_gallery':dfmp_static_gallery,
-        'search_item':search_item,
-        'dfmp_tags':dfmp_tags,
-        'celery_cleaning':celery_cleaning,
-        'celery_getting_tweets': celery_getting_tweets,
-        'celery_streaming_tweets':celery_streaming_tweets,
-        'celery_revoke':celery_revoke,
-        'celery_flickr_import':celery_flickr_import,
-        'celery_solr_indexing':celery_solr_indexing,
-        'flickr_import_group_pool':flickr_import_group_pool,
-        'solr':solr,
-        'solr_add_assets':solr_add_assets,
-        'user_update_dataset':user_update_dataset,
-        'dfmp_all_assets':dfmp_all_assets,
-        'flag_asset':flag_asset,
-
-      }
+    return {
+      'user_get_assets': user_get_assets,
+      'user_add_asset': user_add_asset,
+      'user_update_asset': user_update_asset,
+      'user_remove_asset':user_remove_asset,
+      'user_create_with_dataset': user_create_with_dataset,
+      'all_user_list':all_user_list,
+      'delete_user_test':delete_user_test,
+      'create_organization':create_organization,
+      'organization_add_user':organization_add_user,
+      'organization_remove_user':organization_remove_user,
+      'all_organization_list':all_organization_list,
+      'user_get_organization':user_get_organization,
+      'resource_items':resource_items,
+      'static_gallery_reset':static_gallery_reset,
+      'dfmp_static_gallery':dfmp_static_gallery,
+      'search_item':search_item,
+      'dfmp_tags':dfmp_tags,
+      'celery_cleaning':celery_cleaning,
+      'celery_getting_tweets': celery_getting_tweets,
+      'celery_streaming_tweets':celery_streaming_tweets,
+      'celery_revoke':celery_revoke,
+      'celery_flickr_import':celery_flickr_import,
+      'celery_solr_indexing':celery_solr_indexing,
+      'flickr_import_group_pool':flickr_import_group_pool,
+      'solr':solr,
+      'solr_add_assets':solr_add_assets,
+      'user_update_dataset':user_update_dataset,
+      'dfmp_all_assets':dfmp_all_assets,
+      'flag_asset':flag_asset,
+      'dfmp_user_info':dfmp_user_info,
+      'get_last_geo_asset':get_last_geo_asset,
+      'delete_from_solr':delete_from_solr,
+    }
 
 
 def custom_stack(func):

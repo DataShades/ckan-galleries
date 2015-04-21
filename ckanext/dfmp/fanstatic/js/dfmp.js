@@ -58,11 +58,16 @@
                 // nwe need to notify user that the import has been started
                 flickr_notify('success', response.result.text);
 
-                // gets datastore id of further status updates
-                var entity_id = response.result.datasrore;
+                // gets datastore id for further status updates
+                var entity_id = response.result.datastore;
 
-                // updates status message
-                $('.flash-messages .status-update').html('Starting import...');
+                if (!response.result.update) {
+                    // updates status message
+                    $('.flash-messages .status-update').html('Starting import...');
+                }
+                else {
+                     $('.flash-messages .status-update').html('Starting pool update...');
+                }
 
                 // current status
                 var current_status = 0;

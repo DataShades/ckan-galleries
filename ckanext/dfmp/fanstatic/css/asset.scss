@@ -1,0 +1,25 @@
+.asset-content{
+  .asset-info-holder{
+    margin:{
+      left: 161px;
+    }
+    min-height: 100px;
+    h3{
+      margin-bottom: 0;
+      text-transform: capitalize;
+    }
+    .meta-date-lic{
+      color: $green;
+    }
+    .well{
+      background: none;
+      padding: 20px 0 0;
+      box-shadow: none;
+    }
+  }
+  .thumb-holder{
+    float: left;
+    max-height: 120px;
+    overflow: hidden;
+  }
+}

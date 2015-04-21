@@ -36,8 +36,8 @@ def celery_streaming_tweets(context, data_dict):
   task_id, celery_context = _prepare_celery(context, data_dict, 'streaming_tweets')
   log.warn('task_id')
   log.warn(task_id)
-  celery.send_task("dfmp.streaming_tweets", args=[celery_context, data_dict], task_id=task_id)
-
+  a = celery.send_task("dfmp.streaming_tweets", args=[celery_context, data_dict], task_id=task_id)
+  log.warn(a)
 
 def celery_revoke(context, data_dict):
   task_id, celery_context = _prepare_celery(context, data_dict, 'revoke')

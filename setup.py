@@ -25,11 +25,14 @@ setup(
         'celery',
         'tweepy',
         'ckanapi',
-        'requests'
+        'requests',
+        'Polygon2',
+        'mysql-python'
     ],
     entry_points='''
         [ckan.plugins]
         dfmp=ckanext.dfmp.plugin:DFMPPlugin
+        drupal7=ckanext.dfmp.drupal_plugin:DrupalAuthPlugin
 
         [ckan.celery_task]
         tasks = ckanext.dfmp.celery_import:task_imports

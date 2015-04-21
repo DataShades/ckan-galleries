@@ -9,14 +9,36 @@ from ckan.common import c, g, _, OrderedDict, request
 from urllib import urlencode
 
 session = model.Session
-from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery
+from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery, _asset_search
+import ckanext.dfmp.scripts.flickr_import as flickr_import
 import logging
 log = logging.getLogger(__name__)
 import ckanext.dfmp.scripts as scripts
-from ckanext.dfmp.actions.action import _name_normalize, _asset_to_solr
-from ckanext.dfmp.bonus import _unique_list
+from ckanext.dfmp.actions.action import _asset_to_solr
+from ckanext.dfmp.bonus import _unique_list, _name_normalize
 ASSETS_PER_PAGE = 20
 log_path = '/var/log/dfmp/'
+
+twitter_api_keys = [
+  dict(
+    CK  = u'vKAo073zpwfmuiTkyR83qyZEe',
+    CS  = u'cciB0ZCwQnBASvRp9HPN1vbBdZSCEzyu118igFhQFxOwDVFmVD',
+    AT  = u'23904345-OmiSA5CLpceClmy46IRJ98ddEKoFJAPura2j53ryN',
+    ATS = u'QYJwGyYODIFB5BJM8F5IXNUDn9coJnKzY6scJOErKRcAE'
+  ),
+  dict(
+    CK  = u'VmNHkKuFcza5ouvkNiimpoU8E',
+    CS  = u'E9CcaBikENNmbNC2LaG9aWhpiNuvpBBhUElPtZNGwulpvzIVu1',
+    AT  = u'23904345-4PBhPAYyUn4XvniAFCDOv5HaVEIJt2ik2j7KhEWdx',
+    ATS = u'a7Qtt296u2FnSia9fGGpbejJ3Jg420OC0LBPbCmYIIKVs',
+  ),
+  dict(
+    CK  = u'A0aIjONlJLGHQxN9KR15OnQQp',
+    CS  = u'khhb58i3Qi2BTD0QhxsfNPurOfZZ7YBQbtMheSoNWldWNyR2oe',
+    AT  = u'23904345-2MpF4FY06gvwGV1rNuJQ5oEdpvVMlMpWmWoEFXzMi',
+    ATS = u'8YExrwTKpPVDb3pEGTAGokDyuCzKvKUTLprzcxHlVQ5rG',
+  ),
+]
 
 def search_url(params):
   url = h.url_for('search_assets')
@@ -31,6 +53,31 @@ def _encode_params(params):
     for k, v in params]
 
 class DFMPController(base.BaseController):
+
+  def flickr_update(self):
+
+    log.warn('FLICKR UPDATE')
+    # gets all resource IDs
+    flickr_resources = DFMPSearchQuery()({
+      'q': ' +entity_type:asset +extras_source:flickr',
+      'fl': 'data_dict, id',
+      'facet.field': 'id',
+      'facet.limit': -1
+    })
+
+    # gets context
+    context = {
+      'model': model,
+      'user': c.user or c.author,
+      'auth_user_obj': c.userobj
+    }
+
+    # process resources one by one
+    for resource_id, number in flickr_resources['facets']['id'].items():
+      flickr_import.flickr_group_pool_resource_update (context, resource_id)
+
+    # redirect to DFMP homepage
+    base.redirect(c.environ.get('HTTP_REFERER', config.get('ckan.site_url','/')))
 
   def get_flickr(self):
     return base.render('package/dataset_from_flickr.html')
@@ -111,15 +158,13 @@ class DFMPController(base.BaseController):
       if param[0] in facet_fields:
         fq += u' +{0}:"{1}"'.format(*param)
 
-    result = DFMPSearchQuery()({
+    result = _asset_search(**{
       'q':q,
-      'fl':'data_dict',
       'fq':fq,
-      'facet.field':facet_fields,
+      'facet_fields':facet_fields,
+      'limit':ASSETS_PER_PAGE,
+      'offset':(page-1)*ASSETS_PER_PAGE,
       'sort':sort_by,
-      'rows':ASSETS_PER_PAGE,
-      'start':(page - 1) * ASSETS_PER_PAGE
-
     })
 
     default_facet_titles = {
@@ -190,6 +235,7 @@ class DFMPController(base.BaseController):
 
     extra_vars = {
       'assets':assets,
+      'action_url':h.url_for('ajax_actions'),
 
     }
     return base.render('package/search_assets.html', extra_vars = extra_vars)
@@ -197,17 +243,22 @@ class DFMPController(base.BaseController):
   def flags(self):
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
+    sort = request.params.get('sort', 'metadata_modified asc')
     flagged = DFMPSearchQuery()({
       'q':'',
       'rows':100,
       'start':0,
+      'sort': sort,
+      'fl':'data_dict, metadata_modified',
       'fq':'+extras_flag:[* TO *]',
     })['results']
     assets = []
     if flagged:
       for item in flagged:
-        assets.append(json.loads(item['data_dict']))
-    return base.render('admin/flags.html', extra_vars={'assets':assets})
+        asset = json.loads(item['data_dict'])
+        asset['metadata_modified'] = item['metadata_modified']
+        assets.append(asset)
+    return base.render('admin/flags.html', extra_vars={'assets':assets, 'sort': sort})
 
   def terminate_listener(self, id, resource_id):
     self._listener_route('terminate', id, resource_id)
@@ -218,6 +269,90 @@ class DFMPController(base.BaseController):
   def solr_commit(self):
     DFMPSolr().commit()
     base.redirect(c.environ.get('HTTP_REFERER', config.get('ckan.site_url','/')))
+
+  def solr_clean_index(self):
+    result = DFMPSearchQuery()({
+      'q':'',
+      'facet.field':'id',
+      'rows':0,
+    })['facets']['id'].keys()
+    offset = 0
+    limit = 2
+    while True:
+      resources = [
+        item[0] for item
+        in session.query(model.Resource.id)\
+          .filter(model.Resource.state == 'active')\
+          .limit(limit)\
+          .offset(offset)\
+          .all()
+      ]
+      result = filter(lambda x: x not in resources, result)
+
+      offset += limit
+      if not resources:
+        break
+
+    remover = DFMPSolr()
+    for item in result:
+      remover.delete_asset({'whole_resource':item})
+
+    self.solr_commit()
+
+  def ckanadmin_org_relationship(self, org):
+    if not c.userobj or not c.userobj.sysadmin:
+      base.abort(404)
+    context = {
+      'model': model,
+      'user': c.user or c.author,
+      'auth_user_obj': c.userobj
+    }
+    
+    
+    
+
+    params = dict(request.params)
+    if 'route' in params and 'child' in params:
+      if params['route'] == 'add':
+        member_create = toolkit.get_action('member_create')
+        member_create(context,{
+          'id': org,
+          'object': params['child'],
+          'object_type': 'group',
+          'capacity': 'child_organization'
+          })
+        member_create(context,{
+          'id': params['child'],
+          'object': org,
+          'object_type': 'group',
+          'capacity': 'parent_organization'
+          })
+      elif params['route'] == 'remove':
+        member_delete = toolkit.get_action('member_delete')
+        member_delete(context,{
+          'id': org,
+          'object': params['child'],
+          'object_type': 'group',
+          })
+        member_delete(context,{
+          'id': params['child'],
+          'object': org,
+          'object_type': 'group',
+          })
+
+    org_obj = session.query(model.Group).filter_by(id=org).first()
+    children = [ item.table_id for item in filter(lambda x: x.capacity=='child_organization' and x.state == 'active', org_obj.member_all)]
+
+    all_organizations = toolkit.get_action('organization_list')(context, {'all_fields':True})
+    for o in all_organizations:
+      if o['id'] == org:
+        organization = o
+    c.group_dict = organization
+    return base.render('organization/relationship.html', extra_vars={
+      'all_organizations':all_organizations,
+      'children':children
+    })
+  
 
   def twitter_listeners(self):
     if not c.userobj or not c.userobj.sysadmin:
@@ -344,7 +479,8 @@ class DFMPController(base.BaseController):
 
     forbidden = _unique_list(forbidden)
     parent['forbidden_id'] = json.dumps(forbidden)
-    toolkit.get_action('resource_update')(context, parent)
+    if not request.params.get('without_forbidding'):
+      toolkit.get_action('resource_update')(context, parent)
     solr.commit()
     return 'Done'
 
@@ -474,6 +610,7 @@ class DFMPController(base.BaseController):
       },
       'pull_error_summary':{},
       'stream_error_summary':{},
+      'key_list':[x for x in  range(len(twitter_api_keys))],
     }
     
     try:
@@ -533,17 +670,22 @@ class DFMPController(base.BaseController):
 
       elif 'stream_word' in pst:       
         word = pst['stream_word']
+        key_list = int(pst['key_list'])
         if not word:
           stable = False
           extra_vars['stream_error_summary'].update( { 'Hashtag': 'Must be defined' } )
 
         if stable:
-          args = ' --host {host} --ckan-api {apikey} --resource {resource} --search \'{word}\''.\
+          args = ' --host {host} --ckan-api {apikey} --resource {resource} --ck {ck} --cs {cs} --at {at} --ats {ats} --search \'{word}\''.\
               format(
                 host=config.get('ckan.site_url', ''),
                 apikey=c.userobj.apikey,
                 resource=resource_id,
-                word=word
+                word=word,
+                ck=twitter_api_keys[key_list]['CK'],
+                cs=twitter_api_keys[key_list]['CS'],
+                at=twitter_api_keys[key_list]['AT'],
+                ats=twitter_api_keys[key_list]['ATS']
               )
           valid_word = _name_normalize(word)
           log_file = ( '>' + log_path + 'dfmp_{word}.log'.format(word=valid_word) ) if log_access else ''
