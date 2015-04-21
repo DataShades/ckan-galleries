@@ -1,8 +1,8 @@
 {% ckan_extends %}
 
 {% block resource_item_explore_links %}
-
-  {% if h.dfmp_with_gallery(res.id) %}
+{% set with_gallery, total_ds, total_solr = h.dfmp_with_gallery(res.id) %}
+  {% if with_gallery %}
     <li>
       <a href="/gallery/view/{{ res.id }}">
         <i class="icon-picture"></i>
@@ -21,7 +21,7 @@
       <li>
         <a href="{{ g.site_url }}/api/3/action/celery_solr_indexing?resource={{ res.id }}" >
           <i class="icon-tags"></i>
-          {{ _('Add to SOLR Index') }} 
+          {{ _('SOLR Re-Index (%s total/ %s indexed)')|format(total_ds, total_solr) }} 
         </a>
       </li>
 

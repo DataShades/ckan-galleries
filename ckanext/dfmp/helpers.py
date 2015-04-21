@@ -7,10 +7,43 @@ import datetime
 from dateutil.parser import parse
 import ckan.model as model
 session = model.Session
+
+REQUIRED_DATASTORE_COLS = [
+  '_id',
+  'assetID',
+  'lastModified',
+  'name',
+  'url',
+  'spatial',
+  'metadata',
+]
+
 def dfmp_with_gallery(id):
-  res = toolkit.get_action('resource_show')(None, {'id':id})
-  result = res.get('datastore_active', False)
-  return result
+  with_gallery = False
+  total_in_ds = 0
+  ammount = 0
+  try:
+    ds = toolkit.get_action('datastore_search')(None, {
+      'resource_id':id,
+      'limit': 1,
+    })
+    field_names = map(lambda x: x['id'], ds['fields'])
+    for field in REQUIRED_DATASTORE_COLS:
+      if not field in field_names:
+        raise Exception
+    with_gallery = True
+
+    total_in_ds = ds.get('total', 0)
+    ammount = DFMPSearchQuery()({
+    'rows':0,
+    'q':'*:*',
+    'fq':'+id:{0}'.format(id)
+    })['count']
+
+  except Exception, e:
+    pass
+
+  return with_gallery, total_in_ds, ammount
 
 def is_sysadmin():
   if c.userobj:
@@ -67,7 +100,6 @@ def dfmp_relationship(org):
   return parents, children, friends, orgs
 
 def dfmp_relative_time(time):
-  import logging as log
   try:
     parsed_time = parse(time).replace(tzinfo=None)
     diff = datetime.datetime.now() - parsed_time
@@ -92,5 +124,4 @@ def dfmp_relative_time(time):
       return time
     return time
   except Exception, e:
-    log.warn(e)
     return time
