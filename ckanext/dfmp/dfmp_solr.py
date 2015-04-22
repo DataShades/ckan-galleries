@@ -277,7 +277,8 @@ class DFMPSearchQuery(SearchQuery):
       fq += " -state:hidden -state:deleted"
 
     user = c.userobj
-    if user and (user.sysadmin or user.email.endswith('@act.gov.au')): pass
+    # if user and (user.sysadmin or user.email.endswith('@act.gov.au')): pass
+    if user and user.sysadmin: pass
     else:
       user_groups = []
       if user:
