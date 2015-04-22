@@ -73,6 +73,8 @@ class TwitterListener(StreamListener):
     return True
 
   def on_error(self, status):
+    print status
+    flush()
     raise Exception(status)
 
   def on_connect(self):
@@ -204,6 +206,8 @@ def start_parsing(args):
   print 'Proccess %d. Starting...' % pid
   while True:
     try:
+      print 'Starting..'
+      flush()
       init_stream(args).filter(track=[args.search])
     except Exception, e:
       _change_status(
