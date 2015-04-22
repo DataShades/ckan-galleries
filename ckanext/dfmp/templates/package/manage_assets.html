@@ -50,6 +50,7 @@
     <table class="table table-striped table-bordered table-condensed " data-module="asset-actions" data-module-id="{{ c.resource.id }}" data-module-url="{{ action_url }}">
       <thead>
         <tr>
+          <th></th>
           <th>Name</th>
           <th>Image URL</th>
           <th>Unhide asset</th>
@@ -62,8 +63,8 @@
         <tr>
         <tr>
           <td data-module="dfmp-fancy-lightbox" data-module-selector=".flag-preview" data-module-title="{{ asset.name }}" data-module-thumbnail="{{ thumbnail }}" class="gallery-preview-column">
-            <a class="flag-preview" href="#flag-preview-{{loop.index}}"><img class="preview-smallest-image" src="{{ thumbnail }}" alt=""></a>
-            <div style="display:none"><div id="flag-preview-{{loop.index}}"><p class="asset-preview-title"><i class="icon-remove asset-preview-close" onclick="$.fancybox.close()"></i>{{ asset.name }}</p><img src="{{ asset.url }}" alt=""></div></div>
+            <a class="flag-preview" href="#flag-preview-{{loop.index + 999}}"><img class="preview-smallest-image" src="{{ thumbnail }}" alt=""></a>
+            <div style="display:none"><div id="flag-preview-{{loop.index + 999}}"><p class="asset-preview-title"><i class="icon-remove asset-preview-close" onclick="$.fancybox.close()"></i>{{ asset.name }}</p><img src="{{ asset.url }}" alt=""></div></div>
           </td>
           <td>{{asset.name}}</td>
           <td><a href="{{asset.url}}">{{asset.name}}</a></td>
