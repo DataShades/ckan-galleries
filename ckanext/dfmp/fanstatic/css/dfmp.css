@@ -296,7 +296,7 @@ body {
   font-family: Arial; }
 body .icon-search {
   text-indent: 99999px; }
-body .icon-search:before, body .search-form .icon-search:before {
+body .icon-search:before, body .search-form .icon-search:before, body .btn-search:before {
   content: "a..";
   color: transparent;
   display: block;
@@ -304,10 +304,12 @@ body .icon-search:before, body .search-form .icon-search:before {
   background-image: url("../../../../dfmp/images/blue_search.png");
   background-size: contain;
   background-repeat: no-repeat; }
-body .icon-search:hover:before {
+body .icon-search:hover:before, body .btn-search:hover:before {
   background-image: url("../../../../dfmp/images/orange_search.png"); }
-body .search-form .icon-search:before {
+body .search-form .icon-search:before, body .search-form .btn-search:before {
   width: 30px; }
+body .btn-search:before {
+  width: 17px; }
 
 .homepage .module-search .module-content {
   background-color: #fff; }
