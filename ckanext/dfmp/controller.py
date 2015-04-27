@@ -53,6 +53,9 @@ def _encode_params(params):
 
 class DFMPController(base.BaseController):
 
+  def api_doc(self):
+    return base.render('home/api_doc.html')
+
   def flickr_update(self):
     log.warn('FLICKR UPDATE')
     context = {
