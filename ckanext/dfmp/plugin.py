@@ -111,6 +111,10 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       'search_assets', '/asset',
       controller='ckanext.dfmp.controller:DFMPController',
       action='search_assets', ckan_icon='')
+    map.connect(
+      'api_doc', '/api_doc',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='api_doc', ckan_icon='')
 
     return map
 
