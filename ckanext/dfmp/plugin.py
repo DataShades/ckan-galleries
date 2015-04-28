@@ -192,6 +192,7 @@ def custom_stack(func):
       return e
   return waiter
 
+@side_effect_free
 @custom_stack
 def user_add_asset(context, data_dict):
   """Add new assets"""

@@ -10,6 +10,7 @@ from pylons import config
 from sqlalchemy.orm.exc import NoResultFound
 from ckanext.dfmp.bonus import _validate, _get_index_id, _name_normalize, _only_admin
 import ckan.lib.helpers as h
+from ckanext.dfmp.asset import Asset
 log = logging.getLogger(__name__)
 session = model.Session
 indexer = DFMPSolr()
@@ -141,64 +142,8 @@ def user_add_asset_inner(context, data_dict, package_id, resources):
   data_dict['owner_name'] = organization.title if organization else context['auth_user_obj'].name
   data_dict['organization'] = organization.name if organization else None
 
-  if not data_dict.get('spatial'):
-    if data_dict.get('geoLocation'):
-      location =  { "type": "Point", "coordinates": [
-          float(data_dict['geoLocation']['lng']),
-          float(data_dict['geoLocation']['lat'])
-        ]}
-    else:
-      location = None
+  result = Asset(data_dict, 'user', package_id = package_id, context = context, resources = resources).data
   
-  if data_dict.get('license'):
-    data_dict['license_id']   = data_dict['license']
-    data_dict['license_name'] = _get_license_name(data_dict['license'])
-  
-  if not resources:
-    new_id = make_uuid()
-    parent = toolkit.get_action('resource_create')(context, {
-      'package_id':package_id,
-      'id':new_id,
-      'url': config.get('ckan.site_url') + '/datastore/dump/' + new_id,
-      'name':'Assets',
-      'resource_type':'asset',
-    })
-
-  else:
-    parent = toolkit.get_action('resource_show')(context, {'id': resources[0].id})
-
-  if not parent.get('datastore_active'):
-    _default_datastore_create(context, parent['id'])
-  metadata = {'source':'user'}
-  metadata.update(data_dict)
-  datastore_item = toolkit.get_action('datastore_upsert')(context, {
-    'resource_id':parent['id'],
-    'force': True,
-    'records':[{
-      'assetID':make_uuid(),
-      'lastModified':datetime.now().isoformat(' '),
-      'name':data_dict['name'],
-      'url':data_dict['url'],
-      'spatial':location,
-      'metadata':metadata,
-      }
-    ],
-    'method':'upsert'
-  })
-
-  result = datastore_item['records'][0]
-  log.warn(result)
-  if type( result['metadata'] ) == tuple:
-    result['metadata'] = json.loads(result['metadata'][0])
-  if type( result['spatial'] ) == tuple:
-    result['spatial'] = json.loads(result['spatial'][0])
-
-  ind = {'id': parent['id']}
-  ind.update(copy.deepcopy(result))
-  _asset_to_solr(ind)
-
-  result['parent_id'] = parent['id']
-  indexer.commit()
   return result
 
 def user_update_asset_inner(context, data_dict):
@@ -297,8 +242,6 @@ def user_update_dataset(context, data_dict):
 
 def user_create_with_dataset(context, data_dict):
   log.warn('USER CREATE WITH DATASET')
-  log.warn(data_dict)
-  log.error(data_dict)
   _validate(data_dict, 'password', 'name', 'email' )
   title = data_dict.get('title', data_dict['name'])
   notes = data_dict.get('description', '')

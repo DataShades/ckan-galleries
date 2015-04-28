@@ -11,7 +11,7 @@ from pylons import config
 
 from ckanext.dfmp.actions.action import indexer, searcher
 from ckanext.dfmp.dfmp_solr import _asset_search
-
+from ckanext.dfmp.asset import Asset
 log = logging.getLogger(__name__)
 session = model.Session
 

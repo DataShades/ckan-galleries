@@ -27,7 +27,9 @@ setup(
         'ckanapi',
         'requests',
         'Polygon2',
-        'mysql-python'
+        'mysql-python',
+        'nose',
+        'coverage'
     ],
     entry_points='''
         [ckan.plugins]
