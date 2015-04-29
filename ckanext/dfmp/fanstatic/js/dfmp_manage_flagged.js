@@ -25,7 +25,7 @@ ckan.module('dfmp-manage-flagged', function ($, _) {
           window.location.reload();
         },
         error: function (error, data) {
-          alert(error.status + ' ' + error.statusText);
+          console.log(error.status + ' ' + error.statusText);
         }
       });
     },

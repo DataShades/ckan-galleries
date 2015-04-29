@@ -111,6 +111,10 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       'search_assets', '/asset',
       controller='ckanext.dfmp.controller:DFMPController',
       action='search_assets', ckan_icon='')
+    map.connect(
+      'api_doc', '/api_doc',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='api_doc', ckan_icon='')
 
     return map
 
@@ -158,6 +162,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       'celery_flickr_import':celery_flickr_import,
       'celery_solr_indexing':celery_solr_indexing,
       'flickr_import_group_pool':flickr_import_group_pool,
+      'dfmp_flickr_update': dfmp_flickr_update,
       'solr':solr,
       'solr_add_assets':solr_add_assets,
       'user_update_dataset':user_update_dataset,
@@ -187,6 +192,7 @@ def custom_stack(func):
       return e
   return waiter
 
+@side_effect_free
 @custom_stack
 def user_add_asset(context, data_dict):
   """Add new assets"""

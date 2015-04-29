@@ -23,6 +23,10 @@ body {
         @extend .icon-search:before;
         width: 30px;
     }
+    .btn-search:before{
+        @extend .icon-search:before;
+        width: 17px;
+    }
 }
 
 .homepage .module-search .module-content {

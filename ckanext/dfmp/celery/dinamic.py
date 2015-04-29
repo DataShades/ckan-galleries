@@ -163,7 +163,7 @@ def getting_tweets(data, context, post_data, offlim):
   _create_datastore(data['resource'], context)
   for piece in searcher:
     if not piece:
-      continue
+      break
     records = []
     for item in piece:
       assetID = item.entities['media'][0]['id_str']

@@ -1,0 +1,24 @@
+<section class="module module-narrow module-shallow">
+  <h2 class="module-heading"><i class="icon-info-sign"></i> {{ _('What\'s a resource?') }}</h2>
+  <div class="module-content">
+    <p>{{ _('A resource can be any file or link to a file containing useful data.') }}</p>
+    <hr>
+    <p>{{ _('But if you want your resource to be added into PIVL gallery you should follow next rules:') }}</p>
+    <ul>
+      <li>{{ _('Uploaded or linked resource shoul be in CSV format and have next columns:') }}
+        <ol>
+          <li>assetID - unique(inside this file) ID for item</li>
+          <li>lastModified - date in ISO format</li>
+          <li>name - title of item</li>
+          <li>url - absolute URL to item</li>
+          <li>spatial - valid GEOJson data or empty</li>
+          <li>metadata - any other data in valid JSON format</li>
+        </ol>
+      </li>
+      <hr>
+      <li><a href="{{ g.site_url + '/dfmp/documents/example.csv' }}">{{ _('Example of uploaded CSV-file') }}</a></li>
+      <hr>
+      <li>{{ _('Choose CSV format for your resource') }}</li>
+    </ul>
+  </div>
+</section>

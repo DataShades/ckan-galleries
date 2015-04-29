@@ -84,6 +84,8 @@ class DFMPSolr(SearchIndex):
 
     for field in ('organization', 'text', 'notes'):
       if not ast_dict['metadata'].get(field):
+        if field == 'text':
+          field = ''
         ast_dict[field] = None
     if 'text' in ast_dict['metadata'] and not ast_dict['notes']:
       ast_dict['notes'] = ast_dict['metadata']['text']
@@ -95,6 +97,8 @@ class DFMPSolr(SearchIndex):
     for field in (('type', 'mimetype'),('mimetype', 'type')):
       if field[0] in ast_dict['metadata'] and field[1] not in ast_dict['metadata']:
         ast_dict['metadata'][field[1]] = ast_dict['metadata'][field[0]]
+    if not 'mimetype' in ast_dict['metadata']:
+      ast_dict['metadata']['mimetype'] = 'image/jpeg'
 
     tags = ast_dict['metadata'].get('tags')
     if type(tags) in (str, unicode): tags = [name.strip() for name in tags.split(',') if name]
@@ -273,7 +277,8 @@ class DFMPSearchQuery(SearchQuery):
       fq += " -state:hidden -state:deleted"
 
     user = c.userobj
-    if user and (user.sysadmin or user.email.endswith('@act.gov.au')): pass
+    # if user and (user.sysadmin or user.email.endswith('@act.gov.au')): pass
+    if user and user.sysadmin: pass
     else:
       user_groups = []
       if user:

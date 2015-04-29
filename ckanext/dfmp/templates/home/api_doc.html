@@ -1,0 +1,25 @@
+{% extends "page.html" %}
+
+{% block subtitle %}{{ _('DFMP API Documentation') }}{% endblock %}
+
+{% block breadcrumb_content %}
+  <li class="active">{% link_for _('DFMP API Documentation'), controller='ckanext.dfmp.controller:DFMPController', action='api_doc' %}</li>
+{% endblock %}
+
+{% block primary %}
+  <article class="module">
+    <div class="module-content">
+      {% block documentation %}
+        {% trans %}
+        <p>API's development in progress.</p>
+        <p>
+          Native CKAN API: <a href="http://docs.ckan.org/en/latest/api/index.html">CKAN API</a>
+        </p>
+ 
+        {% endtrans %}
+      {% endblock %}
+    </div>
+  </article>
+{% endblock %}
+
+{% block secondary %}{% endblock %}
