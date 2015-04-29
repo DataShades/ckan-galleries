@@ -15,6 +15,9 @@ def _get_index_id(id, assetID):
 def _make_uuid():
   return unicode(uuid.uuid4())
 
+def _sanitize(s):
+  return s.replace(';','').replace('"','').replace("'","")
+
 def _site_url():
   return config.get('ckan.site_url')
 

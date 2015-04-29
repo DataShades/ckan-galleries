@@ -1,6 +1,6 @@
 import ckan.plugins.toolkit as toolkit
 from ckan.logic import side_effect_free
-from ckanext.dfmp.bonus import _validate, _unjson, _unjson_base, _get_package_id_by_res
+from ckanext.dfmp.bonus import _validate, _unjson, _unjson_base, _get_package_id_by_res, _sanitize
 from ckan.lib.helpers import url_for
 import ckan.model as model
 from random import randint
@@ -272,6 +272,3 @@ def _check_datastore_json(rec, field):
         log.warn(e)
         log.warn(rec)
         log.warn('Wrong {0}'.format(field))
-
-def _sanitize(s):
-  return s.replace(';','').replace('"','').replace("'","")

@@ -28,7 +28,7 @@ _illegal_xml_chars_re = re.compile(u'[\x00-\x08\x0b\x0c\x0e-\x1F\uD800-\uDFFF\uF
 
 
 def _asset_search(q = '*:*', fl = 'data_dict', fq = '', facet_fields = '', sort='score desc, metadata_created desc', limit=20, offset=1):
-  return DFMPSearchQuery()({
+  return DFMPSearchQuery.run({
     'q':q,
     'fl':fl,
     'fq':fq,
@@ -48,11 +48,14 @@ def escape_xml_illegal_chars(val, replacement=''):
 
 
 class DFMPSolr(SearchIndex):
-  def remove_dict(self, ast_dict, defer_commit):self.delete_asset(ast_dict, defer_commit)
+  @staticmethod
+  def remove_dict(ast_dict, defer_commit):DFMPSolr.delete_asset(ast_dict, defer_commit)
 
-  def update_dict(self, ast_dict, defer_commit=False):self.index_asset(ast_dict, defer_commit)
+  @staticmethod
+  def update_dict(ast_dict, defer_commit=False):DFMPSolr.index_asset(ast_dict, defer_commit)
 
-  def index_asset(self, ast_dict, defer_commit=False):
+  @staticmethod
+  def index_asset(ast_dict, defer_commit=False):
     if ast_dict is None:
       return
     ast_dict[TYPE_FIELD] = ASSET_TYPE
@@ -193,7 +196,8 @@ class DFMPSolr(SearchIndex):
     commit_debug_msg = 'Not commited yet' if defer_commit else 'Commited'
     # log.debug('Updated index for %s [%s]' % (ast_dict.get('name'), commit_debug_msg))
 
-  def commit(self):
+  @staticmethod
+  def commit():
     try:
       conn = make_connection()
       conn.commit(wait_searcher=False)
@@ -203,8 +207,8 @@ class DFMPSolr(SearchIndex):
     finally:
       conn.close()
 
-
-  def delete_asset(self, ast_dict, defer_commit=False):
+  @staticmethod
+  def delete_asset(ast_dict, defer_commit=False):
     conn = make_connection()
     if ast_dict.get('remove_all_assets'):
       index = ''
@@ -232,8 +236,8 @@ class DFMPSolr(SearchIndex):
 
 class DFMPSearchQuery(SearchQuery):
   """Search for resources."""
-    
-  def run(self, query):
+  @staticmethod
+  def run(query):
     '''
     Performs a asset search using the given query.
 
@@ -356,14 +360,14 @@ class DFMPSearchQuery(SearchQuery):
     try:
       data = json.loads(solr_response)
       response = data['response']
-      self.count = response.get('numFound', 0)
-      self.results = response.get('docs', [])
+      count = response.get('numFound', 0)
+      results = response.get('docs', [])
 
       # #1683 Filter out the last row that is sometimes out of order
-      self.results = self.results[:rows_to_return]
+      results = results[:rows_to_return]
 
       # get any extras and add to 'extras' dict
-      for result in self.results:
+      for result in results:
         extra_keys = filter(lambda x: x.startswith('extras_'), result.keys())
         extras = {}
         for extra_key in extra_keys:
@@ -374,16 +378,17 @@ class DFMPSearchQuery(SearchQuery):
 
       # if just fetching the id or name, return a list instead of a dict
       if query.get('fl') in ['id', 'name']:
-        self.results = [r.get(query.get('fl')) for r in self.results]
+        results = [r.get(query.get('fl')) for r in results]
 
       # get facets and convert facets list to a dict
-      self.facets = data.get('facet_counts', {}).get('facet_fields', {})
-      for field, values in self.facets.iteritems():
-        self.facets[field] = dict(zip(values[0::2], values[1::2]))
+      facets = data.get('facet_counts', {}).get('facet_fields', {})
+      for field, values in facets.iteritems():
+        facets[field] = dict(zip(values[0::2], values[1::2]))
     except Exception, e:
       log.exception(e)
       raise SearchError(e)
     finally:
       conn.close()
-    return {'results': self.results, 'count': self.count, 'facets':self.facets}
-  __call__ = run
+    return {'results': results, 'count': count, 'facets':facets}
+  def __call__(self, *pargs, **kargs):
+    return run(*pargs, **kargs)

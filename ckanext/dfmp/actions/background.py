@@ -80,7 +80,7 @@ def celery_solr_indexing(context, data_dict):
 
 def dfmp_flickr_update(context, data_dict):
   # gets all resource IDs
-  flickr_resources = DFMPSearchQuery()({
+  flickr_resources = DFMPSearchQuery.run({
     'q': ' +entity_type:asset +extras_source:flickr',
     'fl': 'data_dict, id',
     'facet.field': 'id',

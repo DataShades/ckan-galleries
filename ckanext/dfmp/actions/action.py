@@ -13,8 +13,8 @@ import ckan.lib.helpers as h
 from ckanext.dfmp.asset import Asset
 log = logging.getLogger(__name__)
 session = model.Session
-indexer = DFMPSolr()
-searcher = DFMPSearchQuery()
+indexer = DFMPSolr
+searcher = DFMPSearchQuery.run
 #GET functions
 @side_effect_free
 def solr(context, data_dict):
@@ -453,7 +453,7 @@ def get_last_geo_asset(context, data_dict):
   # gets latest valid image
   while True:
     # requests the latest image
-    last_added = DFMPSearchQuery()({
+    last_added = DFMPSearchQuery.run({
       'q': ' +entity_type:asset +type:image* +spatial:["" TO *] ',
       'sort': 'metadata_created desc',
       'start': start,
