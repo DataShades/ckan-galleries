@@ -1,5 +1,5 @@
 import ckan.plugins.toolkit as toolkit
-import hashlib, string, json
+import hashlib, string, json, uuid
 from pylons import config
 from ckan.common import c
 import ckan.model as model
@@ -12,11 +12,23 @@ KEY_CHARS = string.digits + string.letters + "_-"
 def _get_index_id(id, assetID):
   return hashlib.md5('%s%s' % (id + assetID, config.get('ckan.site_id'))).hexdigest()
 
+def _make_uuid():
+  return unicode(uuid.uuid4())
+
+def _site_url():
+  return config.get('ckan.site_url')
+
+def _asset_name_from_url(url):
+  slash_index = url.rfind('/')
+  if slash_index == -1:
+    name = url
+  else:
+    name = url[slash_index+1:]
+  return name
 
 def _validate(data, *fields):
   for field in fields:
     if not field in data:
-
       raise toolkit.ValidationError('Parameter {%s} must be defined' % field)
 
 def _unjson_base(string):
@@ -73,3 +85,9 @@ def _get_rel_members(collection, capacity):
       lambda x: x.capacity==capacity and x.state == 'active',
       collection.member_all
     )]
+
+def _get_license_name(id):
+  license = filter(lambda x: x['id']==id, toolkit.get_action('license_list')(None,None) )
+  if license:
+    return license[0]['title']
+  return ''
