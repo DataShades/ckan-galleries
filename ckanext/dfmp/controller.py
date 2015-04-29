@@ -53,6 +53,41 @@ def _encode_params(params):
 
 class DFMPController(base.BaseController):
 
+  # asset edit form
+  def record_edit(self, resource, asset):
+    context = {
+      'model': model,
+      'user': c.user or c.author,
+      'auth_user_obj': c.userobj
+    }
+
+    log.warn(context['user'])
+
+    try:
+      # we use API action to get asset details
+      asset = toolkit.get_action('resource_items')(context, {
+        'id': resource,
+        'item': asset,
+      })['records'][0]
+    except toolkit.ValidationError, e:
+      # returns "Asset not found" page
+      return base.render('assets/edit.html', {'asset': {}, 'error': 'Asset not found'})
+
+    # creates asset dict for Template
+    asset = {
+      'name': asset['name'],
+      'resource_id': resource,
+      'asset_id': asset['assetID'],
+      'last_modified': asset['lastModified'],
+      'url': asset['url'],
+      'organisation': asset['organization'],
+      'spatial': asset['spatial'],
+      'metadata': asset['metadata']
+    }
+
+    # renders Edit form
+    return base.render('assets/edit.html', {'asset': asset})
+
   def api_doc(self):
     return base.render('home/api_doc.html')
 
