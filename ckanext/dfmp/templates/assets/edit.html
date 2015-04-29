@@ -28,7 +28,7 @@
 {% block form %}
     <form class="form-horizontal" method="post">
 
-        <input type="hidden" name="destination" value="{{ dest }}"/>
+        <input type="hidden" name="destination" value="{{ destination }}"/>
 
         <div class="control-group control-full control-large">
             <label class="control-label" for="field-title">{{ _('Resource ID') }}</label>
@@ -89,7 +89,7 @@
             <p class="action-info small"><a href="">{{ _('cancel') }}</a></p>
             <button class="btn btn-primary" type="submit" name="save">{{ _('Save changes') }}</button>
             <p class="control-required-message">
-                <span class="control-required">*</span> Required field
+                <span class="control-required">*</span> {{ _('Required field') }}
             </p>
         </div>
     </form>
