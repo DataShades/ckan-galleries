@@ -1,20 +1,29 @@
+import json
 from copy import deepcopy
 from datetime import datetime
-import ckan.plugins.toolkit as toolkit
 
-import json
+import ckan.model as model
+import ckan.plugins.toolkit as toolkit
+from ckan.lib.helpers import url_for
+
 import ckanext.dfmp.dfmp_solr as solr
 from ckanext.dfmp.bonus import (
   _get_license_name, _make_uuid, _site_url, _asset_name_from_url, _sanitize
 )
 
-DEF_LIMIT = 21
-DEF_FIELDS = '_id, CAST("assetID" AS TEXT), CAST(url AS TEXT), CAST("lastModified" AS TEXT), metadata, name, spatial'
+import logging
+log = logging.getLogger(__name__)
 
+session = model.Session
+
+DEF_FIELDS = '_id, CAST("assetID" AS TEXT), CAST(url AS TEXT), CAST("lastModified" AS TEXT), metadata, name, spatial'
+LIMIT = 21
+OFFSET = 0
 
 class AssetAbsentFieldsException(Exception):
   pass
 
+# structure of default datastore
 def _default_datastore_create(context, id):
   toolkit.get_action('datastore_create')(context, {
     'resource_id':id,
@@ -35,13 +44,59 @@ def _asset_to_solr(dict_to_solr, defer_commit=True):
   solr.DFMPSolr.index_asset(dict_to_solr, defer_commit=defer_commit)
   return True
 
+def _filter_metadata(rec):
+  # del rec['_full_text']
+  _check_datastore_json(rec, 'metadata')
+  _check_datastore_json(rec, 'spatial')
+  return rec
+
+# convert json string to python dict
+def _check_datastore_json(rec, field):
+  try:
+    if type( rec[field] ) in (str, unicode) and rec[field]:
+      rec[field] = json.loads( rec[field] )
+  except ValueError, e:
+    try:
+      rec[field] = json.loads( _unjson(rec[field]) )
+    except ValueError, e:
+      try:
+        rec[field] = json.loads( _unjson_base(rec[field]) )
+      except ValueError, e:
+        log.warn(e)
+        log.warn(rec)
+        log.warn('Wrong {0}'.format(field))
+#  get one or many assets
+def _get_asset_func(id, where, context):
+  # get assets
+  sql = "SELECT {fields} FROM \"{table}\"".format(fields=DEF_FIELDS, table=_sanitize(id) )
+  try:
+    result = toolkit.get_action('datastore_search_sql')(context, {'sql': sql + where })
+  except toolkit.ValidationError, e:
+    # resource not exists
+    raise toolkit.ObjectNotFound('Resource not found')
+
+  # convert metadata & spatial to correct python dict
+  result['records'] = map(_filter_metadata, result['records'])
+  # return result
+  return result
+  
 class Asset:
 
   @staticmethod
-  def get(id, assetID): pass
+  def get(id, assetID, context=None):
+    where = " WHERE \"assetID\" = '{0}' ".format( _sanitize(assetID))
+    return _get_asset_func(id, where, context)
+
 
   @staticmethod
-  def get_all(id): pass
+  def get_all(id, limit=LIMIT, offset=OFFSET, context=None):
+    if type(limit) != int:
+      limit = limit if limit.isdigit() else LIMIT
+    if type(offset) !=int:
+      offset = offset if offset.isdigit() else OFFSET
+      
+    where = ' ORDER BY "lastModified" DESC LIMIT {0} OFFSET {1}'.format(limit, offset )
+    return _get_asset_func(id, where, context)
 
 
 
