@@ -171,6 +171,10 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       'dfmp_user_info':dfmp_user_info,
       'get_last_geo_asset':get_last_geo_asset,
       'delete_from_solr':delete_from_solr,
+
+      # new actions
+      'dfmp_get_asset':dfmp_get_asset,
+      'dfmp_get_asset_list':dfmp_get_asset_list,
     }
 
 
