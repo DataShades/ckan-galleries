@@ -10,6 +10,7 @@ from dateutil.parser import parse
 from pylons import config
 
 from ckanext.dfmp.actions.action import indexer, searcher
+import ckanext.dfmp.dfmp_solr as solr
 from ckanext.dfmp.dfmp_solr import _asset_search
 from ckanext.dfmp.asset import Asset
 log = logging.getLogger(__name__)
@@ -26,32 +27,23 @@ def resource_items(context, data_dict):
   for global search
   '''
   _validate(data_dict, 'id')
-  sql = "SELECT {fields} FROM \"{table}\"".format(fields=DEF_FIELDS, table=_sanitize(data_dict['id']) )
-  sql_search =  toolkit.get_action('datastore_search_sql')
+  id = data_dict['id']
 
   item = data_dict.get('item')
   if item:
-    try:
-      # check PostgreSQL integer top bound
-      if int(item) > 2147483647: raise ValueError
-      fields_filter = " _id = '{0}' OR \"assetID\" = '{0}'".format(item)
-    except ValueError:
-      fields_filter = " \"assetID\" = '{0}' ".format( _sanitize(item) )
-    where = " WHERE {0}".format(fields_filter)
+    result = Asset.get(id, item, context=context)
 
   else:
-    where = ' ORDER BY "lastModified" DESC LIMIT {0} OFFSET {1}'.format( int(data_dict.get('limit', DEF_LIMIT)), int(data_dict.get('offset', 0)) )
+    limit = int(data_dict.get('limit', 21))
+    offset = int(data_dict.get('offset', 0)) 
+    result = Asset.get_all(data_dict['id'], limit, offset, context=context)
+  package_id = session.query(model.Resource).filter_by(id=id).first().get_package_id()
 
-
-  result = sql_search(context, {'sql': sql + where })
-  result['records'] = map(_filter_metadata, result['records'])
-
-  package_id = session.query(model.Resource).filter_by(id=data_dict['id']).first().get_package_id()
-  result['backlink'] = url_for(controller='package', action='resource_read', resource_id=data_dict['id'], id=package_id)[1:]
+  result['backlink'] = url_for(controller='package', action='resource_read', resource_id=id, id=package_id)[1:]
   package = toolkit.get_action('package_show')(context, {'id':package_id})
 
-  result['count'] = searcher({
-    'q':'id:({ids})'.format(ids=data_dict['id']),
+  result['count'] = solr.DFMPSearchQuery.run({
+    'q':'id:({ids})'.format(ids=id),
     'fq':'-state:hidden',
     'rows':0,
   })['count']
@@ -70,7 +62,7 @@ def resource_items(context, data_dict):
       for res in pkg.resources:
         all_res.append(res.id)
     ids = ' OR '.join(all_res)
-    ammount = searcher({
+    ammount = solr.DFMPSearchQuery.run({
       'q':'id:({ids})'.format(ids=ids),
       'fq':'-state:hidden',
       'rows':0,
@@ -83,6 +75,8 @@ def resource_items(context, data_dict):
   result['description'] = package.get('notes')
   result['tags'] = ','.join([item['display_name'] for item in package.get('tags')])
   return result
+
+ 
 
 @side_effect_free
 def static_gallery_reset(context, data_dict):
@@ -250,25 +244,3 @@ def search_item(context, data_dict):
 
   result.update(records=records, limit=limit, offset=offset)
   return result
-
-
-def _filter_metadata(rec):
-  # del rec['_full_text']
-  _check_datastore_json(rec, 'metadata')
-  _check_datastore_json(rec, 'spatial')
-  return rec
-
-def _check_datastore_json(rec, field):
-  try:
-    if type( rec[field] ) in (str, unicode) and rec[field]:
-      rec[field] = json.loads( rec[field] )
-  except ValueError, e:
-    try:
-      rec[field] = json.loads( _unjson(rec[field]) )
-    except ValueError, e:
-      try:
-        rec[field] = json.loads( _unjson_base(rec[field]) )
-      except ValueError, e:
-        log.warn(e)
-        log.warn(rec)
-        log.warn('Wrong {0}'.format(field))
