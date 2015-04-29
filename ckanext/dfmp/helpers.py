@@ -1,5 +1,4 @@
 from ckan.common import c
-from ckanext.dfmp.dfmp_solr import DFMPSearchQuery
 import ckan.plugins.toolkit as toolkit 
 from ckanext.dfmp.bonus import _count_literal, _get_rel_members
 from ckanext.dfmp.dfmp_solr import DFMPSearchQuery
@@ -34,7 +33,7 @@ def dfmp_with_gallery(id):
     with_gallery = True
 
     total_in_ds = ds.get('total', 0)
-    ammount = DFMPSearchQuery()({
+    ammount = DFMPSearchQuery.run({
     'rows':0,
     'q':'*:*',
     'fq':'+id:{0}'.format(id)
@@ -51,7 +50,7 @@ def is_sysadmin():
   return False
 
 def dfmp_total_ammount_of_assets():
-  ammount = DFMPSearchQuery()({
+  ammount = DFMPSearchQuery.run({
     'rows':0,
     'q':'*:*'
     })['count']
@@ -63,12 +62,12 @@ def dfmp_total_ammount_of_datasets():
 
 
 def dfmp_last_added_assets_with_spatial_data():
-  # twitter_items = DFMPSearchQuery()({
+  # twitter_items = DFMPSearchQuery.run({
   #   'q': '+entity_type:asset +type:image* +extras_retweeted:[* TO *] +metadata_created[' + datetime.datetime.now().replace(hour=0, minute=0, second=0).isoformat()[0:19] + 'Z' + ' TO *]',
   #   'rows': 0,
   # })['count']
   #
-  # flickr_items = DFMPSearchQuery()({
+  # flickr_items = DFMPSearchQuery.run({
   #   'q': '+entity_type:asset +type:image* +extras_source:flickr +metadata_created[' + datetime.datetime.now().replace(hour=0, minute=0, second=0).isoformat()[0:19] + 'Z' + ' TO *]',
   #   'rows': 0
   # })['count']

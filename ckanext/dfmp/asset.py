@@ -4,7 +4,9 @@ import ckan.plugins.toolkit as toolkit
 
 import json
 import ckanext.dfmp.dfmp_solr as solr
-from ckanext.dfmp.bonus import _get_license_name, _make_uuid, _site_url, _asset_name_from_url
+from ckanext.dfmp.bonus import (
+  _get_license_name, _make_uuid, _site_url, _asset_name_from_url, _sanitize
+)
 
 DEF_LIMIT = 21
 DEF_FIELDS = '_id, CAST("assetID" AS TEXT), CAST(url AS TEXT), CAST("lastModified" AS TEXT), metadata, name, spatial'
@@ -30,13 +32,17 @@ def _default_datastore_create(context, id):
   })
 
 def _asset_to_solr(dict_to_solr, defer_commit=True):
-  solr.DFMPSolr().index_asset(dict_to_solr, defer_commit=defer_commit)
+  solr.DFMPSolr.index_asset(dict_to_solr, defer_commit=defer_commit)
   return True
 
 class Asset:
 
   @staticmethod
   def get(id, assetID): pass
+
+  @staticmethod
+  def get_all(id): pass
+
 
 
   def __init__(self, data = None, source='user',  **additional):

@@ -233,7 +233,7 @@ class DFMPController(base.BaseController):
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
     sort = request.params.get('sort', 'metadata_modified asc')
-    flagged = DFMPSearchQuery()({
+    flagged = DFMPSearchQuery.run({
       'q':'',
       'rows':100,
       'start':0,
@@ -256,11 +256,11 @@ class DFMPController(base.BaseController):
     self._listener_route('start', id, resource_id)
 
   def solr_commit(self):
-    DFMPSolr().commit()
+    DFMPSolr.commit()
     base.redirect(c.environ.get('HTTP_REFERER', config.get('ckan.site_url','/')))
 
   def solr_clean_index(self):
-    result = DFMPSearchQuery()({
+    result = DFMPSearchQuery.run({
       'q':'',
       'facet.field':'id',
       'rows':0,
@@ -282,7 +282,7 @@ class DFMPController(base.BaseController):
       if not resources:
         break
 
-    remover = DFMPSolr()
+    remover = DFMPSolr
     for item in result:
       remover.delete_asset({'whole_resource':item})
 
@@ -382,7 +382,7 @@ class DFMPController(base.BaseController):
     assets = request.params.get('assets').split(' ')
     parent = toolkit.get_action('resource_show')(context, {'id': res_id})
     forbidden = json.loads(parent.get('forbidden_id', '[]'))
-    solr = DFMPSolr()
+    solr = DFMPSolr
 
     if action == 'delete':
       toolkit.get_action('user_remove_asset')(context, {
@@ -434,7 +434,7 @@ class DFMPController(base.BaseController):
       forbidden.extend(assets)
 
     elif action == 'unhide':
-      hidden_assets = DFMPSearchQuery()({
+      hidden_assets = DFMPSearchQuery.run({
         'q':'assetID:({assets})'.format(assets=' OR '.join(assets)),
         'fl':'data_dict',
         'fq':'+state:hidden',
@@ -501,7 +501,7 @@ class DFMPController(base.BaseController):
     except toolkit.ObjectNotFound:
       return base.render('package/manage_assets.html')
     hidden_assets = []
-    hidden = DFMPSearchQuery()({
+    hidden = DFMPSearchQuery.run({
       'q':'id:{res_id}'.format(res_id=resource_id),
       'rows':100,
       'start':0,
