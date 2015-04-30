@@ -8,7 +8,7 @@ from pylons import config
 from ckan.common import c, g, _, OrderedDict, request
 from urllib import urlencode
 import ckanext.dfmp.actions.get as dfmp_get_action
-import ckanext.dfmp.actions.update as dfmp_update_action
+import ckanext.dfmp.actions as dfmp_parent_action
 import json
 
 session = model.Session
@@ -83,8 +83,9 @@ class DFMPController(base.BaseController):
           'name': request.params.get('name'),
           'lastModified': request.params.get('last_modified')
         }
+        # log.warn(dir(dfmp_update_action))
         # we need to update asset
-        if hasattr(dfmp_update_action, 'dfmp_update_asset'):
+        if hasattr(dfmp_parent_action, 'update') and hasattr(dfmp_parent_action.update, 'dfmp_update_asset'):
           asset_update['resource_id'] = request.params.get('resource_id')
           asset_update['asset_id'] = request.params.get('asset_id')
           update = toolkit.get_action('dfmp_update_asset')(self.context, asset_update)
