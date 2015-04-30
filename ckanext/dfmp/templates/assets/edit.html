@@ -1,6 +1,7 @@
 {% extends "package/base_form_page.html" %}
 
 {% block subtitle %}{{ _('Asset Edit') }}{% endblock %}
+{% import 'macros/form.html' as form %}
 
 {% block breadcrumb %}
     <ol class="breadcrumb">
@@ -33,28 +34,28 @@
         <div class="control-group control-full control-large">
             <label class="control-label" for="field-title">{{ _('Resource ID') }}</label>
             <div class="controls ">
-                <input id="field-resource_id" type="text" name="resource_id" value="{{ asset.resource_id }}" disabled="true">
+                <input id="field-resource_id" type="text" name="resource_id" value="{{ asset.resource_id }}" readonly="true">
             </div>
         </div>
 
         <div class="control-group control-full control-large">
             <label class="control-label" for="field-title">{{ _('Asset ID') }}</label>
             <div class="controls ">
-                <input id="field-asset_id" type="text" name="asset_id" value="{{ asset.asset_id }}" disabled="true">
+                <input id="field-asset_id" type="text" name="asset_id" value="{{ asset.asset_id }}" readonly="true">
             </div>
         </div>
 
          <div class="control-group control-full control-large">
             <label class="control-label" for="field-title">{{ _('Last Modified') }}</label>
             <div class="controls ">
-                <input id="field-last_modified" type="text" name="title" value="{{ asset.last_modified }}" placeholder="eg. 2015-04-09 10:21:59.129956">
+                <input id="field-last_modified" type="text" name="last_modified" value="{{ asset.last_modified }}" placeholder="eg. 2015-04-09 10:21:59.129956">
             </div>
         </div>
 
          <div class="control-group control-full control-large">
             <label class="control-label" for="field-title">{{ _('Name') }}</label>
             <div class="controls ">
-                <input id="field-title" type="text" name="title" value="{{ asset.name }}" placeholder="eg. A name">
+                <input id="field-name" type="text" name="name" value="{{ asset.name }}" placeholder="eg. A name">
             </div>
         </div>
 
@@ -68,14 +69,14 @@
         <div class="control-group control-full control-large">
             <label class="control-label" for="field-title">{{ _('Spatial') }}</label>
             <div class="controls ">
-                {{ asset.spatial }}
+               <pre> {{ asset.spatial }} </pre>
             </div>
         </div>
 
         <div class="control-group control-full control-large">
             <label class="control-label" for="field-title">{{ _('Metadata') }}</label>
             <div class="controls ">
-                {{ asset.metadata }}
+                <pre> {{ asset.metadata }} </pre>
             </div>
         </div>
 {#        <div class="control-group control-full">#}
@@ -86,8 +87,15 @@
 {#            </div>#}
 {#        </div>#}
         <div class="form-actions">
-            <p class="action-info small"><a href="">{{ _('cancel') }}</a></p>
-            <button class="btn btn-primary" type="submit" name="save">{{ _('Save changes') }}</button>
+            <a class="btn btn-danger btn-small" href="{{ destination }}" data-module="confirm-action" data-module-i18n="{{
+               h.dump_json({
+                 'heading': _('Leave Page'),
+                 'content': _('Are you sure that you want to leave page? All changes will be lost...'),
+                 'confirm': _('Leave'),
+                 'cancel': _('Stay on the page')
+              })
+            }}" title="{{ _('Cancel') }}">{{ _('cancel') }}</a>
+            <button class="btn btn-primary" type="submit" name="save" value="asset_update">{{ _('Save changes') }}</button>
             <p class="control-required-message">
                 <span class="control-required">*</span> {{ _('Required field') }}
             </p>

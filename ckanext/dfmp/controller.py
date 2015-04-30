@@ -7,6 +7,8 @@ import ckan.model as model
 from pylons import config
 from ckan.common import c, g, _, OrderedDict, request
 from urllib import urlencode
+import ckanext.dfmp.actions.get as dfmp_get_action
+import json
 
 session = model.Session
 from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery, _asset_search
@@ -53,7 +55,7 @@ def _encode_params(params):
 
 class DFMPController(base.BaseController):
 
-  def __init__(self):
+  def _init_context(self):
     self.context = {
       'model': model,
       'user': c.user or c.author,
@@ -62,17 +64,57 @@ class DFMPController(base.BaseController):
 
   # asset edit form
   def record_edit(self, resource, asset):
-    # we need to make sure that requestsed asset exists
+    # inits context
+    self._init_context()
+
+    #gets destination URL
+    destination = request.params.get('destination') or c.environ.get('HTTP_REFERER') or ''
+
+    # we ned to apply changes if from is submitted
+    if request.method == 'POST' and request.params.get('save') == 'asset_update':
+      while True:
+        # only admins can modify assets
+        if not c.userobj or not c.userobj.sysadmin:
+          h.flash_error('Only admins can modify assets.')
+          break
+        # asset changes dict
+        asset_update = {
+          'name': request.params.get('name'),
+          'lastModified': request.params.get('last_modified')
+        }
+        # we need to update asset
+        if hasattr(dfmp_get_action, 'dfmp_update_asset'):
+          asset_update['resource_id'] = request.params.get('resource_id')
+          asset_update['asset_id'] = request.params.get('asset_id')
+          update = dfmp_get_action('dfmp_update_asset')(self.context, asset_update)
+        else:
+          # DEPRICATED
+          asset_update['id'] = request.params.get('resource_id')
+          asset_update['assetID'] = request.params.get('asset_id')
+          update = toolkit.get_action('user_update_asset')(self.context, asset_update)
+        # notification about successful update
+        h.flash_success('Asset has been updated.')
+        if destination:
+          base.redirect(destination)
+        break
+
+    # we need to make sure that requested asset exists
     try:
       # we use API action to get asset details
-      asset = toolkit.get_action('resource_items')(self.context, {
-        'id': resource,
-        'item': asset,
-      })['records'][0]
+      if hasattr(dfmp_get_action, 'dfmp_get_assets'):
+        asset = dfmp_get_action('dfmp_get_assets')(self.context, {
+          'resource_id': resource,
+          'asset_id': asset,
+        })
+      else:
+        # DEPRICATED
+        asset = toolkit.get_action('resource_items')(self.context, {
+          'id': resource,
+          'item': asset,
+        })['records'][0]
     except toolkit.ValidationError, e:
-      c.lalala = 'aaa'
-      # returns "Asset not found" page
-      return base.abort(404, 'Asset not found')
+      # returns "Resourse not found" page if no asset found
+      return base.abort(404)
 
     # creates asset dict for Template
     asset = {
@@ -82,13 +124,9 @@ class DFMPController(base.BaseController):
       'last_modified': asset['lastModified'],
       'url': asset['url'],
       'organisation': asset['organization'],
-      'spatial': asset['spatial'],
-      'metadata': asset['metadata']
+      'spatial': json.dumps(asset['spatial'], sort_keys=False, indent=2, separators=(',', ': ')),
+      'metadata': json.dumps(asset['metadata'], sort_keys=False, indent=2, separators=(',', ': '))
     }
-
-    #gets destination URL
-    destination = request.params.get('destination')
-
     # renders Edit form
     return base.render('assets/edit.html', {'asset': asset, 'destination': destination})
 
@@ -98,6 +136,8 @@ class DFMPController(base.BaseController):
 
   def flickr_update(self):
     log.warn('FLICKR UPDATE')
+    # inits context
+    self._init_context()
 
     toolkit.get_action('dfmp_flickr_update')(self.context, {})
     
@@ -325,6 +365,9 @@ class DFMPController(base.BaseController):
     self.solr_commit()
 
   def ckanadmin_org_relationship(self, org):
+    # inits context
+    self._init_context()
+
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
 
@@ -398,6 +441,9 @@ class DFMPController(base.BaseController):
     return base.render('admin/twitter_listeners.html', extra_vars=extra_vars)
 
   def ajax_actions(self):
+    # inits context
+    self._init_context()
+
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
 
@@ -498,6 +544,9 @@ class DFMPController(base.BaseController):
     return 'Done'
 
   def manage_assets(self, id, resource_id):
+    # inits context
+    self._init_context()
+
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
     try:
@@ -589,6 +638,9 @@ class DFMPController(base.BaseController):
     
 
   def getting_tweets(self, id, resource_id):
+    # inits context
+    self._init_context()
+
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
 
