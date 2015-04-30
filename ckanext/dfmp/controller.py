@@ -7,6 +7,8 @@ import ckan.model as model
 from pylons import config
 from ckan.common import c, g, _, OrderedDict, request
 from urllib import urlencode
+import ckanext.dfmp.actions.get as dfmp_get_action
+import json
 
 session = model.Session
 from ckanext.dfmp.dfmp_solr import DFMPSolr, DFMPSearchQuery, _asset_search
@@ -53,17 +55,91 @@ def _encode_params(params):
 
 class DFMPController(base.BaseController):
 
+  def _init_context(self):
+    self.context = {
+      'model': model,
+      'user': c.user or c.author,
+      'auth_user_obj': c.userobj
+    }
+
+  # asset edit form
+  def record_edit(self, resource, asset):
+    # inits context
+    self._init_context()
+
+    #gets destination URL
+    destination = request.params.get('destination') or c.environ.get('HTTP_REFERER') or ''
+
+    # we ned to apply changes if from is submitted
+    if request.method == 'POST' and request.params.get('save') == 'asset_update':
+      while True:
+        # only admins can modify assets
+        if not c.userobj or not c.userobj.sysadmin:
+          h.flash_error('Only admins can modify assets.')
+          break
+        # asset changes dict
+        asset_update = {
+          'name': request.params.get('name'),
+          'lastModified': request.params.get('last_modified')
+        }
+        # we need to update asset
+        if hasattr(dfmp_get_action, 'dfmp_update_asset'):
+          asset_update['resource_id'] = request.params.get('resource_id')
+          asset_update['asset_id'] = request.params.get('asset_id')
+          update = dfmp_get_action('dfmp_update_asset')(self.context, asset_update)
+        else:
+          # DEPRICATED
+          asset_update['id'] = request.params.get('resource_id')
+          asset_update['assetID'] = request.params.get('asset_id')
+          update = toolkit.get_action('user_update_asset')(self.context, asset_update)
+        # notification about successful update
+        h.flash_success('Asset has been updated.')
+        if destination:
+          base.redirect(destination)
+        break
+
+    # we need to make sure that requested asset exists
+    try:
+      # we use API action to get asset details
+      if hasattr(dfmp_get_action, 'dfmp_get_assets'):
+        asset = dfmp_get_action('dfmp_get_assets')(self.context, {
+          'resource_id': resource,
+          'asset_id': asset,
+        })
+      else:
+        # DEPRICATED
+        asset = toolkit.get_action('resource_items')(self.context, {
+          'id': resource,
+          'item': asset,
+        })['records'][0]
+    except toolkit.ValidationError, e:
+      # returns "Resourse not found" page if no asset found
+      return base.abort(404)
+
+    # creates asset dict for Template
+    asset = {
+      'name': asset['name'],
+      'resource_id': resource,
+      'asset_id': asset['assetID'],
+      'last_modified': asset['lastModified'],
+      'url': asset['url'],
+      'organisation': asset['organization'],
+      'spatial': json.dumps(asset['spatial'], sort_keys=False, indent=2, separators=(',', ': ')),
+      'metadata': json.dumps(asset['metadata'], sort_keys=False, indent=2, separators=(',', ': '))
+    }
+    # renders Edit form
+    return base.render('assets/edit.html', {'asset': asset, 'destination': destination})
+
+
   def api_doc(self):
     return base.render('home/api_doc.html')
 
   def flickr_update(self):
     log.warn('FLICKR UPDATE')
-    context = {
-      'model': model,
-      'user': c.user or c.author,
-      'auth_user_obj': c.userobj
-    }
-    toolkit.get_action('dfmp_flickr_update')(context, {})
+    # inits context
+    self._init_context()
+
+    toolkit.get_action('dfmp_flickr_update')(self.context, {})
     
     # redirect to DFMP homepage
     base.redirect(c.environ.get('HTTP_REFERER', config.get('ckan.site_url','/')))
@@ -289,28 +365,23 @@ class DFMPController(base.BaseController):
     self.solr_commit()
 
   def ckanadmin_org_relationship(self, org):
+    # inits context
+    self._init_context()
+
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
-    context = {
-      'model': model,
-      'user': c.user or c.author,
-      'auth_user_obj': c.userobj
-    }
-    
-    
-    
 
     params = dict(request.params)
     if 'route' in params and 'child' in params:
       if params['route'] == 'add':
         member_create = toolkit.get_action('member_create')
-        member_create(context,{
+        member_create(self.context,{
           'id': org,
           'object': params['child'],
           'object_type': 'group',
           'capacity': 'child_organization'
           })
-        member_create(context,{
+        member_create(self.context,{
           'id': params['child'],
           'object': org,
           'object_type': 'group',
@@ -318,12 +389,12 @@ class DFMPController(base.BaseController):
           })
       elif params['route'] == 'remove':
         member_delete = toolkit.get_action('member_delete')
-        member_delete(context,{
+        member_delete(self.context,{
           'id': org,
           'object': params['child'],
           'object_type': 'group',
           })
-        member_delete(context,{
+        member_delete(self.context,{
           'id': params['child'],
           'object': org,
           'object_type': 'group',
@@ -332,7 +403,7 @@ class DFMPController(base.BaseController):
     org_obj = session.query(model.Group).filter_by(id=org).first()
     children = [ item.table_id for item in filter(lambda x: x.capacity=='child_organization' and x.state == 'active', org_obj.member_all)]
 
-    all_organizations = toolkit.get_action('organization_list')(context, {'all_fields':True})
+    all_organizations = toolkit.get_action('organization_list')(self.context, {'all_fields':True})
     for o in all_organizations:
       if o['id'] == org:
         organization = o
@@ -370,22 +441,21 @@ class DFMPController(base.BaseController):
     return base.render('admin/twitter_listeners.html', extra_vars=extra_vars)
 
   def ajax_actions(self):
+    # inits context
+    self._init_context()
+
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
-    context = {
-      'model': model,
-      'user': c.user or c.author,
-      'auth_user_obj': c.userobj
-    }
+
     action = request.params.get('action')
     res_id = request.params.get('res_id')
     assets = request.params.get('assets').split(' ')
-    parent = toolkit.get_action('resource_show')(context, {'id': res_id})
+    parent = toolkit.get_action('resource_show')(self.context, {'id': res_id})
     forbidden = json.loads(parent.get('forbidden_id', '[]'))
     solr = DFMPSolr
 
     if action == 'delete':
-      toolkit.get_action('user_remove_asset')(context, {
+      toolkit.get_action('user_remove_asset')(self.context, {
         'items':[{
           'id': res_id,
           'assetID':assetID
@@ -397,7 +467,7 @@ class DFMPController(base.BaseController):
 
     elif action == 'hide':
       for visible_asset in assets:
-        asset = toolkit.get_action('datastore_search')(context, {
+        asset = toolkit.get_action('datastore_search')(self.context, {
           'id': res_id,
           'filters':{
             'assetID':visible_asset
@@ -414,7 +484,7 @@ class DFMPController(base.BaseController):
 
         _asset_to_solr(asset, defer_commit=True)
 
-        toolkit.get_action('datastore_delete')(context,{
+        toolkit.get_action('datastore_delete')(self.context,{
           'resource_id': res_id,
           'force': True,
           'filters':{
@@ -444,7 +514,7 @@ class DFMPController(base.BaseController):
         asset = json.loads(asset['data_dict'])
         asset['metadata']['state'] = 'active'
 
-        datastore_item = toolkit.get_action('datastore_upsert')(context, {
+        datastore_item = toolkit.get_action('datastore_upsert')(self.context, {
           'resource_id':res_id,
           'force': True,
           'records':[{
@@ -469,11 +539,14 @@ class DFMPController(base.BaseController):
     forbidden = _unique_list(forbidden)
     parent['forbidden_id'] = json.dumps(forbidden)
     if not request.params.get('without_forbidding'):
-      toolkit.get_action('resource_update')(context, parent)
+      toolkit.get_action('resource_update')(self.context, parent)
     solr.commit()
     return 'Done'
 
   def manage_assets(self, id, resource_id):
+    # inits context
+    self._init_context()
+
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
     try:
@@ -483,15 +556,11 @@ class DFMPController(base.BaseController):
       base.abort(404, _('Resource not found'))
     except toolkit.NotAuthorized:
       base.abort(401, _('Unauthorized to edit this resource'))
-    context = {
-      'model': model,
-      'user': c.user or c.author,
-      'auth_user_obj': c.userobj
-    }
+
     page = int(request.params.get('page',1))
     assets = []
     try:
-      result = toolkit.get_action('datastore_search')(context,{
+      result = toolkit.get_action('datastore_search')(self.context,{
         'id':resource_id,
         'limit':ASSETS_PER_PAGE,
         'offset':(page-1)*ASSETS_PER_PAGE,
@@ -538,11 +607,7 @@ class DFMPController(base.BaseController):
   def _listener_route(self, action, id, resource_id):
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
-    context = {
-      'model': model,
-      'user': c.user or c.author,
-      'auth_user_obj': c.userobj
-    }
+
     if action == 'terminate':
       task = session.query(model.TaskStatus)\
         .filter(
@@ -568,19 +633,16 @@ class DFMPController(base.BaseController):
             'entity_type': 'resource'
           })
           if os.system('kill -9 %s' % pid):
-            toolkit.get_action('celery_revoke')(context, {'id': pid, 'resource': resource_id})
+            toolkit.get_action('celery_revoke')(self.context, {'id': pid, 'resource': resource_id})
     base.redirect(h.url_for('getting_tweets', id=id, resource_id=resource_id))
     
 
   def getting_tweets(self, id, resource_id):
+    # inits context
+    self._init_context()
+
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
-    context = {
-      'model': model,
-      'user': c.user or c.author,
-      'auth_user_obj': c.userobj
-    }
-
 
     log_access = os.access(log_path, os.W_OK)
     if not log_access:
@@ -650,7 +712,7 @@ class DFMPController(base.BaseController):
           extra_vars['pull_error_summary'].update( { 'Date': 'Wrong date' } )
 
         if stable:
-          getting = toolkit.get_action('celery_getting_tweets')(context,{
+          getting = toolkit.get_action('celery_getting_tweets')(self.context,{
             'resource': resource_id,
             'word': pst['pull_word'],
             'deepness': date,
