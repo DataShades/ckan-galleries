@@ -116,6 +116,10 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       'api_doc', '/api_doc',
       controller='ckanext.dfmp.controller:DFMPController',
       action='api_doc', ckan_icon='')
+    map.connect(
+      'record_edit', '/asset/{resource}/{asset}/edit',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='record_edit', ckan_icon='')
 
     return map
 
