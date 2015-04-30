@@ -3,6 +3,7 @@ from time import sleep
 from ckanext.dfmp.actions.action import *
 from ckanext.dfmp.actions.datastore_action import *
 from ckanext.dfmp.actions.get import *
+from ckanext.dfmp.actions.update import *
 from ckanext.dfmp.actions.action import _get_pkid_and_resource
 
 from ckan.logic import side_effect_free
@@ -175,6 +176,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       # new actions
       'dfmp_get_asset':dfmp_get_asset,
       'dfmp_get_asset_list':dfmp_get_asset_list,
+      'dfmp_update_asset':dfmp_update_asset,
     }
 
 
@@ -193,7 +195,7 @@ def custom_stack(func):
       log.warn(e)
       log.warn('out with error')
       DFMPPlugin.inProgress -= 1
-      return e
+      raise e
   return waiter
 
 @side_effect_free
