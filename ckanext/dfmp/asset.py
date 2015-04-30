@@ -107,6 +107,8 @@ class Asset:
     }
     package = session.query(model.Package).get(package_id).as_dict()
     del package['resources']
+    if 'notes_rendered' in package:
+      del package['notes_rendered']
     activity_dict['data'] = {'package': package}
     toolkit.get_action('activity_create')(context, activity_dict)
 
@@ -182,7 +184,7 @@ class Asset:
       data['name'] = _asset_name_from_url(data['url'])
 
     # uploaded time
-    data['lastModified'] = datetime.now().isoformat(' ')[:19]
+    data['lastModified'] = data.get('lastModified') or datetime.now().isoformat(' ')[:19]
 
     # correct spatial
     if 'spatial' in data: pass
