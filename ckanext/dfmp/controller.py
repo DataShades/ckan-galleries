@@ -8,6 +8,7 @@ from pylons import config
 from ckan.common import c, g, _, OrderedDict, request
 from urllib import urlencode
 import ckanext.dfmp.actions.get as dfmp_get_action
+import ckanext.dfmp.actions.update as dfmp_update_action
 import json
 
 session = model.Session
@@ -83,10 +84,10 @@ class DFMPController(base.BaseController):
           'lastModified': request.params.get('last_modified')
         }
         # we need to update asset
-        if hasattr(dfmp_get_action, 'dfmp_update_asset'):
+        if hasattr(dfmp_update_action, 'dfmp_update_asset'):
           asset_update['resource_id'] = request.params.get('resource_id')
           asset_update['asset_id'] = request.params.get('asset_id')
-          update = dfmp_get_action('dfmp_update_asset')(self.context, asset_update)
+          update = toolkit.get_action('dfmp_update_asset')(self.context, asset_update)
         else:
           # DEPRICATED
           asset_update['id'] = request.params.get('resource_id')
@@ -101,8 +102,8 @@ class DFMPController(base.BaseController):
     # we need to make sure that requested asset exists
     try:
       # we use API action to get asset details
-      if hasattr(dfmp_get_action, 'dfmp_get_assets'):
-        asset = dfmp_get_action('dfmp_get_assets')(self.context, {
+      if hasattr(dfmp_get_action, 'dfmp_get_asset'):
+        asset = toolkit.get_action('dfmp_get_asset')(self.context, {
           'resource_id': resource,
           'asset_id': asset,
         })
@@ -123,7 +124,6 @@ class DFMPController(base.BaseController):
       'asset_id': asset['assetID'],
       'last_modified': asset['lastModified'],
       'url': asset['url'],
-      'organisation': asset['organization'],
       'spatial': json.dumps(asset['spatial'], sort_keys=False, indent=2, separators=(',', ': ')),
       'metadata': json.dumps(asset['metadata'], sort_keys=False, indent=2, separators=(',', ': '))
     }
