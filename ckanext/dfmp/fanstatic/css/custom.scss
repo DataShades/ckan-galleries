@@ -290,6 +290,7 @@ input[type=text], input[type=password], select {
 }
 
 .btn {
+  
     @extend .btn;
 }
 
@@ -477,6 +478,9 @@ input[type=text], input[type=password], select {
     .asset-content{
       position: relative;
       img{max-width: 150px;}
+      .asset-edit {
+        float:right;
+      }
     }
   }
   &-actions i{cursor: pointer;}
