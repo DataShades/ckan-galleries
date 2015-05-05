@@ -53,8 +53,7 @@ class TestFirefox(AbstractBrowser):
     }
     asset = dfmp_plugin.user_add_asset(context, asset_dict)
 
-
-
+    self.driver.get('http://google.com')
 
 
 
