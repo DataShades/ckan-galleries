@@ -619,6 +619,8 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
   position: relative; }
 .asset-list .asset-content img {
   max-width: 150px; }
+.asset-list .asset-content .asset-edit {
+  float: right; }
 .asset-actions i {
   cursor: pointer; }
 
