@@ -77,7 +77,10 @@ def dfmp_current_server_time():
   return datetime.datetime.now()
 
 def dfmp_nice_date(date):
-  result = parse(date).strftime('%d %b %Y')
+  try:
+    result = parse(date).strftime('%d %b %Y')
+  except:
+    result = ''
   return result
 
 def dfmp_relationship(org):
