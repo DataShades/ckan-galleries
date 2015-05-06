@@ -1,6 +1,6 @@
 import ckan.model as model
 session = model.Session
-
+import json
 import itertools
 import nose.tools as nt
 from pylons import config
@@ -24,7 +24,7 @@ class AbstractBrowser(AbstractDFMP):
       self.common_user_dict = dict(
         password='aA129kk',
         name='test_user_created_for_selenium_probably_unique_name',
-        email='test.user@selenium.dfmp.test'
+        email='test.user@selenium.dfmp.test',
       )
 
     def setUp(self):
@@ -49,13 +49,36 @@ class TestFirefox(AbstractBrowser):
     )
     asset_dict = {
       'url':'http://some.image/com/a.jpg',
-
+      'metadata': json.dumps({})
     }
     asset = dfmp_plugin.user_add_asset(context, asset_dict)
 
-    self.driver.get('http://google.com')
+    site_url = config.get('ckan.site_url')
+    self.driver.get(site_url + '/asset/' + asset['parent_id'] + '/' + asset['assetID'] + '/edit')
 
+    # checks if edit form exists
+    edit_form = self.driver.find_element_by_id('asset-edit-form')
+    assert edit_form
 
+    # checks if edit fields exist
+    last_modified = self.driver.find_element_by_id('field-last_modified')
+    name = self.driver.find_element_by_id('field-name')
+    assert last_modified, name
+
+    # updates asset
+    new_date = '2015-05-06 13:00:00'
+    last_modified.clear()
+    last_modified.send_keys(new_date)
+    new_name = 'new name'
+    name.clear()
+    name.send_keys(new_name)
+    edit_form.submit()
+
+    # checks updated fileds
+    last_modified = self.driver.find_element_by_id('field-last_modified')
+    name = self.driver.find_element_by_id('field-name')
+    nt.assert_equal(last_modified.get_attribute('value'), new_date)
+    nt.assert_equal(name.get_attribute('value'), new_name)
 
     dfmp_plugin.user_remove_asset(context, {'id': asset['parent_id'], 'assetID': asset['assetID']})
 

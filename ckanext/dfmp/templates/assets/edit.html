@@ -27,7 +27,7 @@
   {% endblock %}
 
 {% block form %}
-    <form class="form-horizontal" method="post">
+    <form class="form-horizontal" id="asset-edit-form" method="post">
 
         <input type="hidden" name="destination" value="{{ destination }}"/>
 
@@ -62,7 +62,7 @@
         <div class="control-group control-full control-large">
             <label class="control-label">{{ _('URL') }}</label>
             <div class="controls ">
-                <a href="{{ asset.url }}" target="_blank">{{ asset.url }}</a>
+                <a id="asset-url" href="{{ asset.url }}" target="_blank">{{ asset.url }}</a>
             </div>
         </div>
 
