@@ -255,7 +255,6 @@ input[type=text], input[type=password], select {
     box-shadow: none;
     color: $black;
     &:hover, &.hover {
-        color: $black;
         background: $ybtn_h;
     }
     &-primary, &-success {
