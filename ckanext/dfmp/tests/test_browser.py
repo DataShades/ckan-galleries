@@ -30,10 +30,22 @@ class AbstractBrowser(AbstractDFMP):
     def setUp(self):
       self.driver = w.Remote(self.host, self.browser)
       self._create_common_user()
+      user = session.query(model.User).get(self.common_user['id'])
+      self.context = dict(
+        model=model,
+        user=user.name,
+        auth_user_obj=user
+      )
+      asset_dict = {
+        'url':'http://some.image/com/a.jpg',
+        'metadata': json.dumps({})
+      }
+      self.asset = dfmp_plugin.user_add_asset(self.context, asset_dict)
 
 
     def tearDown(self):
       self.driver.close()
+      dfmp_plugin.user_remove_asset(self.context, {'id': self.asset['parent_id'], 'assetID': self.asset['assetID']})
       self._purge_common_user()
 
 
@@ -66,20 +78,8 @@ class AbstractBrowser(AbstractDFMP):
 
 class TestFirefox(AbstractBrowser):
   def test_asset_edit_page(self):
-    user = session.query(model.User).get(self.common_user['id'])
-    context = dict(
-      model=model,
-      user=user.name,
-      auth_user_obj=user
-    )
-    asset_dict = {
-      'url':'http://some.image/com/a.jpg',
-      'metadata': json.dumps({})
-    }
-    asset = dfmp_plugin.user_add_asset(context, asset_dict)
-
     site_url = config.get('ckan.site_url')
-    self.driver.get(site_url + '/asset/' + asset['parent_id'] + '/' + asset['assetID'] + '/edit')
+    self.driver.get(site_url + '/asset/' + self.asset['parent_id'] + '/' + self.asset['assetID'] + '/edit')
 
     # checks if edit form exists
     edit_form = self.driver.find_element_by_id('asset-edit-form')
@@ -105,7 +105,6 @@ class TestFirefox(AbstractBrowser):
     nt.assert_equal(last_modified.get_attribute('value'), new_date)
     nt.assert_equal(name.get_attribute('value'), new_name)
 
-    dfmp_plugin.user_remove_asset(context, {'id': asset['parent_id'], 'assetID': asset['assetID']})
 
   def test_asset_edit_button(self):
 
