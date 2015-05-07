@@ -79,8 +79,9 @@ class DFMPController(base.BaseController):
     # inits context
     self._init_context()
 
-    editable_datasets = _get_user_editable_datasets(self._init_context(), c.userobj.id)
-    log.warn(editable_datasets)
+    # gets the list of datasets user can edit
+    editable_datasets = _get_user_editable_datasets(self._init_context(), c.userobj.id) if c.userobj.get('id') else []
+
     # we need to make sure that requested asset exists
     try:
       # we use API action to get asset details
