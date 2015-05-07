@@ -7,6 +7,7 @@ import ckan.model as model
 from pylons import config
 from ckan.common import c, g, _, OrderedDict, request
 from urllib import urlencode
+from sqlalchemy import or_
 import ckanext.dfmp.actions.get as dfmp_get_action
 import ckanext.dfmp.actions as dfmp_parent_action
 import json
@@ -53,6 +54,16 @@ def url_with_params(url, params):
 def _encode_params(params):
   return [(k, v.encode('utf-8') if isinstance(v, basestring) else str(v))
     for k, v in params]
+
+def _get_user_editable_datasets(context, user_id):
+  all_organizations = toolkit.get_action('organization_list_for_user')(context, {'permission':'update_dataset'})
+
+  org_ids = [x['id'] for x in all_organizations]
+
+  datasets = session.query(model.Package.id)\
+          .filter(or_(model.Package.creator_user_id == user_id, model.Package.owner_org.in_(org_ids)))\
+          .all()
+  return [x[0] for x in datasets]
 
 class DFMPController(base.BaseController):
 
@@ -149,6 +160,8 @@ class DFMPController(base.BaseController):
     return base.render('package/dataset_from_flickr.html')
 
   def search_assets(self):
+
+    editable_datasets = _get_user_editable_datasets(self._init_context(), c.userobj.id)
 
     q = c.q = request.params.get('q', u'')
     c.query_error = False
@@ -290,6 +303,10 @@ class DFMPController(base.BaseController):
 
     assets = [ json.loads(item['data_dict']) for item in result['results'] ]
 
+    for asset in assets:
+      if asset['package_id'] in editable_datasets:
+        asset['user_editable'] = True
+
     c.page = h.Page(
         collection=assets,#query['results'],
         page=page,#page,
@@ -302,7 +319,6 @@ class DFMPController(base.BaseController):
     extra_vars = {
       'assets':assets,
       'action_url':h.url_for('ajax_actions'),
-
     }
     return base.render('package/search_assets.html', extra_vars = extra_vars)
 

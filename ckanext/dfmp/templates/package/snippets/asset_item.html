@@ -7,37 +7,42 @@
 {% endif %}
 
 <li class="{{ item_class or 'asset-item' }}">
-  {% block asset_item_content %}
-    <div class="asset-content" >
-      <div class="thumb-holder">
-        <img src="{{ asset.metadata.thumb or default_thumb }}" alt="" width="136px" height="95px">
-      </div>
-      <div class="asset-info-holder">
-        <h3 class="asset-heading" data-module="dfmp-removable-asset" data-module-asset="s{{ asset.assetID }}" data-module-resource="{{ asset.id }}" data-module-url="{{ action_url }}">
-          {{ h.link_to(h.truncate(title, truncate_title), '/gallery/item/%s/%s' % (asset.id,asset.assetID)) }}
-        </h3>
-        <div class="meta-date-lic">
-          <b>Posted:</b> <em>{{ h.dfmp_nice_date(asset.lastModified)  }}</em>
-          {% if asset.metadata.license_id %}
-            &middot;
-            <b>License:</b> <em>{{ asset.metadata.license_name }}</em>
-          {% endif %}
+    {% block asset_item_content %}
+    <div class="asset-content">
+        <div class="thumb-holder">
+            <img src="{{ asset.metadata.thumb or default_thumb }}" alt="" width="136px" height="95px">
         </div>
-        {% if notes %}
-          <div>{{ notes|urlize }}</div>
-        {% endif %}
+        <div class="asset-info-holder">
+            {% if h.is_sysadmin() or (asset.user_editable) %}
+                <a class="btn asset-edit" href="/asset/{{ asset.id }}/{{ asset.assetID }}/edit">Edit</a>
+            {% endif %}
+            <h3 class="asset-heading" data-module="dfmp-removable-asset"
+                data-module-asset="s{{ asset.assetID }}" data-module-resource="{{ asset.id }}"
+                data-module-url="{{ action_url }}">
+                {{ h.link_to(h.truncate(title, truncate_title), '/gallery/item/%s/%s' %
+                (asset.id,asset.assetID)) }}
+            </h3>
+            <div class="meta-date-lic">
+                <b>Posted:</b> <em>{{ h.dfmp_nice_date(asset.lastModified) }}</em>
+                {% if asset.metadata.license_id %}
+                &middot;
+                <b>License:</b> <em>{{ asset.metadata.license_name }}</em>
+                {% endif %}
+            </div>
+            {% if notes %}
+            <div>{{ notes|urlize }}</div>
+            {% endif %}
 
-        {% if asset.tags %}
-          <ul class="tag-list well">
-            {% for tag in asset.tags %}
-              <li>
-                <a class="tag" href="{{ h.url_for('search_assets', tags=tag) }}">{{ tag }}</a>
-              </li>
-            {% endfor %}
-          </ul>
-        {% endif %}
-
-      </div>
+            {% if asset.tags %}
+            <ul class="tag-list well">
+                {% for tag in asset.tags %}
+                <li>
+                    <a class="tag" href="{{ h.url_for('search_assets', tags=tag) }}">{{ tag }}</a>
+                </li>
+                {% endfor %}
+            </ul>
+            {% endif %}
+        </div>
     </div>
-  {% endblock %}
+    {% endblock %}
 </li>
