@@ -164,8 +164,7 @@ class DFMPController(base.BaseController):
     return base.render('package/dataset_from_flickr.html')
 
   def search_assets(self):
-
-    editable_datasets = _get_user_editable_datasets(self._init_context(), c.userobj.id)
+    editable_datasets = _get_user_editable_datasets(self._init_context(), c.userobj.id) if c.userobj else []
 
     q = c.q = request.params.get('q', u'')
     c.query_error = False
