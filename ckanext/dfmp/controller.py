@@ -78,9 +78,8 @@ class DFMPController(base.BaseController):
   def record_edit(self, resource, asset_id):
     # inits context
     self._init_context()
-
     # gets the list of datasets user can edit
-    editable_datasets = _get_user_editable_datasets(self._init_context(), c.userobj.id) if c.userobj and c.userobj.get('id') else []
+    editable_datasets = _get_user_editable_datasets(self._init_context(), c.userobj.id) if (c.userobj and hasattr(c.userobj, 'id')) else []
 
     # we need to make sure that requested asset exists
     try:
@@ -99,12 +98,12 @@ class DFMPController(base.BaseController):
     except toolkit.ValidationError, e:
       # returns "Resourse not found" page if no asset found
       return base.abort(404)
-    log.warn(asset)
+
     #gets destination URL
     destination = request.params.get('destination') or c.environ.get('HTTP_REFERER') or ''
 
     # we ned to apply changes if from is submitted
-    if request.method == 'POST' and request.params.get('save') == 'asset_update':
+    if request.method == 'POST' and request.params.get('save'):
       while True:
         package_id = session.query(model.Resource).filter_by(id=resource).first().get_package_id()
         # only admins can modify assets
