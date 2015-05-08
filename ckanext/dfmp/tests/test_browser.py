@@ -5,6 +5,7 @@ import itertools
 import nose.tools as nt
 from pylons import config
 from copy import deepcopy
+from ckanext.dfmp.actions.action import _get_assets_container_name
 
 import ckan.plugins.toolkit as toolkit
 
@@ -91,7 +92,9 @@ class TestFirefox(AbstractBrowser):
     super(TestFirefox, self).tearDown()
     dfmp_plugin.user_remove_asset(self.context, {'id': self.asset['parent_id'], 'assetID': self.asset['assetID']})
 
-    self._purge_dataset(self.asset['parent_id'])
+    session.query(model.Package).filter_by(name=_get_assets_container_name(self.common_user_dict0['name'])).one().purge()
+    session.query(model.Package).filter_by(name=_get_assets_container_name(self.common_user_dict1['name'])).one().purge()
+
     self._purge_common_user(self.common_user_dict0['name'])
     self._purge_common_user(self.common_user_dict1['name'])
 
@@ -118,7 +121,7 @@ class TestFirefox(AbstractBrowser):
     new_name = 'new name'
     name.clear()
     name.send_keys(new_name)
-    edit_form.submit()
+    self.driver.find_element_by_id('edit-asset-submit').click()
 
     # checks updated fileds
     last_modified = self.driver.find_element_by_id('field-last_modified')
@@ -127,8 +130,7 @@ class TestFirefox(AbstractBrowser):
     nt.assert_equal(name.get_attribute('value'), new_name)
 
 
-  def test_asset_edit_button(self):
-
+  def teest_asset_edit_button(self):
     site_url = config.get('ckan.site_url')
 
     self._user_login(redirect_url=site_url + '/asset', login=self.common_user_dict0['name'], password=self.common_user_dict0['password'])
