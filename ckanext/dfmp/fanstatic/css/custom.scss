@@ -255,7 +255,6 @@ input[type=text], input[type=password], select {
     box-shadow: none;
     color: $black;
     &:hover, &.hover {
-        color: $black;
         background: $ybtn_h;
     }
     &-primary, &-success {
@@ -290,6 +289,7 @@ input[type=text], input[type=password], select {
 }
 
 .btn {
+  
     @extend .btn;
 }
 
@@ -477,6 +477,9 @@ input[type=text], input[type=password], select {
     .asset-content{
       position: relative;
       img{max-width: 150px;}
+      .asset-edit {
+        float:right;
+      }
     }
   }
   &-actions i{cursor: pointer;}
@@ -486,4 +489,25 @@ input[type=text], input[type=password], select {
 i.in-progress:before{
     background: url("../../../../base/images/loading-spinner.gif") 50% no-repeat;
     color: transparent;
+}
+
+.add-dataset-btn {
+  margin-bottom: 20px;
+  .page_primary_action {
+    margin: 0;
+    .btn.btn-primary {
+      width: auto;
+      background: none;
+      border: none;
+      font-weight: normal;
+      padding: 3px 20px;
+      a {
+        padding: 0;
+      }
+    }
+  }
+  .page_primary_action:hover {
+    background: #eda712;
+    color: #ffffff;
+  }
 }

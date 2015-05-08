@@ -6,10 +6,20 @@
 
 
 {% block page_primary_action %}
-  {{ super() }}
-  {% if h.check_access('package_create') %}
-    <div class="page_primary_action">
-      {% link_for _('Add flickr pool'), controller='ckanext.dfmp.controller:DFMPController', action='get_flickr', class_='btn btn-primary', icon='plus-sign-alt' %}
-    </div>
-  {% endif %}
+  <div class="dropdown btn-group add-dataset-btn">
+    <a href="#" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
+      {{ _('Add Dataset') }}
+      <span class="caret"></span>
+    </a>
+    <ul class="dropdown-menu">
+      <li>
+        {{ super() }}
+      </li>
+      <li>
+        {% if h.check_access('package_create') %}
+            {% link_for _('Add flickr pool'), controller='ckanext.dfmp.controller:DFMPController', action='get_flickr', class_='', icon='plus-sign-alt' %}
+        {% endif %}
+      </li>
+    </ul>
+  </div>
 {% endblock %}

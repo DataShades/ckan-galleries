@@ -7,8 +7,9 @@ import ckan.model as model
 from pylons import config
 from ckan.common import c, g, _, OrderedDict, request
 from urllib import urlencode
+from sqlalchemy import or_
 import ckanext.dfmp.actions.get as dfmp_get_action
-import ckanext.dfmp.actions.update as dfmp_update_action
+import ckanext.dfmp.actions as dfmp_parent_action
 import json
 
 session = model.Session
@@ -54,6 +55,16 @@ def _encode_params(params):
   return [(k, v.encode('utf-8') if isinstance(v, basestring) else str(v))
     for k, v in params]
 
+def _get_user_editable_datasets(context, user_id):
+  all_organizations = toolkit.get_action('organization_list_for_user')(context, {'permission':'update_dataset'})
+
+  org_ids = [x['id'] for x in all_organizations]
+
+  datasets = session.query(model.Package.id)\
+          .filter(or_(model.Package.creator_user_id == user_id, model.Package.owner_org.in_(org_ids)))\
+          .all()
+  return [x[0] for x in datasets]
+
 class DFMPController(base.BaseController):
 
   def _init_context(self):
@@ -64,40 +75,12 @@ class DFMPController(base.BaseController):
     }
 
   # asset edit form
-  def record_edit(self, resource, asset):
+  def record_edit(self, resource, asset_id):
     # inits context
     self._init_context()
 
-    #gets destination URL
-    destination = request.params.get('destination') or c.environ.get('HTTP_REFERER') or ''
-
-    # we ned to apply changes if from is submitted
-    if request.method == 'POST' and request.params.get('save') == 'asset_update':
-      while True:
-        # only admins can modify assets
-        if not c.userobj or not c.userobj.sysadmin:
-          h.flash_error('Only admins can modify assets.')
-          break
-        # asset changes dict
-        asset_update = {
-          'name': request.params.get('name'),
-          'lastModified': request.params.get('last_modified')
-        }
-        # we need to update asset
-        if hasattr(dfmp_update_action, 'dfmp_update_asset'):
-          asset_update['resource_id'] = request.params.get('resource_id')
-          asset_update['asset_id'] = request.params.get('asset_id')
-          update = toolkit.get_action('dfmp_update_asset')(self.context, asset_update)
-        else:
-          # DEPRICATED
-          asset_update['id'] = request.params.get('resource_id')
-          asset_update['assetID'] = request.params.get('asset_id')
-          update = toolkit.get_action('user_update_asset')(self.context, asset_update)
-        # notification about successful update
-        h.flash_success('Asset has been updated.')
-        if destination:
-          base.redirect(destination)
-        break
+    # gets the list of datasets user can edit
+    editable_datasets = _get_user_editable_datasets(self._init_context(), c.userobj.id) if c.userobj and c.userobj.get('id') else []
 
     # we need to make sure that requested asset exists
     try:
@@ -105,17 +88,50 @@ class DFMPController(base.BaseController):
       if hasattr(dfmp_get_action, 'dfmp_get_asset'):
         asset = toolkit.get_action('dfmp_get_asset')(self.context, {
           'resource_id': resource,
-          'asset_id': asset,
+          'asset_id': asset_id,
         })
       else:
         # DEPRICATED
         asset = toolkit.get_action('resource_items')(self.context, {
           'id': resource,
-          'item': asset,
+          'item': asset_id,
         })['records'][0]
     except toolkit.ValidationError, e:
       # returns "Resourse not found" page if no asset found
       return base.abort(404)
+    log.warn(asset)
+    #gets destination URL
+    destination = request.params.get('destination') or c.environ.get('HTTP_REFERER') or ''
+
+    # we ned to apply changes if from is submitted
+    if request.method == 'POST' and request.params.get('save') == 'asset_update':
+      while True:
+        package_id = session.query(model.Resource).filter_by(id=resource).first().get_package_id()
+        # only admins can modify assets
+        if package_id not in editable_datasets and not (c.userobj and c.userobj.sysadmin):
+          h.flash_error('You cannot modify this record.')
+          break
+        # asset changes dict
+        asset_update = {
+          'name': request.params.get('name'),
+          'lastModified': request.params.get('last_modified')
+        }
+        # log.warn(dir(dfmp_update_action))
+        # we need to update asset
+        if hasattr(dfmp_parent_action, 'update') and hasattr(dfmp_parent_action.update, 'dfmp_update_asset'):
+          asset_update['resource_id'] = request.params.get('resource_id')
+          asset_update['asset_id'] = request.params.get('asset_id')
+          asset = toolkit.get_action('dfmp_update_asset')(self.context, asset_update)
+        else:
+          # DEPRICATED
+          asset_update['id'] = request.params.get('resource_id')
+          asset_update['assetID'] = request.params.get('asset_id')
+          asset = toolkit.get_action('user_update_asset')(self.context, asset_update)
+        # notification about successful update
+        h.flash_success('Asset has been updated.')
+        if destination:
+          base.redirect(destination)
+        break
 
     # creates asset dict for Template
     asset = {
@@ -148,6 +164,7 @@ class DFMPController(base.BaseController):
     return base.render('package/dataset_from_flickr.html')
 
   def search_assets(self):
+    editable_datasets = _get_user_editable_datasets(self._init_context(), c.userobj.id) if c.userobj else []
 
     q = c.q = request.params.get('q', u'')
     c.query_error = False
@@ -289,6 +306,10 @@ class DFMPController(base.BaseController):
 
     assets = [ json.loads(item['data_dict']) for item in result['results'] ]
 
+    for asset in assets:
+      if asset['package_id'] in editable_datasets:
+        asset['user_editable'] = True
+
     c.page = h.Page(
         collection=assets,#query['results'],
         page=page,#page,
@@ -301,7 +322,6 @@ class DFMPController(base.BaseController):
     extra_vars = {
       'assets':assets,
       'action_url':h.url_for('ajax_actions'),
-
     }
     return base.render('package/search_assets.html', extra_vars = extra_vars)
 
