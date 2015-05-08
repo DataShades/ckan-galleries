@@ -261,6 +261,7 @@ def user_create_with_dataset(context, data_dict):
     log.error(e)
     raise e
 
+  context['user'] = user['name']
   _user_create_base_dataset(context, data_dict, title=title, notes=notes, tags=tags)
 
   user['dataset_url'] = h.url_for(controller='package', action='read', id=_get_assets_container_name(data_dict['name']))
