@@ -110,7 +110,13 @@ class Asset:
     if 'notes_rendered' in package:
       del package['notes_rendered']
     activity_dict['data'] = {'package': package}
-    toolkit.get_action('activity_create')(context, activity_dict)
+    admin = session.query(model.User).filter_by(sysadmin=True).first()
+    admin_context = {
+      'model':model,
+      'user':admin.name,
+      'userobj':admin,
+    }
+    toolkit.get_action('activity_create')(admin_context, activity_dict)
 
     return updated.data
 
