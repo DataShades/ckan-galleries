@@ -36,8 +36,15 @@ class AbstractDFMP(object):
       pass
     self.common_user = common_actions.user_create_with_dataset(_get_admin_context(), self.common_user_dict)
 
-  def _purge_common_user(self):
-    session.query(model.User).filter_by(name=self.common_user_dict['name']).one().purge()
+  def _purge_common_user(self, usr_name=None):
+    usr_name = self.common_user_dict['name'] if not usr_name else usr_name
+    session.query(model.User).filter_by(name=usr_name).one().purge()
+    session.commit()
+
+  def _purge_dataset(self, resource_id='', package_id=''):
+    if resource_id:
+      package_id = session.query(model.Resource).filter_by(id=resource_id).one().get_package_id()
+    dataset = session.query(model.Package).get(package_id).purge()
     session.commit()
 
   def __init__(self):
