@@ -96,8 +96,10 @@ class TestFirefox(AbstractBrowser):
     self._purge_common_user(self.common_user_dict1['name'])
 
 
-  def tlest_asset_edit_page(self):
+  def test_asset_edit_page(self):
     site_url = config.get('ckan.site_url')
+    # logins user and goes to assets edit page
+    self._user_login(redirect_url=site_url + '/asset', login=self.common_user_dict0['name'], password=self.common_user_dict0['password'])
     self.driver.get(site_url + '/asset/' + self.asset['parent_id'] + '/' + self.asset['assetID'] + '/edit')
 
     # checks if edit form exists

@@ -99,7 +99,7 @@ class DFMPController(base.BaseController):
     except toolkit.ValidationError, e:
       # returns "Resourse not found" page if no asset found
       return base.abort(404)
-    log.warn(asset)
+
     #gets destination URL
     destination = request.params.get('destination') or c.environ.get('HTTP_REFERER') or ''
 
