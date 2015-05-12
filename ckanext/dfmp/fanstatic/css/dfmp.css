@@ -563,9 +563,15 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
   background: #01525e;
   text-shadow: none; }
 .table .gallery-preview-column {
-  width: 50px;
-  padding: 10px;
-  vertical-align: top; }
+  width: auto;
+  padding: 3px 10px;
+  vertical-align: middle;
+  text-align: center; }
+  .table .gallery-preview-column img {
+    max-width: 200px;
+    height: 45px; }
+  .table .gallery-preview-column .flag-preview-wrapper img {
+    height: auto; }
 .table a {
   color: #056c7f; }
 .table .flags-asset-column {
@@ -581,30 +587,19 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
     color: #056c7f; }
 .table .dfmp-manage-asset-btn {
   vertical-align: middle; }
+  .table .dfmp-manage-asset-btn .dropdown > a {
+    width: 100%;
+    padding-right: 0; }
   .table .dfmp-manage-asset-btn.remove-action a:hover {
     background-color: #a22a2b; }
   .table .dfmp-manage-asset-btn.hide-action a:hover {
     background-color: #056c7f; }
   .table .dfmp-manage-asset-btn a {
-    display: block;
-    text-align: center;
-    width: 60px;
-    height: 30px;
-    border-radius: 3px;
-    margin: auto;
-    color: #1e1f21;
-    border: 1px solid #c5d2e3;
-    background-color: #e1e7ee; }
+    color: #1e1f21; }
     .table .dfmp-manage-asset-btn a[data-module-action="hide"]:hover, .table .dfmp-manage-asset-btn a[data-module-action="unhide"]:hover {
       border-color: #c4d2e3; }
     .table .dfmp-manage-asset-btn a[data-module-action="solr-delete"]:hover, .table .dfmp-manage-asset-btn a[data-module-action="delete"]:hover {
       border-color: #870000; }
-    .table .dfmp-manage-asset-btn a:hover {
-      text-decoration: none;
-      color: #fff; }
-    .table .dfmp-manage-asset-btn a i {
-      font-size: 22px;
-      line-height: 30px; }
 
 .group-list .module-heading h3 a {
   color: #056c7f; }
