@@ -328,6 +328,11 @@ class DFMPController(base.BaseController):
     if not c.userobj or not c.userobj.sysadmin:
       base.abort(404)
     sort = request.params.get('sort', 'metadata_modified asc')
+    sort_ico = request.params.get('sort', '')
+    if sort_ico == 'metadata_modified asc':
+      sort_ico = 'icon-sort-up'
+    elif sort_ico == 'metadata_modified desc':
+      sort_ico = 'icon-sort-down'
     flagged = DFMPSearchQuery.run({
       'q':'',
       'rows':100,
@@ -342,7 +347,7 @@ class DFMPController(base.BaseController):
         asset = json.loads(item['data_dict'])
         asset['metadata_modified'] = item['metadata_modified']
         assets.append(asset)
-    return base.render('admin/flags.html', extra_vars={'assets':assets, 'sort': sort})
+    return base.render('admin/flags.html', extra_vars={'assets':assets, 'sort': sort, 'sort_ico': sort_ico})
 
   def terminate_listener(self, id, resource_id):
     self._listener_route('terminate', id, resource_id)

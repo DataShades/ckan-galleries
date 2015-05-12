@@ -15,15 +15,11 @@
   <table class="table table-striped table-bordered table-condensed ">
     <thead>
       <tr>
-        <th class="gallery-preview-column"></th>
-        <!--<th>Link to gallery</th>
-        <th>Link to resource</th>-->
-        <th>Links</th>
+        <th class="gallery-preview-column">Image</th>
         <th class="flags-asset-column">Asset ID</th>
         <th>Flag</th>
-        <th class="dfmp-sort-column" data-module="dfmp-table-sorting" data-module-current="{{ sort }}" data-module-reverse="metadata_modified">Date flagged</th>
-        <th>Hide asset</th>
-        <th>Delete asset</th>
+        <th class="dfmp-sort-column" data-module="dfmp-table-sorting" data-module-current="{{ sort }}" data-module-reverse="metadata_modified">Date flagged <i class="{{ sort_ico }}"></i></th>
+        <th>Action</th>
       </tr>
     </thead>
     <tbody>
@@ -34,24 +30,25 @@
       <tr>
         <td data-module="dfmp-fancy-lightbox" data-module-selector=".flag-preview" data-module-title="{{ asset.name }}" data-module-thumbnail="{{ thumbnail }}" class="gallery-preview-column">
           <a class="flag-preview" href="#flag-preview-{{loop.index}}"><img class="preview-smallest-image" src="{{ thumbnail }}" alt=""></a>
-          <div style="display:none"><div id="flag-preview-{{loop.index}}"><p class="asset-preview-title"><i class="icon-remove asset-preview-close" onclick="$.fancybox.close()"></i>{{ asset.name }}</p><img src="{{ asset.url }}" alt=""></div></div>
+          <div style="display:none" class="flag-preview-wrapper"><div id="flag-preview-{{loop.index}}"><p class="asset-preview-title"><i class="icon-remove asset-preview-close" onclick="$.fancybox.close()"></i>{{ asset.name }}</p><img src="{{ asset.url }}" alt=""></div></div>
         </td>
-        <td><a class='' href="/gallery/item/{{dataset}}/{{ ID }}">{{ _('Gallery') }}</a>
-        <!--</td>
-        <td>-->
-        <p></p>
-        <a class='' href="{{ h.url_for( controller='package', action='resource_read', id=asset.get('package_id'), resource_id=asset['id']) }}">{{ _('Resource') }}</a></td>
         <td>{{ ID }}</td>
         <td>{{ asset.metadata.flag }}</td>
         <td>{{ h.dfmp_relative_time(asset.metadata_modified) }}</td>
-        <td class="dfmp-manage-asset-btn hide-action">
-          <a data-module="dfmp-manage-flagged" data-module-res="{{ dataset }}" data-module-asset="s{{ ID }}" 
-          data-module-action="hide" data-module-url="{{ ajax_action }}"><i class="icon-eye-close"></i></a>
+        <td class="dfmp-manage-asset-btn">
+
+          <div class="dropdown btn-group add-dataset-btn">
+            <a class='btn' href="/gallery/item/{{dataset}}/{{ ID }}"><i class="icon-picture"></i>{{ _('View') }}</a>
+            <button class="btn dropdown-toggle" data-toggle="dropdown"><span class="caret"></span></button>
+            <ul class="dropdown-menu">
+              <li>
+                <a class='' href="{{ h.url_for( controller='package', action='resource_read', id=asset.get('package_id'), resource_id=asset['id']) }}"><i class="icon-dropbox"></i>{{ _('In dataset') }}</a>
+                <a data-module="dfmp-manage-flagged" data-module-res="{{ dataset }}" data-module-asset="s{{ ID }}" data-module-action="hide" data-module-url="{{ ajax_action }}"><i class="icon-eye-close"></i>{{ _('Hide') }}</a>
+                <a data-module="dfmp-manage-flagged" data-module-res="{{ dataset }}" data-module-asset="s{{ ID }}" data-module-action="delete" data-module-url="{{ ajax_action }}"><i class="icon-trash"></i>{{ _('Delete') }}</a>
+              </li>
+            </ul>
+          </div>
         </td>
-        <td class="dfmp-manage-asset-btn remove-action">
-          <a data-module="dfmp-manage-flagged" data-module-res="{{ dataset }}" data-module-asset="s{{ ID }}"
-         data-module-action="delete" data-module-url="{{ ajax_action }}"><i class="icon-trash"></i></a>
-       </td>
       </tr>
       {% endfor %}
     </tbody>

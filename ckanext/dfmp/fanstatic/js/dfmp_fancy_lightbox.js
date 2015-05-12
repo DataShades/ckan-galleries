@@ -24,7 +24,7 @@ ckan.module('dfmp-fancy-lightbox', function ($, _) {
       });
       this.el.find('.preview-smallest-image').popover({
         html: true,
-        content: '<p>' + this.options.title + '</p><img src="' + this.options.thumbnail + '">',
+        content: '<div class="flag-preview-wrapper"><p>' + this.options.title + '</p><img src="' + this.options.thumbnail + '"></div>',
       })
       // this.el.on('click', this._onClick);
       this.el.on('mouseenter', this._onHoverStart);
