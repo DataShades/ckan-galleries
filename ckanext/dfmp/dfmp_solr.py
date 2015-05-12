@@ -10,7 +10,7 @@ from ckan.lib.search.query import SearchQuery, VALID_SOLR_PARAMETERS, SearchQuer
 from ckan.lib.search.common import SearchIndexError, make_connection
 from ckan.lib.search.index import SearchIndex
 import ckan.model as model
-session = model.session
+session = model.Session
 
 from ckanext.dfmp.bonus import _unjson, _unjson_base, _get_package_id_by_res
 
