@@ -14,7 +14,7 @@
         </div>
         <div class="asset-info-holder">
             {% if h.is_sysadmin() or (asset.user_editable) %}
-                <a class="btn asset-edit" href="/asset/{{ asset.id }}/{{ asset.assetID }}/edit">Edit</a>
+                <a class="btn asset-edit" href="{{ h.url_for('record_edit', resource=asset.id, asset_id=asset.assetID) }}">Edit</a>
             {% endif %}
             <h3 class="asset-heading" data-module="dfmp-removable-asset"
                 data-module-asset="s{{ asset.assetID }}" data-module-resource="{{ asset.id }}"
