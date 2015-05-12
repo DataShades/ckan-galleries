@@ -1,25 +1,21 @@
 {% ckan_extends %}
-{# block secondary_content %}
-  {{ super() }}
-  {% snippet "spatial/snippets/spatial_query.html" %}
-{% endblock #}
-
 
 {% block page_primary_action %}
-  <div class="dropdown btn-group add-dataset-btn">
-    <a href="#" class="btn btn-primary dropdown-toggle" data-toggle="dropdown">
-      {{ _('Add Dataset') }}
-      <span class="caret"></span>
-    </a>
-    <ul class="dropdown-menu">
-      <li>
-        {{ super() }}
-      </li>
-      <li>
-        {% if h.check_access('package_create') %}
-            {% link_for _('Add flickr pool'), controller='ckanext.dfmp.controller:DFMPController', action='get_flickr', class_='', icon='plus-sign-alt' %}
-        {% endif %}
-      </li>
-    </ul>
-  </div>
+    {% if h.check_access('package_create') %}
+      <div class="dropdown btn-group add-dataset-btn">
+        <a href="/dataset/new" class="btn">{{ _('Add Dataset') }}</a>
+          <button class="btn dropdown-toggle" data-toggle="dropdown">
+        <span class="caret"></span>
+      </button>
+
+        <ul class="dropdown-menu">
+    {#      <li>#}
+    {#        {{ super() }}#}
+    {#      </li>#}
+          <li>
+                {% link_for _('Add Flickr pool'), controller='ckanext.dfmp.controller:DFMPController', action='get_flickr', class_='', icon='flickr' %}
+          </li>
+        </ul>
+      </div>
+    {% endif %}
 {% endblock %}
