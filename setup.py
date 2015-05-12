@@ -25,11 +25,12 @@ setup(
         'celery',
         'tweepy',
         'ckanapi',
-        'requests',
+        'requests==2.4.3',
         'Polygon2',
         'mysql-python',
         'nose',
-        'coverage'
+        'coverage',
+        'selenium'
     ],
     entry_points='''
         [ckan.plugins]
