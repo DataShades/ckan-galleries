@@ -25,7 +25,7 @@ setup(
         'celery',
         'tweepy',
         'ckanapi',
-        'requests==2.4.3',
+        'requests',
         'Polygon2',
         'mysql-python',
         'nose',
