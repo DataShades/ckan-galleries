@@ -28,12 +28,14 @@ echo Virtual environment activated
 # echo DB initialized
 
 
-default_test_admin_name='jenkins_test_admin'
-default_test_admin_pass='040471'
-default_test_admin_mail='jenkins_test_admin@testing.net'
-default_test_admin_apikey='123123123123'
+# default_test_admin_name='jenkins_test_admin'
+# default_test_admin_pass='040471'
+# default_test_admin_mail='jenkins_test_admin@testing.net'
+# default_test_admin_apikey='123123123123'
 
-paster --plugin=ckan user add $default_test_admin_name email=$default_test_admin_mail password=$default_test_admin_pass apikey=$default_test_admin_apikey -c $2
-paster --plugin=ckan sysadmin add $default_test_admin_name -c $2
+# paster --plugin=ckan user add $default_test_admin_name email=$default_test_admin_mail password=$default_test_admin_pass apikey=$default_test_admin_apikey -c $2
+# paster --plugin=ckan sysadmin add $default_test_admin_name -c $2
 
-nosetests --with-xunit --xunit-file=nosetests.xml -v --nologcapture --with-pylons=$2
+# nosetests --with-xunit --xunit-file=nosetests.xml -v --nologcapture --with-pylons=$2
+
+python setup.py nosetests --with-xunit --xunit-file=nosetests.xml -v --nologcapture --with-pylons=$2 -e browser

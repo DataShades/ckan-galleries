@@ -63,9 +63,9 @@ class TestUserCreation:
     new_user = common_actions.user_create_with_dataset(_get_admin_context(), data_dict)
     print new_user
 
-    nt.assert_is_not_none(new_user)
-    nt.assert_in('apikey', new_user)
-    nt.assert_greater(new_user['apikey'], '')
+    assert new_user
+    assert 'apikey' in new_user
+    assert new_user['apikey'] > ''
     session.query(model.User).filter_by(name=new_user['name']).one().purge()
     session.commit()
 
