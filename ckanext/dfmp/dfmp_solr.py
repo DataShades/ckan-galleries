@@ -10,6 +10,7 @@ from ckan.lib.search.query import SearchQuery, VALID_SOLR_PARAMETERS, SearchQuer
 from ckan.lib.search.common import SearchIndexError, make_connection
 from ckan.lib.search.index import SearchIndex
 import ckan.model as model
+session = model.session
 
 from ckanext.dfmp.bonus import _unjson, _unjson_base, _get_package_id_by_res
 
@@ -61,7 +62,7 @@ class DFMPSolr(SearchIndex):
     ast_dict[TYPE_FIELD] = ASSET_TYPE
     ast_dict['capacity'] = 'public'
     if not ast_dict.get('package_id'):
-      ast_dict['package_id'] = _get_package_id_by_res(ast_dict['id'])
+      ast_dict['package_id']  = session.query(model.Resource).filter_by(id=resource).first().get_package_id()
 
     bogus_date = datetime.datetime(1, 1, 1)
     try:
