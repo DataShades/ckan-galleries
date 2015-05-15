@@ -16,7 +16,7 @@ setup(
     url='',
     license='',
     packages=find_packages(exclude=['ez_setup', 'examples', 'tests']),
-    namespace_packages=['ckanext', 'ckanext.dfmp'],
+    namespace_packages=['ckanext', 'ckanext.dfmp', 'ckanext.s3con'],
     include_package_data=True,
     zip_safe=False,
     install_requires=[
@@ -30,12 +30,14 @@ setup(
         'mysql-python',
         'nose',
         'coverage',
-        'selenium'
+        'selenium',
+        'boto',
     ],
     entry_points='''
         [ckan.plugins]
         dfmp=ckanext.dfmp.plugin:DFMPPlugin
         drupal7=ckanext.dfmp.drupal_plugin:DrupalAuthPlugin
+        s3con_dfmp=ckanext.s3con.plugin:S3Plugin
 
         [ckan.celery_task]
         tasks = ckanext.dfmp.celery_import:task_imports
