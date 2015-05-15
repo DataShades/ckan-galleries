@@ -119,6 +119,10 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       'record_edit', '/asset/{resource}/{asset_id}/edit',
       controller='ckanext.dfmp.controller:DFMPController',
       action='record_edit', ckan_icon='')
+    map.connect(
+      'create_record', '/asset/{resource}/add',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='create_record', ckan_icon='')
 
     return map
 

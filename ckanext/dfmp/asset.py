@@ -64,6 +64,34 @@ class Asset:
         if not field in data:
           raise AssetAbsentFieldsException(field)
 
+    # create resource if not exists
+    if not additional['resources']:
+      new_id = _make_uuid()
+      parent = toolkit.get_action('resource_create')(additional['context'], {
+        'package_id':additional['package_id'],
+        'id':new_id,
+        'url': _site_url() + '/datastore/dump/' + new_id,
+        'name':'Assets',
+        'resource_type':'asset',
+      })
+    # get resource if exists
+    else:
+      parent = toolkit.get_action('resource_show')(additional['context'], {'id': additional['resources'][0].id})
+
+    parent_id = parent['id']
+    # create datastore if not exists
+    if not parent.get('datastore_active'):
+      _default_datastore_create(additional['context'], parent_id)
+    additional['parent_id'] = parent_id
+    # add asset to datastore
+    return self._add_new_asset(data, additional)
+
+  @staticmethod
+  def create(data, additional):
+    return self._add_new_asset(data, additional)
+
+  def _add_new_asset(self, data, additional):
+    # get name/ convert url to name
     if not 'name' in data:
       data['name'] = _asset_name_from_url(data['url'])
 
