@@ -488,18 +488,30 @@ i.in-progress:before{
     color: transparent;
 }
 
-.recent-datasets-tile{
-    $tile_width: 150px;
-    width: $tile_width;
-    height: 150px;
-    overflow: hidden;
-    background: black;
-    margin: 30px;
-    float: left;
-    img{
-        min-width: $tile_width;   
-    }
-    .recent-dataset-title{
-        position: absolute;
+.latest-home-dfmp{
+    margin-top: 20px;
+    .recent-datasets-tile{
+        $tile_width: 220px;
+        width: $tile_width;
+        height: $tile_width;
+        overflow: hidden;
+        background: black;
+        margin: 0 0 20px 20px;
+        float: left;
+        .recent-dataset-title{
+            padding: 15px;
+            background: rgba(red($yellow), green($yellow), blue($yellow), 0.7);
+            font-weight: bold;
+        }
+        &:first-child{
+            margin-left: 0;
+        }
+        img{
+            min-width: $tile_width;
+            min-height: $tile_width;
+        }
+        .recent-dataset-title{
+            position: absolute;
+        }
     }
 }

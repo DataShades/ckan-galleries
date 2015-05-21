@@ -634,16 +634,25 @@ i.in-progress:before {
   background: url("../../../../base/images/loading-spinner.gif") 50% no-repeat;
   color: transparent; }
 
-.recent-datasets-tile {
-  width: 150px;
-  height: 150px;
-  overflow: hidden;
-  background: black;
-  margin: 30px;
-  float: left; }
-  .recent-datasets-tile img {
-    min-width: 150px; }
-  .recent-datasets-tile .recent-dataset-title {
-    position: absolute; }
+.latest-home-dfmp {
+  margin-top: 20px; }
+  .latest-home-dfmp .recent-datasets-tile {
+    width: 220px;
+    height: 220px;
+    overflow: hidden;
+    background: black;
+    margin: 0 0 20px 20px;
+    float: left; }
+    .latest-home-dfmp .recent-datasets-tile .recent-dataset-title {
+      padding: 15px;
+      background: rgba(237, 225, 18, 0.7);
+      font-weight: bold; }
+    .latest-home-dfmp .recent-datasets-tile:first-child {
+      margin-left: 0; }
+    .latest-home-dfmp .recent-datasets-tile img {
+      min-width: 220px;
+      min-height: 220px; }
+    .latest-home-dfmp .recent-datasets-tile .recent-dataset-title {
+      position: absolute; }
 
 /*# sourceMappingURL=dfmp.css.map */
