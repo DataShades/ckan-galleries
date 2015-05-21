@@ -487,3 +487,19 @@ i.in-progress:before{
     background: url("../../../../base/images/loading-spinner.gif") 50% no-repeat;
     color: transparent;
 }
+
+.recent-datasets-tile{
+    $tile_width: 150px;
+    width: $tile_width;
+    height: 150px;
+    overflow: hidden;
+    background: black;
+    margin: 30px;
+    float: left;
+    img{
+        min-width: $tile_width;   
+    }
+    .recent-dataset-title{
+        position: absolute;
+    }
+}

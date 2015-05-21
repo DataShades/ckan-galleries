@@ -17,6 +17,28 @@ REQUIRED_DATASTORE_COLS = [
   'metadata',
 ]
 
+
+def dfmp_recently_added():
+  import logging as log 
+  q = session.query(model.Resource.name, model.Resource.id)\
+    .join(model.ResourceGroup).join(model.Package)\
+    .filter(model.Package.state == 'active',
+            model.Package.private == False,
+            model.Resource.state == 'active')\
+    .order_by('created desc')\
+    .limit(4)\
+    .all()
+  for item in q:
+    asset = DFMPSearchQuery.run({
+      'q':'*:*',
+      'rows':1,
+      'fq':'id:%s' % item.id,
+      'fl':'url,extras_thumb',
+      'sort':'metadata_modified asc',
+      })['results']
+    item.image = asset[0] if asset else {'extras':{}}
+  return q
+
 def dfmp_with_gallery(id):
   with_gallery = False
   total_in_ds = 0

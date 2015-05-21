@@ -129,6 +129,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       'dfmp_relationship':dfmp_relationship,
       'dfmp_nice_date':dfmp_nice_date,
       'dfmp_relative_time':dfmp_relative_time,
+      'dfmp_recently_added':dfmp_recently_added,
       }
 
   def update_config(self, config):
