@@ -4,7 +4,6 @@ from datetime import datetime
 
 import ckan.model as model
 import ckan.plugins.toolkit as toolkit
-from ckan.lib.helpers import url_for
 import ckan.model as model
 import ckan.logic as logic
 

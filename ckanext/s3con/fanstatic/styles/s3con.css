@@ -1,0 +1,9 @@
+  .without-colon:after{
+    content:'';
+  }
+
+  .inline-radio-label{
+    display: inline;
+    top: 7px;
+    position: relative;
+  }
