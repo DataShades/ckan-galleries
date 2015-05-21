@@ -183,6 +183,9 @@ body .account-masthead .account.not-authed ul li:last-child a:hover, body .accou
   max-height: 120px;
   overflow: hidden; }
 
+#asset-edit-form #asset-url {
+  line-height: 40px; }
+
 .recline-data-explorer {
   background: #fff; }
 .recline-data-explorer .well, .recline-data-explorer .well a {
@@ -469,7 +472,6 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
 .btn.btn-danger {
   color: white; }
 .btn:hover, .btn-primary:hover, .btn-primary:focus, .btn-group.open .btn-primary.dropdown-toggle, .btn-success:hover, .btn-success:focus, .btn-group.open .btn-success.dropdown-toggle, .dropdown-menu li a:hover, .dropdown-menu li a:focus, .dropdown-submenu:hover a, .dropdown-submenu:focus a, .btn.hover {
-  color: #1e1f21;
   background: #eda712; }
 .btn-primary, .btn-success {
   width: 190px; }
@@ -619,6 +621,8 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
   position: relative; }
 .asset-list .asset-content img {
   max-width: 150px; }
+.asset-list .asset-content .asset-edit {
+  float: right; }
 .asset-actions i {
   cursor: pointer; }
 

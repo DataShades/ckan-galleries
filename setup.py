@@ -29,7 +29,8 @@ setup(
         'Polygon2',
         'mysql-python',
         'nose',
-        'coverage'
+        'coverage',
+        'selenium'
     ],
     entry_points='''
         [ckan.plugins]
