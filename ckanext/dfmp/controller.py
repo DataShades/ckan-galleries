@@ -145,6 +145,75 @@ class DFMPController(base.BaseController):
     # renders Edit form
     return base.render('assets/edit.html', {'asset': asset, 'destination': destination})
 
+  # asset create form
+  def create_record(self, resource):
+    # inits context
+    self._init_context()
+
+    # # we need to make sure that requested asset exists
+    # try:
+    #   # we use API action to get asset details
+    #   if hasattr(dfmp_get_action, 'dfmp_get_asset'):
+    #     asset = toolkit.get_action('dfmp_get_asset')(self.context, {
+    #       'resource_id': resource,
+    #       'asset_id': asset_id,
+    #     })
+    #   else:
+    #     # DEPRICATED
+    #     asset = toolkit.get_action('resource_items')(self.context, {
+    #       'id': resource,
+    #       'item': asset_id,
+    #     })['records'][0]
+    # except toolkit.ValidationError, e:
+    #   # returns "Resourse not found" page if no asset found
+    #   return base.abort(404)
+
+    #gets destination URL
+    # destination = request.params.get('destination') or c.environ.get('HTTP_REFERER') or ''
+
+    # we ned to apply changes if from is submitted
+    if request.method == 'POST' and request.params.get('save'):
+      while True:
+        package_id = session.query(model.Resource).filter_by(id=resource).first().get_package_id()
+        # only admins can modify assets
+        if package_id not in editable_datasets and not (c.userobj and c.userobj.sysadmin):
+          h.flash_error('You cannot modify this record.')
+          break
+        # asset changes dict
+        asset_update = {
+          'name': request.params.get('name'),
+          'lastModified': request.params.get('last_modified')
+        }
+        # log.warn(dir(dfmp_update_action))
+        # we need to update asset
+        if hasattr(dfmp_parent_action, 'update') and hasattr(dfmp_parent_action.update, 'dfmp_update_asset'):
+          asset_update['resource_id'] = request.params.get('resource_id')
+          asset_update['asset_id'] = request.params.get('asset_id')
+          asset = toolkit.get_action('dfmp_update_asset')(self.context, asset_update)
+        else:
+          # DEPRICATED
+          asset_update['id'] = request.params.get('resource_id')
+          asset_update['assetID'] = request.params.get('asset_id')
+          asset = toolkit.get_action('user_update_asset')(self.context, asset_update)
+        # notification about successful update
+        h.flash_success('Asset has been updated.')
+        if destination:
+          base.redirect(destination)
+        break
+
+    # creates asset dict for Template
+    asset = {
+      'name': asset['name'],
+      'resource_id': resource,
+      'asset_id': asset['assetID'],
+      'last_modified': asset['lastModified'],
+      'url': asset['url'],
+      'spatial': json.dumps(asset['spatial'], sort_keys=False, indent=2, separators=(',', ': ')),
+      'metadata': json.dumps(asset['metadata'], sort_keys=False, indent=2, separators=(',', ': '))
+    }
+    # renders Edit form
+    return base.render('assets/edit.html', {'asset': asset, 'destination': destination})
+
 
   def api_doc(self):
     return base.render('home/api_doc.html')

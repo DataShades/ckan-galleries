@@ -237,6 +237,10 @@ class Asset:
     # add asset to datastore
     return self._add_new_asset(data, additional)
 
+  @staticmethod
+  def create(data, additional):
+    return self._add_new_asset(data, additional)
+
   def _add_new_asset(self, data, additional):
     # get name/ convert url to name
     if not 'name' in data:
