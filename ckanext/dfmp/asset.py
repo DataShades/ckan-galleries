@@ -4,12 +4,9 @@ from datetime import datetime
 
 import ckan.model as model
 import ckan.plugins.toolkit as toolkit
-<<<<<<< HEAD
 from ckan.lib.helpers import url_for
-=======
 import ckan.model as model
 import ckan.logic as logic
->>>>>>> 2dd4636b2864dbcf4a72e384fdccbae2058570ff
 
 import ckanext.dfmp.dfmp_solr as solr
 from ckanext.dfmp.bonus import (
@@ -239,6 +236,10 @@ class Asset:
       _default_datastore_create(additional['context'], parent_id)
     additional['parent_id'] = parent_id
     # add asset to datastore
+    return self._add_new_asset(data, additional)
+
+  @staticmethod
+  def create(data, additional):
     return self._add_new_asset(data, additional)
 
   def _add_new_asset(self, data, additional):
