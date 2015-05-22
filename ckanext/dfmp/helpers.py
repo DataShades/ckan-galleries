@@ -29,13 +29,17 @@ def dfmp_recently_added():
     .limit(4)\
     .all()
   for item in q:
-    asset = DFMPSearchQuery.run({
+    result = DFMPSearchQuery.run({
       'q':'*:*',
       'rows':1,
       'fq':'id:%s' % item.id,
       'fl':'url,extras_thumb',
       'sort':'metadata_modified asc',
-      })['results']
+      'facet.field':'id'
+      })
+    count = result['facets']['id'].values()
+    item.count = count[0] if count else 0
+    asset = result['results']
     item.image = asset[0] if asset else {'extras':{}}
   return q
 

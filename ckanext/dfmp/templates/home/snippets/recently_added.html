@@ -1,5 +1,10 @@
 <div class="module-content box">
   {% for item in h.dfmp_recently_added() %}
-  <div class="recent-datasets-tile"><div class="recent-dataset-title">{{ item.name }}</div><img src="{{ item.image.extras.thumb or item.image.url }}" alt=""></div>
+	<div class="recent-datasets-tile">
+  		<div class="recent-dataset-title">{{ item.name }}</div>
+  		<img src="{{ item.image.extras.thumb or item.image.url }}" alt="">
+  		<div class="shadow"></div>
+  		<div class="recent-dataset-counter">{{ item.count }} {{ _('Images') }}</div>
+ 	</div>
   {% endfor %}
 </div>
