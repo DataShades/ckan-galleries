@@ -1,0 +1,104 @@
+{% extends "package/base_form_page.html" %}
+
+{% block subtitle %}{{ _('Asset Edit') }}{% endblock %}
+{% import 'macros/form.html' as form %}
+
+{% block breadcrumb %}
+    <ol class="breadcrumb">
+        <!-- Snippet snippets/home_breadcrumb_item.html start -->
+        <li class="home"><a href="/"><i class="icon-home"></i><span>{{ _('Home') }}</span></a></li>
+        <!-- Snippet snippets/home_breadcrumb_item.html end -->
+        <li><a href="/assets">{{ _('Assets') }}</a></li>
+        <li class="active"><a href="">{{ asset.asset_id }}</a></li>
+    </ol>
+{% endblock %}
+
+{% block info_module %}
+    <section class="module module-narrow module-shallow">
+      <h2 class="module-heading"><i class="icon-info-sign"></i> {{ _('Managing assets') }}</h2>
+      <div class="module-content">
+        <p>
+          {% trans %}
+            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Nulla quis augue volutpat, luctus tortor dignissim, ornare ligula. Suspendisse volutpat accumsan purus, ac maximus dui rutrum ac. Donec rutrum est in convallis maximus. Mauris arcu ex, lobortis a erat nec, cursus vehicula dui. Fusce et facilisis turpis. Nulla facilisi. Pellentesque a.
+          {% endtrans %}
+        </p>
+      </div>
+    </section>
+  {% endblock %}
+
+{% block form %}
+    <form class="form-horizontal" id="asset-edit-form" method="post">
+
+        <input type="hidden" name="destination" value="{{ destination }}"/>
+
+        <div class="control-group control-full control-large">
+            <label class="control-label" for="field-resource_id">{{ _('Resource ID') }}</label>
+            <div class="controls ">
+                <input id="field-resource_id" type="text" name="resource_id" value="{{ asset.resource_id }}" readonly="true">
+            </div>
+        </div>
+
+        <div class="control-group control-full control-large">
+            <label class="control-label" for="field-asset_id">{{ _('Asset ID') }}</label>
+            <div class="controls ">
+                <input id="field-asset_id" type="text" name="asset_id" value="{{ asset.asset_id }}" readonly="true">
+            </div>
+        </div>
+
+         <div class="control-group control-full control-large">
+            <label class="control-label" for="field-last_modified">{{ _('Last Modified') }}</label>
+            <div class="controls ">
+                <input id="field-last_modified" type="text" name="last_modified" value="{{ asset.last_modified }}" placeholder="eg. 2015-04-09 10:21:59.129956">
+            </div>
+        </div>
+
+         <div class="control-group control-full control-large">
+            <label class="control-label" for="field-name">{{ _('Name') }}</label>
+            <div class="controls ">
+                <input id="field-name" type="text" name="name" value="{{ asset.name }}" placeholder="eg. A name">
+            </div>
+        </div>
+
+        <div class="control-group control-full control-large">
+            <label class="control-label">{{ _('URL') }}</label>
+            <div class="controls ">
+                <a id="asset-url" href="{{ asset.url }}" target="_blank">{{ asset.url }}</a>
+            </div>
+        </div>
+
+        <div class="control-group control-full control-large">
+            <label class="control-label">{{ _('Spatial') }}</label>
+            <div class="controls ">
+               <pre> {{ asset.spatial }} </pre>
+            </div>
+        </div>
+
+        <div class="control-group control-full control-large">
+            <label class="control-label">{{ _('Metadata') }}</label>
+            <div class="controls ">
+                <pre> {{ asset.metadata }} </pre>
+            </div>
+        </div>
+{#        <div class="control-group control-full">#}
+{#            <label class="control-label" for="field-notes">{{ _('Description') }}</label>#}
+{#            <div class="controls editor">#}
+{#                <textarea id="field-notes" name="notes" cols="20" rows="5" placeholder="eg. Some useful notes about the data"></textarea>#}
+{#                <span class="editor-info-block">{{ _('You can use') }}<a href="http://daringfireball.net/projects/markdown/syntax" target="_blank">{{ _('Markdown formatting') }}</a> here</span>#}
+{#            </div>#}
+{#        </div>#}
+        <div class="form-actions">
+            <a class="btn btn-danger btn-small" href="{{ destination }}" data-module="confirm-action" data-module-i18n="{{
+               h.dump_json({
+                 'heading': _('Leave Page'),
+                 'content': _('Are you sure that you want to leave page? All changes will be lost...'),
+                 'confirm': _('Leave'),
+                 'cancel': _('Stay on the page')
+              })
+            }}" title="{{ _('Cancel') }}">{{ _('cancel') }}</a>
+            <input id="edit-asset-submit" class="btn btn-primary" type="submit" name="save" value="{{ _('Save changes') }}">
+            <p class="control-required-message">
+                <span class="control-required">*</span> {{ _('Required field') }}
+            </p>
+        </div>
+    </form>
+{% endblock %}

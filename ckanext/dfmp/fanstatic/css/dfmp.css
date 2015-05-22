@@ -185,6 +185,9 @@ body .account-masthead {
   max-height: 120px;
   overflow: hidden; }
 
+#asset-edit-form #asset-url {
+  line-height: 40px; }
+
 .recline-data-explorer {
   background: #fff; }
   .recline-data-explorer .well, .recline-data-explorer .well a {
@@ -471,7 +474,6 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
   .btn.btn-danger {
     color: white; }
   .btn:hover, .btn-primary:hover, .btn-primary:focus, .btn-group.open .btn-primary.dropdown-toggle, .btn-success:hover, .btn-success:focus, .btn-group.open .btn-success.dropdown-toggle, .dropdown-menu li a:hover, .dropdown-menu li a:focus, .dropdown-submenu:hover a, .dropdown-submenu:focus a, .btn.hover {
-    color: #1e1f21;
     background: #eda712; }
   .btn-primary, .btn-success {
     width: 190px; }
@@ -561,9 +563,15 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
   background: #01525e;
   text-shadow: none; }
 .table .gallery-preview-column {
-  width: 50px;
-  padding: 10px;
-  vertical-align: top; }
+  width: auto;
+  padding: 3px 10px;
+  vertical-align: middle;
+  text-align: center; }
+  .table .gallery-preview-column img {
+    max-width: 200px;
+    height: 45px; }
+  .table .gallery-preview-column .flag-preview-wrapper img {
+    height: auto; }
 .table a {
   color: #056c7f; }
 .table .flags-asset-column {
@@ -579,30 +587,19 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
     color: #056c7f; }
 .table .dfmp-manage-asset-btn {
   vertical-align: middle; }
+  .table .dfmp-manage-asset-btn .dropdown > a {
+    width: 100%;
+    padding-right: 0; }
   .table .dfmp-manage-asset-btn.remove-action a:hover {
     background-color: #a22a2b; }
   .table .dfmp-manage-asset-btn.hide-action a:hover {
     background-color: #056c7f; }
   .table .dfmp-manage-asset-btn a {
-    display: block;
-    text-align: center;
-    width: 60px;
-    height: 30px;
-    border-radius: 3px;
-    margin: auto;
-    color: #1e1f21;
-    border: 1px solid #c5d2e3;
-    background-color: #e1e7ee; }
+    color: #1e1f21; }
     .table .dfmp-manage-asset-btn a[data-module-action="hide"]:hover, .table .dfmp-manage-asset-btn a[data-module-action="unhide"]:hover {
       border-color: #c4d2e3; }
     .table .dfmp-manage-asset-btn a[data-module-action="solr-delete"]:hover, .table .dfmp-manage-asset-btn a[data-module-action="delete"]:hover {
       border-color: #870000; }
-    .table .dfmp-manage-asset-btn a:hover {
-      text-decoration: none;
-      color: #fff; }
-    .table .dfmp-manage-asset-btn a i {
-      font-size: 22px;
-      line-height: 30px; }
 
 .group-list .module-heading h3 a {
   color: #056c7f; }
@@ -621,6 +618,8 @@ input[type=text], .masthead input[type=text], input[type=password], .masthead in
   position: relative; }
   .asset-list .asset-content img {
     max-width: 150px; }
+  .asset-list .asset-content .asset-edit {
+    float: right; }
 .asset-actions i {
   cursor: pointer; }
 
@@ -654,5 +653,21 @@ i.in-progress:before {
       min-height: 220px; }
     .latest-home-dfmp .recent-datasets-tile .recent-dataset-title {
       position: absolute; }
+
+.add-dataset-btn {
+  margin-bottom: 20px; }
+  .add-dataset-btn .page_primary_action {
+    margin: 0; }
+    .add-dataset-btn .page_primary_action .btn.btn-primary {
+      width: auto;
+      background: none;
+      border: none;
+      font-weight: normal;
+      padding: 3px 20px; }
+      .add-dataset-btn .page_primary_action .btn.btn-primary a {
+        padding: 0; }
+  .add-dataset-btn .page_primary_action:hover {
+    background: #eda712;
+    color: #ffffff; }
 
 /*# sourceMappingURL=dfmp.css.map */

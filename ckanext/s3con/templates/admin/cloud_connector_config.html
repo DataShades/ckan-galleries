@@ -1,0 +1,60 @@
+{% set enabled_s3 = data['ckan.cloud_storage_enable'] %}
+{% set failover_s3 = data['ckan.cloud_failover'] %}
+{% import 'macros/form.html' as form %}
+
+{% extends "admin/base.html" %}
+
+{% block primary_content_inner %}
+  <form method='post' action="" class="form-horizontal" data-module="s3con-form-disabler">
+    {% block admin_form %}
+
+      <fieldset>
+        <legend>Cloud settings</legend>
+        <label for="cloud-enable" class="control-label">Cloud</label>
+        {{ form.checkbox(name='ckan.cloud_storage_enable', label=' ', id='cloud-enable', checked=enabled_s3, value=1) }}
+        <p class="controls"><em>Currently only S3 Amazon is available</em></p>
+        <label for="upload-failower" class="control-label">Failover</label>
+        <fieldset id="upload-failower" class="controls">
+          <input type="radio" id="upload-failowers-local" name="ckan.cloud_failover" value=1 {{ 'checked' if failover_s3 == '1' }}></radio>
+          <label for="upload-failowers-local" class="without-colon inline-radio-label">Write upload to local</label>
+          <br>
+          <input type="radio" id="upload-failower-abort" name="ckan.cloud_failover" value=2 {{ 'checked' if failover_s3 == '2' }}></radio>
+          <label for="upload-failower-abort" class="without-colon inline-radio-label">Abort upload</label>
+        </fieldset>
+      </fieldset>
+      <br>
+      <fieldset>
+        <legend>AWS S3 settings</legend>
+        {{ form.input('ckan.s3_aws_key', label=_('AWS Access Key'), value=data['ckan.s3_aws_key'], attrs={'class':'disablable'}) }}
+        {{ form.input('ckan.s3_secret_key', label=_('AWS Secret Key'), value=data['ckan.s3_secret_key'], attrs={'class':'disablable'}) }}
+      </fieldset>
+    {% endblock %}
+    <div class="form-actions">
+      {#
+      {% set locale = h.dump_json({'content': _('Are you sure you want to reset the config?')}) %}
+      <a href="{% url_for controller='admin', action='reset_config' %}" class="btn btn-danger pull-left" data-module="confirm-action" data-module-i18n="{{ locale }}">{{ _('Reset') }}</a>
+      #}
+      <button type="submit" class="btn btn-primary" name="save">{{ _('Update Config') }}</button>
+    </div>
+  </form>
+{% endblock %}
+
+{% block secondary_content %}
+  <div class="module module-narrow module-shallow">
+    <h2 class="module-heading">
+      <i class="icon-info-sign"></i>
+      {{ _('CKAN Cloud Connector config options') }}
+    </h2>
+    <div class="module-content">
+      {% block admin_form_help %}
+      {% set about_url = h.url_for(controller='home', action='about') %}
+      {% set home_url = h.url_for(controller='home', action='index') %}
+      {% set docs_url = "http://docs.ckan.org/en/{0}/theming.html".format(g.ckan_doc_version) %}
+      {% trans %}
+        <p><strong>Lorem ipsum:</strong> Lorem ipsum dolor sit amet, consectetur adipisicing elit. Inventore architecto quaerat animi fuga amet voluptatum magni sit quibusdam magnam nulla. Nobis odio rem, animi laborum! Quam quaerat, ratione repellendus voluptate repellat eveniet, minima iusto incidunt laborum cum dolores eos ut.</p>
+       
+      {% endtrans %}
+      {% endblock %}
+    </div>
+  </div>
+{% endblock %}

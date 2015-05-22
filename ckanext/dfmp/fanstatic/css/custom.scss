@@ -255,7 +255,6 @@ input[type=text], input[type=password], select {
     box-shadow: none;
     color: $black;
     &:hover, &.hover {
-        color: $black;
         background: $ybtn_h;
     }
     &-primary, &-success {
@@ -290,6 +289,7 @@ input[type=text], input[type=password], select {
 }
 
 .btn {
+  
     @extend .btn;
 }
 
@@ -399,10 +399,21 @@ input[type=text], input[type=password], select {
     text-shadow: none;
   }
   .gallery-preview-column{
-    width: 50px;
-    padding: 10px;
-    vertical-align: top;
+    width: auto;
+    padding: 3px 10px;
+    vertical-align: middle;
+    text-align: center;
+    img {
+      max-width: 200px;
+      height: 45px;
+    }
+    .flag-preview-wrapper {
+      img {
+        height: auto;
+      }
+    }
   }
+
   a {
     color: $t_a;
   }
@@ -424,6 +435,10 @@ input[type=text], input[type=password], select {
   }
   .dfmp-manage-asset-btn {
     vertical-align: middle;
+    .dropdown > a {
+      width: 100%;
+      padding-right: 0;
+    }
     &.remove-action a:hover{
         background-color: $remove_btn_b;
     }
@@ -438,23 +453,7 @@ input[type=text], input[type=password], select {
         &[data-module-action="solr-delete"]:hover, &[data-module-action="delete"]:hover{
             border-color: #870000;
         }
-        display:block;
-        text-align: center;
-        width: 60px;
-        height: 30px;
-        border-radius: 3px;
-        margin: auto;
         color:$black;
-        &:hover{
-            text-decoration: none;
-            color: $white;
-        }
-            border: 1px solid $abtn_b;
-            background-color: $dbtn_c;
-        i{
-            font-size: 22px;
-            line-height: 30px;
-        }
     }
   }
 }
@@ -477,6 +476,9 @@ input[type=text], input[type=password], select {
     .asset-content{
       position: relative;
       img{max-width: 150px;}
+      .asset-edit {
+        float:right;
+      }
     }
   }
   &-actions i{cursor: pointer;}
@@ -514,4 +516,24 @@ i.in-progress:before{
             position: absolute;
         }
     }
+}
+.add-dataset-btn {
+  margin-bottom: 20px;
+  .page_primary_action {
+    margin: 0;
+    .btn.btn-primary {
+      width: auto;
+      background: none;
+      border: none;
+      font-weight: normal;
+      padding: 3px 20px;
+      a {
+        padding: 0;
+      }
+    }
+  }
+  .page_primary_action:hover {
+    background: #eda712;
+    color: #ffffff;
+  }
 }
