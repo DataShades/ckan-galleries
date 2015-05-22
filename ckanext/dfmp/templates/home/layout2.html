@@ -15,18 +15,19 @@
     </div>
   </div>
 </div>
-<div role="main">
  
-  <div class="container">
+<div class="home-page-map">
+  <div class="home-page-map-wrapper">
+    {% snippet 'home/snippets/latest_assets.html' %}
+  </div>
+</div>
+
+<div role="main">
+  <div class="container latest-home-dfmp">
     <div class="row row2">
-      <div class="span6">
-        {% snippet 'home/snippets/latest_assets.html' %}
-      </div>
-      <div class="span6 col2">
-        {% snippet 'home/snippets/featured_organization.html' %}
-      </div>
-      <div class="span6 col1 with-top-margin">
-        {% snippet 'home/snippets/featured_group.html' %}
+      <h1 class="span">{{ _('Latest datasets') }}</h1>
+      <div class="span12">
+        {# snippet to get latest datasets #}
       </div>
     </div>
   </div>
