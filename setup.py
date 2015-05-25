@@ -33,7 +33,6 @@ setup(
         'selenium',
         'boto',
         'pillow',
-        'io',
     ],
     entry_points='''
         [ckan.plugins]
