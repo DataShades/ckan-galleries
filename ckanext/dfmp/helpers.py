@@ -43,7 +43,7 @@ def dfmp_recently_added():
     count = result['facets']['id'].values()
     item.count = count[0] if count else 0
     asset = result['results']
-    item.image = asset[0] if asset else {'extras':{}}
+    item.image = asset[0] if asset else {'url':config.get('ckan.site_url') + '/dfmp/images/default_thumb.png'}
   return q
 
 def dfmp_with_gallery(id):
