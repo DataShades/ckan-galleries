@@ -5,6 +5,9 @@ from ckanext.dfmp.dfmp_solr import DFMPSearchQuery
 import datetime
 from dateutil.parser import parse
 import ckan.model as model
+from pylons import config
+import ckan.logic
+NotFound = ckan.logic.NotFound
 session = model.Session
 
 REQUIRED_DATASTORE_COLS = [
@@ -153,3 +156,26 @@ def dfmp_relative_time(time):
     return time
   except Exception, e:
     return time
+
+def dfmp_get_thumbnail(path, width, height):
+  ''' Gets thumbnail url '''
+  try:
+    thumbnail = toolkit.get_action(
+      'dfmp_get_thumbnail_url')({}, {
+      'image_url': path,
+      'width': width,
+      'height': height
+    })
+  # returns resized default image if image not found
+  except NotFound:
+    thumbnail = toolkit.get_action(
+      'dfmp_get_thumbnail_url')({}, {
+      'image_url': config.get('ckan.site_url') + '/dfmp/images/default_thumb.png',
+      'width': width,
+      'height': height
+    })
+  return ckan.lib.helpers.url_for(
+    controller='ckanext.dfmp.controller:DFMPController',
+    action='get_thumbnail',
+    resolution=thumbnail['resolution'],
+    image=thumbnail['image'])
