@@ -1,10 +1,13 @@
 <div class="module-content box">
   {% for item in h.dfmp_recently_added() %}
-	<div class="recent-datasets-tile">
-  		<div class="recent-dataset-title">{{ item.name }}</div>
-  		<img src="{{ h.dfmp_get_thumbnail(item.image.url, 220,220) }}" alt="">
-  		<div class="shadow"></div>
-  		<div class="recent-dataset-counter">{{ item.count }} {{ _('Images') }}</div>
- 	</div>
+
+		<div class="recent-datasets-tile">
+	<a href="{% url_for controller='package', action='read', id=item.p_id %}">
+	  		<div class="recent-dataset-title">{{ item.name }}</div>
+	  		<img src="{{ h.dfmp_get_thumbnail(item.image.url, 220,220) }}" alt="">
+	  		<div class="shadow"></div>
+	  		<div class="recent-dataset-counter">{{ item.count }} {{ _('Images') }}</div>
+	</a>
+	 	</div>
   {% endfor %}
 </div>

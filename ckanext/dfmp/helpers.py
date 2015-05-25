@@ -23,7 +23,7 @@ REQUIRED_DATASTORE_COLS = [
 
 def dfmp_recently_added():
   import logging as log 
-  q = session.query(model.Resource.name, model.Resource.id)\
+  q = session.query(model.Resource.name, model.Resource.id, model.Package.id.label('p_id') )\
     .join(model.ResourceGroup).join(model.Package)\
     .filter(model.Package.state == 'active',
             model.Package.private == False,
@@ -32,6 +32,7 @@ def dfmp_recently_added():
     .limit(4)\
     .all()
   for item in q:
+    log.warn(item)
     result = DFMPSearchQuery.run({
       'q':'*:*',
       'rows':1,
