@@ -65,8 +65,7 @@ def dfmp_get_asset_list(context, data_dict):
 @side_effect_free
 def dfmp_get_thumbnail_url(context, data_dict):
   ''' Generates thumbnail and returns url. '''
-  log.warn(data_dict)
-  _validate(data_dict, 'image_url', 'width', 'height')
+   _validate(data_dict, 'image_url', 'width', 'height')
 
   import os
   import ckan.lib.uploader as uploader
