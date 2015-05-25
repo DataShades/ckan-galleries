@@ -106,9 +106,8 @@ def dfmp_get_thumbnail_url(context, data_dict):
   # generate thumbnail if not exist
   m = hashlib.md5()
   m.update(data_dict['image_url'])
-  thumb_file = upload_path + '/thumbnails/' + resolution_dir + '/' + m.hexdigest() + '.jqg'
-  path = thumb_file
-  if not os.path.exists(thumb_file):
-    thumbnail.save(thumb_file, "JPEG")
+  path = upload_path + '/thumbnails/' + resolution_dir + '/' + m.hexdigest() + '.jpg'
+  if not os.path.exists(path):
+    thumbnail.save(path, "JPEG")
 
   return {'resolution': resolution_dir, 'image': path.split('/')[-1]}
