@@ -35,12 +35,12 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
 
   def show_package_schema(self):
     schema['resources'].update({
-      'forbidden_id' : [ tk.get_validator('ignore_missing') ]
+      'forbidden_id' : [ plugins.toolkit.get_validator('ignore_missing') ]
     })
 
   def _modify_package_schema(self, schema):
     schema['resources'].update({
-      'forbidden_id' : [ tk.get_validator('ignore_missing') ]
+      'forbidden_id' : [ plugins.toolkit.get_validator('ignore_missing') ]
       })
     return schema
 
