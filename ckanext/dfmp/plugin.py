@@ -35,12 +35,12 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
 
   def show_package_schema(self):
     schema['resources'].update({
-      'forbidden_id' : [ tk.get_validator('ignore_missing') ]
+      'forbidden_id' : [ plugins.toolkit.get_validator('ignore_missing') ]
     })
 
   def _modify_package_schema(self, schema):
     schema['resources'].update({
-      'forbidden_id' : [ tk.get_validator('ignore_missing') ]
+      'forbidden_id' : [ plugins.toolkit.get_validator('ignore_missing') ]
       })
     return schema
 
@@ -125,6 +125,11 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       controller='ckanext.dfmp.controller:DFMPController',
       action='create_record', ckan_icon='')
 
+    map.connect(
+      'get_thumbnail', '/thumb/{resolution}/{image}',
+      controller='ckanext.dfmp.controller:DFMPController',
+      action='get_thumbnail', ckan_icon='')
+
     return map
 
   def get_helpers(self):
@@ -138,6 +143,8 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       'dfmp_relationship':dfmp_relationship,
       'dfmp_nice_date':dfmp_nice_date,
       'dfmp_relative_time':dfmp_relative_time,
+      'dfmp_recently_added':dfmp_recently_added,
+      'dfmp_get_thumbnail':dfmp_get_thumbnail,
       }
 
   def update_config(self, config):
@@ -185,6 +192,7 @@ class DFMPPlugin(plugins.SingletonPlugin, toolkit.DefaultDatasetForm):
       'dfmp_get_asset':dfmp_get_asset,
       'dfmp_get_asset_list':dfmp_get_asset_list,
       'dfmp_update_asset':dfmp_update_asset,
+      'dfmp_get_thumbnail_url':dfmp_get_thumbnail_url
     }
 
 

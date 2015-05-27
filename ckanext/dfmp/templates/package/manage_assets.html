@@ -3,7 +3,7 @@
 {% block scripts %}
   {{ super() }}
   {% resource 'dfmp/js/dfmp_fancy_lightbox.js' %}
-  {% resource 'dfmp/js/dfmp_manage_flagged.js' %}
+  {% resource 'dfmp/js/dfmp_table_manage_flagged.js' %}
 {% endblock %}
 {% block subtitle %}{{ _('Manage assets') }} - {{ h.resource_display_name(c.resource) }} - {{ h.dataset_display_name(c.pkg_dict) }}{% endblock %}
 
