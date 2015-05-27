@@ -4,8 +4,7 @@ A package of extensions for the [CKAN open data platform](http://ckan.org/) for 
 
 ## Requirements
 
-For example, you might want to mention here which versions of CKAN this
-extension works with.
+This extension was developed and tested under CKAN-
 
 ## Installation
 
@@ -15,38 +14,45 @@ To install CKAN Galleries:
 
      . /usr/lib/ckan/default/bin/activate
 
-2. Install the {{ project }} Python package into your virtual environment::
+2. Install the ckanext-dfmp Python package into your virtual environment::
 
-     pip install {{ project }}
+     $ python setup.py install
 
-3. Add ``ckan-dfmp`` to the ``ckan.plugins`` setting in your CKAN
+3. Add ``dfmp`` to the ``ckan.plugins`` setting in your CKAN
    config file (by default the config file is located at
    ``/etc/ckan/default/production.ini``).
 
 4. Restart CKAN. For example if you've deployed CKAN with Apache on Ubuntu::
 
-     sudo service apache2 reload
+     $ sudo service apache2 reload
 
 ## Config Settings
 
-Document any optional config settings here. For example:
-
-    # The minimum number of hours to wait before re-checking a resource
-    # (optional, default: 24).
-    ckanext.{{ project_shortname }}.some_setting = some_default_value
+This extension doesn't define any additional config settings yet
 
 
 ## Development Installation
 
 To install CKAN Galleries for development, activate your CKAN virtualenv and
 do:
-
+     $ python setup.py develop
+     
+All dependencies will be installed automatically 
 
 ## Running the Tests
 
 To run the tests, do:
 
+Download selenium server from http://www.seleniumhq.org/download/ . Start selenium by:
+     $ java -jar selenium.jar
+where selenium.jar - downloaded file
 
+Activate your virtual environment and use command below to start tests:
+     $ nosetests  --with-pylons=/etc/ckan/default/development.ini
+where /etc/ckan/default/development.ini - path to ckan config file
+If you don't want to perform browser testing or have some troubles with selenium then just add one additional param
+     $ nosetests  --with-pylons=/etc/ckan/default/development.ini -e browser
+in order to exclude browser testing
 
 ## Copying and License
 
