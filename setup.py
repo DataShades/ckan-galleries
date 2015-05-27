@@ -32,6 +32,7 @@ setup(
         'coverage',
         'selenium',
         'boto',
+        'pillow',
     ],
     entry_points='''
         [ckan.plugins]

@@ -5,7 +5,7 @@ import datetime, os, re, json
 from dateutil import parser
 import ckan.model as model
 from pylons import config
-from ckan.common import c, g, _, OrderedDict, request
+from ckan.common import c, g, _, OrderedDict, request, response
 from urllib import urlencode
 from sqlalchemy import or_
 import ckanext.dfmp.actions.get as dfmp_get_action
@@ -851,6 +851,25 @@ class DFMPController(base.BaseController):
 
 
     return base.render('package/twitter_actions.html', extra_vars=extra_vars)
+
+  def get_thumbnail(self, resolution, image):
+    import ckan.lib.uploader as uploader
+    import paste.fileapp
+    import mimetypes
+
+    filepath = uploader.get_storage_path() + '/thumbnails/' + resolution + '/' + image
+    log.warn(filepath)
+    fileapp = paste.fileapp.FileApp(filepath)
+    try:
+       status, headers, app_iter = request.call_application(fileapp)
+    except OSError:
+      base.abort(404, _('Resource data not found'))
+    response.headers.update(dict(headers))
+    content_type, content_enc = mimetypes.guess_type(image)
+    if content_type:
+        response.headers['Content-Type'] = content_type
+    response.status = status
+    return app_iter
 
 def _get_pid(val):
   res = re.search('\d+$',val)

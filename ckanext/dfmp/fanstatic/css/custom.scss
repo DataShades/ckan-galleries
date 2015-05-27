@@ -490,6 +490,58 @@ i.in-progress:before{
     color: transparent;
 }
 
+.homepage.layout-2 .span12.padding-0{
+    padding-bottom:0;
+}
+
+.latest-home-dfmp{
+    // margin-top: 20px;
+    .recent-datasets-tile{
+        position:relative;
+        $tile_width: 220px;
+        width: $tile_width;
+        height: $tile_width;
+        overflow: hidden;
+        background: black;
+        margin: 0 0 20px 20px;
+        float: left;
+        .recent-dataset-title{
+            padding: 15px;
+            font-weight: bold;
+            background: rgba(red($yellow), green($yellow), blue($yellow), 0.8);
+        }
+        &:hover .recent-dataset-title{
+            background: $yellow;
+        }
+        .shadow{
+            height: 30%;
+            width: 100%;
+            background: -webkit-linear-gradient(bottom, rgba(0,0,0,.4) 40%, transparent);
+            background: -o-linear-gradient(bottom, rgba(0,0,0,.4) 40%, transparent);
+            background: linear-gradient(to top, rgba(0,0,0,.4) 40%, transparent);
+            position: absolute;
+            bottom: 0;
+        }
+        .recent-dataset-counter{
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            margin: 15px;
+            color: white;
+            font-weight: bold;
+        }
+        &:first-child{
+            margin-left: 0;
+        }
+        img{
+            min-width: $tile_width;
+            min-height: $tile_width;
+        }
+        .recent-dataset-title{
+            position: absolute;
+        }
+    }
+}
 .add-dataset-btn {
   margin-bottom: 20px;
   .page_primary_action {
